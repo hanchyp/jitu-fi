@@ -4,9 +4,9 @@
 // over that player's podium. During Live a spirit rises when its call is right and sinks when it
 // is wrong, with a ridge of the coin's price line behind it. Loaded on demand by <TableScene>.
 
-import { Html, Sparkles } from "@react-three/drei";
+import { Sparkles } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { COIN } from "@/lib/coins";
 import { Arena, PODIUM_SEATS, PODIUM_TOP_Y } from "@/components/world/Arena";
@@ -36,6 +36,49 @@ const ROW_WIDTH = 2.4;
 const POP_SECONDS = 0.45;
 const CHIP = "pointer-events-none select-none whitespace-nowrap rounded-full border-2 border-garis font-extrabold";
 
+// Screen labels live in one DOM layer over the canvas (not a React root per label, as drei's
+// <Html> would make). Scene objects register an anchor by key, the layer registers the element,
+// and <ProjectLabels> moves each element onto its anchor every frame.
+class Labels {
+  private anchors = new Map<string, THREE.Object3D>();
+  private nodes = new Map<string, HTMLElement>();
+  private at = new THREE.Vector3();
+  private scale = new THREE.Vector3();
+
+  anchor = (key: string) => (o: THREE.Object3D | null) => {
+    if (o) this.anchors.set(key, o);
+    else this.anchors.delete(key);
+  };
+
+  node = (key: string) => (el: HTMLElement | null) => {
+    if (el) this.nodes.set(key, el);
+    else this.nodes.delete(key);
+  };
+
+  project(camera: THREE.Camera, width: number, height: number) {
+    for (const [key, el] of this.nodes) {
+      const o = this.anchors.get(key);
+      let shown = false;
+      if (o) {
+        o.getWorldPosition(this.at).project(camera);
+        // Spirits pop in by scale, so their chips wait until the coin has mostly grown.
+        shown = this.at.z < 1 && o.getWorldScale(this.scale).x > 0.6;
+        // Kept inside the canvas, so labels of the outer seats never clip on narrow screens.
+        const half = el.offsetWidth / 2 + 4;
+        const x = THREE.MathUtils.clamp(((this.at.x + 1) / 2) * width, half, Math.max(half, width - half));
+        const y = ((1 - this.at.y) / 2) * height;
+        if (shown) el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
+      }
+      el.style.visibility = shown ? "visible" : "hidden";
+    }
+  }
+}
+
+function ProjectLabels({ labels }: { labels: Labels }) {
+  useFrame(({ camera, size }) => labels.project(camera, size.width, size.height));
+  return null;
+}
+
 function backOut(t: number) {
   const s = 1.9;
   const u = t - 1;
@@ -52,7 +95,7 @@ function SpiritChip({ pick, showReturn }: { pick: ScenePick; showReturn: boolean
   );
 }
 
-function Spirit({ pick, player, index, count, delay, phase, series, gradient, renderEffect }: {
+function Spirit({ pick, player, index, count, delay, phase, series, gradient, labels, renderEffect }: {
   pick: ScenePick;
   player: ScenePlayer;
   index: number;
@@ -60,6 +103,7 @@ function Spirit({ pick, player, index, count, delay, phase, series, gradient, re
   delay: number;
   series: readonly number[] | undefined;
   gradient: THREE.Texture;
+  labels: Labels;
 } & Pick<SceneProps, "phase" | "renderEffect">) {
   const coin = COIN[pick.symbol];
   const dead = isVoid(pick);
@@ -109,9 +153,7 @@ function Spirit({ pick, player, index, count, delay, phase, series, gradient, re
           {/* Skill effect slot: unit-coin space, centered on the coin. */}
           {pick.effect && (renderEffect ?? renderSkillEffect3D)({ pick, player, index, coin: coinGroup, gradient })}
         </group>
-        <Html center position={[0, COIN_SIZE * 0.85, 0]} zIndexRange={[20, 0]}>
-          <SpiritChip pick={pick} showReturn={phase !== "reveal"} />
-        </Html>
+        <group ref={labels.anchor(`pick:${player.id}:${index}`)} position={[0, COIN_SIZE * 0.85, 0]} />
       </group>
     </group>
   );
@@ -167,11 +209,12 @@ function SeatLabel({ player, phase, winner }: { player: ScenePlayer; phase: Scen
   );
 }
 
-function Seat({ seat, player, phase, prices, winner, gradient, renderEffect }: {
+function Seat({ seat, player, phase, prices, winner, gradient, labels, renderEffect }: {
   seat: number;
   player: ScenePlayer;
   winner: boolean;
   gradient: THREE.Texture;
+  labels: Labels;
 } & Pick<SceneProps, "phase" | "prices" | "renderEffect">) {
   const { x, z } = PODIUM_SEATS[seat];
   const picks = phase === "commit" ? [] : player.picks;
@@ -191,13 +234,12 @@ function Seat({ seat, player, phase, prices, winner, gradient, renderEffect }: {
           phase={phase}
           series={prices[pick.symbol]}
           gradient={gradient}
+          labels={labels}
           renderEffect={renderEffect}
         />
       ))}
       {/* On the podium's outer side, clear of the spirits above and the seats behind. */}
-      <Html center position={[Math.sign(x) * 1.25, -0.35, 0.35]} zIndexRange={[20, 0]}>
-        <SeatLabel player={player} phase={phase} winner={winner} />
-      </Html>
+      <group ref={labels.anchor(`seat:${player.id}`)} position={[Math.sign(x) * 1.25, -0.35, 0.35]} />
     </group>
   );
 }
@@ -210,20 +252,49 @@ function CameraRig() {
   useFrame(({ camera, size, clock }) => {
     const portrait = Math.max(0, 1 - size.width / size.height);
     const cam = camera as THREE.PerspectiveCamera;
-    const fov = 34 + portrait * 26;
+    const fov = 34 + portrait * 18;
     if (Math.abs(cam.fov - fov) > 0.01) {
       cam.fov = fov;
       cam.updateProjectionMatrix();
     }
     const drift = Math.sin(clock.elapsedTime * 0.15) * 0.25;
-    camera.position.set(drift, 9.6 + portrait * 5, 11.2 + portrait * 6);
+    camera.position.set(drift, 9.6 + portrait * 3, 11.2 + portrait * 5);
     target.set(0, 0.7 - portrait * 0.4, 0);
     camera.lookAt(target);
   });
   return null;
 }
 
-function Scene({ players, prices, phase, winnerIds, renderEffect }: SceneProps) {
+function isWinner(player: ScenePlayer, { phase, winnerIds }: Pick<SceneProps, "phase" | "winnerIds">) {
+  return phase === "result" && (winnerIds?.includes(player.id) ?? false);
+}
+
+function LabelLayer({ labels, players, phase, winnerIds }: { labels: Labels } & SceneProps) {
+  const at = "invisible absolute left-0 top-0";
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      {seatPlayers(players).map(
+        (player) =>
+          player && (
+            <Fragment key={player.id}>
+              <div ref={labels.node(`seat:${player.id}`)} className={at}>
+                <SeatLabel player={player} phase={phase} winner={isWinner(player, { phase, winnerIds })} />
+              </div>
+              {phase !== "commit" &&
+                player.picks.map((pick, i) => (
+                  // Phones skip the per-spirit chips: they crowd, and the spirit's height still shows the call.
+                  <div key={`${pick.symbol}-${i}`} ref={labels.node(`pick:${player.id}:${i}`)} className={`${at} max-[480px]:hidden`}>
+                    <SpiritChip pick={pick} showReturn={phase !== "reveal"} />
+                  </div>
+                ))}
+            </Fragment>
+          ),
+      )}
+    </div>
+  );
+}
+
+function Scene({ players, prices, phase, winnerIds, labels, renderEffect }: SceneProps & { labels: Labels }) {
   const gradient = useToonGradient();
   const seats = seatPlayers(players);
   return (
@@ -253,8 +324,9 @@ function Scene({ players, prices, phase, winnerIds, renderEffect }: SceneProps) 
                 player={player}
                 phase={phase}
                 prices={prices}
-                winner={phase === "result" && (winnerIds?.includes(player.id) ?? false)}
+                winner={isWinner(player, { phase, winnerIds })}
                 gradient={gradient}
+                labels={labels}
                 renderEffect={renderEffect}
               />
             ),
@@ -262,6 +334,7 @@ function Scene({ players, prices, phase, winnerIds, renderEffect }: SceneProps) 
         <Sparkles count={40} scale={[11, 5, 11]} position={[0, 2.6, 0]} size={3} speed={0.3} color={C.kristalGlow} />
       </group>
       <CameraRig />
+      <ProjectLabels labels={labels} />
       <Effects />
     </>
   );
@@ -270,6 +343,7 @@ function Scene({ players, prices, phase, winnerIds, renderEffect }: SceneProps) 
 export default function TableScene3D(props: SceneProps) {
   const host = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(true);
+  const [labels] = useState(() => new Labels());
 
   // Stop rendering while the table is scrolled out of view.
   useEffect(() => {
@@ -289,8 +363,9 @@ export default function TableScene3D(props: SceneProps) {
         camera={{ fov: 34, position: [0, 9.6, 11.2], near: 0.1, far: 140 }}
         gl={{ antialias: false, alpha: false, stencil: false, powerPreference: "high-performance" }}
       >
-        <Scene {...props} />
+        <Scene {...props} labels={labels} />
       </Canvas>
+      <LabelLayer {...props} labels={labels} />
     </div>
   );
 }

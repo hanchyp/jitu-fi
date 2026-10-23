@@ -29,11 +29,11 @@ function PickRow({ pick, series, showReturn }: { pick: ScenePick; series: PriceS
       {/* Keyed by effect and coin, so a new spell replays when it lands. */}
       <SkillCoin key={`${pick.effect}-${pick.symbol}`} symbol={pick.symbol} effect={pick.effect} swappedFrom={pick.swappedFrom} />
       <div className="min-w-0 flex-1">
-        <div className="flex items-baseline justify-between gap-1 text-xs font-extrabold">
-          <span>
+        <div className="flex flex-wrap items-baseline justify-between gap-x-1 text-xs font-extrabold">
+          <span className="whitespace-nowrap">
             {pick.symbol} <span className={pick.side === "Buy" ? "text-naik" : "text-turun"}>{pick.side}</span>
           </span>
-          {showReturn && <span className="text-white/80">{dead ? "void" : formatBps(signedBps(pick))}</span>}
+          {showReturn && <span className="whitespace-nowrap text-white/80">{dead ? "void" : formatBps(signedBps(pick))}</span>}
         </div>
         <MiniRidge series={series} color={coin.rim} />
         {pick.effect && (
