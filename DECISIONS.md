@@ -2,6 +2,15 @@
 
 Ambiguous design calls and known limitations, newest first. Each entry picks the simplest safe option. The full design rationale lives in `openspec/changes/build-crypto-draft-mvp/design.md`.
 
+## 2026-10-24 — Leaderboard and profile (UI only)
+
+- **Only players with season points are ranked.** A depositor with 0 points has nothing to rank and no bonus share, so the board leaves them out; `you-not-ranked` shows a "not on the board yet" tile with Play. On the other tenor's board, the same tile explains that your deposit is in the other season (one position at a time).
+- **Estimated bonus is computed in the mock** as bonusPot × points × weight ÷ Σ(points × weight) with truncating bigint math, so the column never adds up to more than the pot. It is labelled an estimate, simulated.
+- **Mobile leaderboard is stacked tiles below md** (a table from md up), so 375 px never scrolls sideways. The tiles drop the mUSD unit and a one-line legend names it.
+- **Medals and empty-state art come from `public/assets/stats/` only if the file exists** (checked with sync `fs` at prerender, `components/stats/art.ts`). Until then ranks 1–3 use a numbered circle in gold, ivory and bronze, and empty states reuse `play-cards.webp`.
+- **Profile history is grouped by season**, newest first. The summary covers the season your position is in; "Best game score" is the best in that season. Game and round scores show as signed integers (bps of game score, the same unit as season points); pick returns use `formatBps`. Dates print in UTC so server and client render the same text.
+- **Points line per game:** counted games show "+N points, game n of K" (a negative counted score adds 0 and says so); other games say "Outside first K games" or "After season end". INSURANCE shows the original return struck through and the floored 0%.
+
 ## 2026-10-24 — Table scene prototype (coin spirits)
 
 - **`<TableScene>` takes props only** (`frontend/src/components/table-scene/types.ts`). A pick's `returnBps` is the raw coin move, and the scene applies Buy/Sell itself. Effects plug in through a `renderEffect` slot.
