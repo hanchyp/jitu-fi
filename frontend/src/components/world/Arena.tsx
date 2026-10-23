@@ -10,6 +10,8 @@ import { C, PLAYER_COLORS, Toon, craggy, hdr } from "./toon";
 
 const RUNE_Y = 0.27;
 const PODIUM_RADIUS = 2.85;
+/** Height of a podium's colored top plate (arena space), where table pieces stand. */
+export const PODIUM_TOP_Y = RUNE_Y - 0.01 + 0.73;
 
 /** Seat positions (arena space) for the four podiums, front seats first. */
 export const PODIUM_SEATS = PLAYER_COLORS.map((color, i) => {

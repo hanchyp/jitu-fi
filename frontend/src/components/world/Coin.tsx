@@ -7,7 +7,7 @@ import { useThree } from "@react-three/fiber";
 import { useMemo } from "react";
 import * as THREE from "three";
 import { coinDataUrl, type Coin as CoinDef } from "@/lib/coins";
-import { Toon } from "./toon";
+import { C, Toon } from "./toon";
 
 // Paints the token logo onto a round coin face. The SVG loads asynchronously, then the texture refreshes.
 export function useCoinTexture(coin: CoinDef) {
@@ -51,18 +51,20 @@ export function useCoinTexture(coin: CoinDef) {
   }, [coin, invalidate]);
 }
 
-export function Coin({ coin, gradient }: { coin: CoinDef; gradient: THREE.Texture }) {
+/** `dim` greys the coin out (a void pick on the table). */
+export function Coin({ coin, gradient, dim = false }: { coin: CoinDef; gradient: THREE.Texture; dim?: boolean }) {
   const face = useCoinTexture(coin);
+  const rim = dim ? C.stoneDark : coin.rim;
   return (
     <group>
       <mesh rotation={[Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[0.5, 0.5, 0.13, 32]} />
-        <Toon color={coin.rim} gradient={gradient} emissive={coin.rim} emissiveIntensity={0.25} />
+        <Toon color={rim} gradient={gradient} emissive={rim} emissiveIntensity={dim ? 0 : 0.25} />
       </mesh>
       {[0.066, -0.066].map((z) => (
         <mesh key={z} position={[0, 0, z]} rotation={[0, z < 0 ? Math.PI : 0, 0]}>
           <circleGeometry args={[0.47, 40]} />
-          <meshBasicMaterial map={face} toneMapped={false} />
+          <meshBasicMaterial map={face} color={dim ? "#6E7590" : "#FFFFFF"} toneMapped={false} />
         </mesh>
       ))}
     </group>

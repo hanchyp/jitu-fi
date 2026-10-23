@@ -1,0 +1,289 @@
+"use client";
+
+// The game table as a scene in the Arena Jitu world: each player's picks are coin spirits floating
+// over that player's podium. During Live a spirit rises when its call is right and sinks when it
+// is wrong, with a ridge of the coin's price line behind it. Loaded on demand by <TableScene>.
+
+import { Html, Sparkles } from "@react-three/drei";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { useEffect, useMemo, useRef, useState } from "react";
+import * as THREE from "three";
+import { COIN } from "@/lib/coins";
+import { Arena, PODIUM_SEATS, PODIUM_TOP_Y } from "@/components/world/Arena";
+import { Backdrop } from "@/components/world/Backdrop";
+import { Coin } from "@/components/world/Coin";
+import { Effects } from "@/components/world/Effects";
+import { useGlowMaterial } from "@/components/world/glow";
+import { MonadCrystal } from "@/components/world/MonadCrystal";
+import { Sky } from "@/components/world/Sky";
+import { C, Toon, useToonGradient } from "@/components/world/toon";
+import { formatBps, formatScore, isVoid, lift, seatPlayers, signedBps } from "./model";
+import { Ridge } from "./Ridge";
+import type { ScenePick, ScenePlayer, TableSceneProps } from "./types";
+
+type SceneProps = Omit<TableSceneProps, "view" | "className">;
+
+const ARENA_Y = -0.6;
+const CRYSTAL_SCALE = 0.55;
+/** Spirit rest height above the podium top, and how far a full lift moves it either way. */
+const REST_Y = 0.9;
+const LIFT_RANGE = 0.55;
+const COIN_SIZE = 0.48;
+const RIDGE_HEIGHT = 0.7;
+/** Row width a podium's spirits may use; spacing shrinks as picks are added. */
+const ROW_WIDTH = 2.4;
+const POP_SECONDS = 0.45;
+const CHIP = "pointer-events-none select-none whitespace-nowrap rounded-full border-2 border-garis font-extrabold";
+
+function backOut(t: number) {
+  const s = 1.9;
+  const u = t - 1;
+  return 1 + (s + 1) * u * u * u + s * u * u;
+}
+
+function SpiritChip({ pick, showReturn }: { pick: ScenePick; showReturn: boolean }) {
+  const dead = isVoid(pick);
+  return (
+    <div className={`${CHIP} bg-dasar/90 px-1.5 py-px text-[10px] text-white ${dead ? "opacity-60" : ""}`}>
+      <span className={pick.side === "Buy" ? "text-naik" : "text-turun"}>{pick.side}</span>
+      {showReturn && <span> {dead ? "void" : formatBps(signedBps(pick))}</span>}
+    </div>
+  );
+}
+
+function Spirit({ pick, player, index, count, delay, phase, series, gradient, renderEffect }: {
+  pick: ScenePick;
+  player: ScenePlayer;
+  index: number;
+  count: number;
+  delay: number;
+  series: readonly number[] | undefined;
+  gradient: THREE.Texture;
+} & Pick<SceneProps, "phase" | "renderEffect">) {
+  const coin = COIN[pick.symbol];
+  const dead = isVoid(pick);
+  const spacing = Math.min(0.66, ROW_WIDTH / count);
+  const x = (index - (count - 1) / 2) * spacing;
+  const target = phase === "reveal" ? REST_Y : REST_Y + lift(pick) * LIFT_RANGE;
+
+  const halo = useGlowMaterial("radial", coin.rim, 1.5, 2.4);
+  const spirit = useRef<THREE.Group>(null);
+  const body = useRef<THREE.Group>(null);
+  const ridge = useRef<THREE.Group>(null);
+  const born = useRef<number | null>(null);
+  const y = useRef(REST_Y);
+  const glow = useRef(halo);
+
+  useFrame(({ clock }, delta) => {
+    const t = clock.elapsedTime;
+    if (born.current === null) born.current = t;
+    const appear = THREE.MathUtils.clamp((t - born.current - delay) / POP_SECONDS, 0, 1);
+    y.current = THREE.MathUtils.damp(y.current, target, 2.2, delta);
+    if (spirit.current) {
+      const bob = dead ? 0 : Math.sin(t * 1.6 + index * 1.3) * 0.04;
+      spirit.current.position.y = y.current + bob;
+      spirit.current.scale.setScalar(Math.max(0.0001, backOut(appear)));
+    }
+    if (body.current) body.current.rotation.y = dead ? 0 : Math.sin(t * 0.9 + index) * 0.45;
+    if (ridge.current) ridge.current.scale.y = Math.max(0.0001, appear);
+    glow.current.uniforms.uStrength.value = dead ? 0 : 1.1 + 0.4 * Math.sin(t * 2 + index);
+  });
+
+  return (
+    <group position={[x, 0, 0]}>
+      <group ref={ridge} position={[0, 0.02, -0.38]}>
+        <Ridge series={series} width={spacing * 0.94} height={RIDGE_HEIGHT} tint={coin.rim} dim={dead} gradient={gradient} />
+      </group>
+      <group ref={spirit} position={[0, REST_Y, 0]} scale={0.0001}>
+        <mesh material={halo} position={[0, 0, -0.08]} renderOrder={2}>
+          <planeGeometry args={[COIN_SIZE * 2.4, COIN_SIZE * 2.4]} />
+        </mesh>
+        <group ref={body} scale={COIN_SIZE}>
+          <Coin coin={coin} gradient={gradient} dim={dead} />
+          {/* Skill effect slot: unit-coin space, centered on the coin. */}
+          {pick.effect && renderEffect?.({ pick, player, index })}
+        </group>
+        <Html center position={[0, COIN_SIZE * 0.85, 0]} zIndexRange={[20, 0]}>
+          <SpiritChip pick={pick} showReturn={phase !== "reveal"} />
+        </Html>
+      </group>
+    </group>
+  );
+}
+
+// Commit phase: a sealed rune stone stands in for the hidden picks.
+function SealedPicks({ gradient, color }: { gradient: THREE.Texture; color: string }) {
+  const stone = useRef<THREE.Mesh>(null);
+  useFrame(({ clock }) => {
+    if (!stone.current) return;
+    stone.current.rotation.y = clock.elapsedTime * 0.8;
+    stone.current.position.y = REST_Y - 0.2 + Math.sin(clock.elapsedTime * 1.4) * 0.06;
+  });
+  return (
+    <mesh ref={stone} scale={[0.26, 0.4, 0.26]}>
+      <octahedronGeometry args={[1, 0]} />
+      <Toon color={C.stoneDark} gradient={gradient} emissive={color} emissiveIntensity={0.18} />
+    </mesh>
+  );
+}
+
+function WinnerBeam({ color }: { color: string }) {
+  const beam = useGlowMaterial("beam", color, 1.6);
+  const floor = useGlowMaterial("radial", color, 2.2, 2);
+  const mats = useRef({ beam });
+  useFrame(({ clock }) => {
+    mats.current.beam.uniforms.uTime.value = clock.elapsedTime;
+  });
+  return (
+    <>
+      <mesh material={beam} position={[0, 1.6, 0]} renderOrder={2}>
+        <cylinderGeometry args={[0.9, 0.7, 3.2, 32, 1, true]} />
+      </mesh>
+      <mesh material={floor} position={[0, -0.7, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={2}>
+        <planeGeometry args={[3.4, 3.4]} />
+      </mesh>
+    </>
+  );
+}
+
+function SeatLabel({ player, phase, winner }: { player: ScenePlayer; phase: SceneProps["phase"]; winner: boolean }) {
+  const sub =
+    phase === "commit" ? "Picks sealed" : phase === "result" && player.score !== undefined ? `${formatScore(player.score)} pts` : null;
+  return (
+    <div
+      className={`${CHIP} flex items-center gap-1.5 px-2.5 py-1 text-xs ${winner ? "bg-emas text-garis" : "bg-malam/90 text-white"}`}
+    >
+      <span className="h-2.5 w-2.5 rounded-full border border-garis" style={{ background: player.color }} />
+      <span className="font-display text-sm font-normal">{player.name}</span>
+      {sub && <span className={winner ? "text-garis/80" : "text-white/70"}>{sub}</span>}
+      {winner && <span className="font-display text-sm font-normal">· Winner</span>}
+    </div>
+  );
+}
+
+function Seat({ seat, player, phase, prices, winner, gradient, renderEffect }: {
+  seat: number;
+  player: ScenePlayer;
+  winner: boolean;
+  gradient: THREE.Texture;
+} & Pick<SceneProps, "phase" | "prices" | "renderEffect">) {
+  const { x, z } = PODIUM_SEATS[seat];
+  const picks = phase === "commit" ? [] : player.picks;
+  return (
+    <group position={[x, PODIUM_TOP_Y, z]}>
+      {winner && <WinnerBeam color={player.color} />}
+      {phase === "commit" && <SealedPicks gradient={gradient} color={player.color} />}
+      {picks.map((pick, i) => (
+        <Spirit
+          key={`${pick.symbol}-${i}`}
+          pick={pick}
+          player={player}
+          index={i}
+          count={picks.length}
+          delay={seat * 0.22 + i * 0.12}
+          phase={phase}
+          series={prices[pick.symbol]}
+          gradient={gradient}
+          renderEffect={renderEffect}
+        />
+      ))}
+      {/* On the podium's outer side, clear of the spirits above and the seats behind. */}
+      <Html center position={[Math.sign(x) * 1.25, -0.35, 0.35]} zIndexRange={[20, 0]}>
+        <SeatLabel player={player} phase={phase} winner={winner} />
+      </Html>
+    </group>
+  );
+}
+
+// Fixed view from the front, high enough (about 38 deg) that a front spirit at full lift stays clear of
+// the podium behind it, and low enough that rising and sinking still reads. All four podiums and their rows read at once.
+// Portrait screens widen the lens and step back.
+function CameraRig() {
+  const target = useMemo(() => new THREE.Vector3(), []);
+  useFrame(({ camera, size, clock }) => {
+    const portrait = Math.max(0, 1 - size.width / size.height);
+    const cam = camera as THREE.PerspectiveCamera;
+    const fov = 34 + portrait * 26;
+    if (Math.abs(cam.fov - fov) > 0.01) {
+      cam.fov = fov;
+      cam.updateProjectionMatrix();
+    }
+    const drift = Math.sin(clock.elapsedTime * 0.15) * 0.25;
+    camera.position.set(drift, 9.6 + portrait * 5, 11.2 + portrait * 6);
+    target.set(0, 0.7 - portrait * 0.4, 0);
+    camera.lookAt(target);
+  });
+  return null;
+}
+
+function Scene({ players, prices, phase, winnerIds, renderEffect }: SceneProps) {
+  const gradient = useToonGradient();
+  const seats = seatPlayers(players);
+  return (
+    <>
+      <color attach="background" args={[C.skyTop]} />
+      <fog attach="fog" args={[C.fog, 18, 80]} />
+      <ambientLight intensity={0.45} />
+      <hemisphereLight args={["#A6C4E6", "#12324A", 0.55]} />
+      <directionalLight position={[-7, 11, 7]} intensity={2.1} color="#EAF0FF" />
+      <directionalLight position={[6, 4, -10]} intensity={1.1} color="#7FB0FF" />
+
+      <Sky still={false} />
+      <Backdrop gradient={gradient} still={false} />
+      <group position={[0, ARENA_Y, 0]}>
+        <Arena gradient={gradient} still={false} />
+        {/* A smaller crystal than the title screen, so it never hides the back podiums. Its floor
+            glow stays on the rune circle (floor at y 0.28). */}
+        <group scale={CRYSTAL_SCALE} position={[0, 0.28 * (1 - CRYSTAL_SCALE), 0]}>
+          <MonadCrystal still={false} />
+        </group>
+        {seats.map(
+          (player, i) =>
+            player && (
+              <Seat
+                key={player.id}
+                seat={i}
+                player={player}
+                phase={phase}
+                prices={prices}
+                winner={phase === "result" && (winnerIds?.includes(player.id) ?? false)}
+                gradient={gradient}
+                renderEffect={renderEffect}
+              />
+            ),
+        )}
+        <Sparkles count={40} scale={[11, 5, 11]} position={[0, 2.6, 0]} size={3} speed={0.3} color={C.kristalGlow} />
+      </group>
+      <CameraRig />
+      <Effects />
+    </>
+  );
+}
+
+export default function TableScene3D(props: SceneProps) {
+  const host = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(true);
+
+  // Stop rendering while the table is scrolled out of view.
+  useEffect(() => {
+    const el = host.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  return (
+    <div ref={host} className="absolute inset-0">
+      <Canvas
+        flat
+        dpr={[1, 2]}
+        frameloop={visible ? "always" : "never"}
+        camera={{ fov: 34, position: [0, 9.6, 11.2], near: 0.1, far: 140 }}
+        gl={{ antialias: false, alpha: false, stencil: false, powerPreference: "high-performance" }}
+      >
+        <Scene {...props} />
+      </Canvas>
+    </div>
+  );
+}
