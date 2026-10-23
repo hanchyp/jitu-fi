@@ -1,103 +1,129 @@
 "use client";
 
-import type { SkillCard, SkillHandProps, SkillName } from "./types";
+// Your skill hand at the table: up to 3 cards, each playable or disabled with its reason, and the
+// target picker for the selected card. Max 1 skill per round. Props only; `onUse` does the work.
 
-const COPY: Record<SkillName, { label: string; body: string }> = {
-  BOOST: { label: "Boost", body: "Double this pick's weight." },
-  INSURANCE: { label: "Insurance", body: "Floor this pick at zero." },
-  LOCK: { label: "Lock", body: "Seal your pick in place." },
-  FLIP: { label: "Flip", body: "Reverse your pick's call." },
-  SWAP: { label: "Swap", body: "Trade your pick for another call." },
-  FREEZE: { label: "Freeze", body: "Freeze one opponent pick." },
-};
+import { useState } from "react";
+import { SKILLS } from "./info";
+import { cardBlock } from "./rules";
+import { SkillCardFace } from "./SkillCard";
+import { SkillPicker } from "./SkillPicker";
+import type { SkillCard, SkillHandProps, SkillTarget } from "./types";
 
-const art = (skill: SkillName) => `/assets/skills/${skill.toLowerCase()}.webp`;
+const HAND_MAX = 3;
 
-function cardDisabled(card: SkillCard, live: boolean, used: boolean) {
-  return card.disabled || !live || used;
+type Cast = { state: "pending" } | { state: "success"; text: string } | { state: "error"; text: string };
+
+function statusLine({ phase, liveDeadlinePassed, usedThisRound }: SkillHandProps) {
+  if (usedThisRound) return "You've used this round's skill. Your hand opens again next round.";
+  if (phase === "commit") return "BOOST and INSURANCE go on a pick now. Live skills wait for Live.";
+  if (phase === "reveal") return "Live skills open when Live starts.";
+  if (phase === "result") return "Round over. Your hand opens again next round.";
+  if (liveDeadlinePassed) return "Live deadline passed. Your hand opens again next round.";
+  return "Pick a card to cast it. One skill per round.";
 }
 
-export function SkillHand({
-  cards,
-  targets = [],
-  selectedId,
-  selectedTargetId,
-  usedThisRound = false,
-  live = true,
-  onSelect,
-  onTargetSelect,
-  onCast,
-  className = "",
-}: SkillHandProps) {
-  const selected = cards.find((card) => card.id === selectedId);
-  const target = targets.find((item) => item.id === selectedTargetId);
-  const disabled = selected ? cardDisabled(selected, live, usedThisRound) : true;
-  const status = !live ? "Skills open during Live." : usedThisRound ? "One skill per round." : "Choose a skill, then its target.";
+/** What the success line says about the target, e.g. "Flipped your ETH". */
+function doneText(card: SkillCard, target: SkillTarget, props: SkillHandProps) {
+  const info = SKILLS[card.skill];
+  const pick = [...props.ownPicks, ...(props.opponentPicks ?? [])].find((p) => p.id === target.pickId);
+  if (!pick) return `${info.done}.`;
+  const whose = props.ownPicks.some((p) => p.id === pick.id) ? "your" : `${pick.ownerName}'s`;
+  const swap = target.swapTo ? ` for ${target.swapTo.symbol} ${target.swapTo.side}` : "";
+  return `${info.done} ${whose} ${pick.symbol}${swap}.`;
+}
+
+export function SkillHand(props: SkillHandProps) {
+  const { cards, onUse, className = "" } = props;
+  const [selectedId, setSelectedId] = useState<string>();
+  const [cast, setCast] = useState<Cast>();
+  const pending = cast?.state === "pending";
+  const selected = cards.find((c) => c.id === selectedId);
+  const selectedBlock = selected ? cardBlock(selected, props) : null;
+
+  const use = async (card: SkillCard, target: SkillTarget) => {
+    setCast({ state: "pending" });
+    try {
+      await onUse?.(card, target);
+      setCast({ state: "success", text: doneText(card, target, props) });
+      setSelectedId(undefined);
+    } catch (err) {
+      const reason = err instanceof Error && err.message ? err.message : "Try again before the live deadline.";
+      setCast({ state: "error", text: `${card.skill} didn't land. ${reason}` });
+    }
+  };
 
   return (
-    <section aria-label="Skill hand" className={`rounded-2xl border-[3px] border-garis bg-dasar p-3 shadow-[0_5px_0_#040b10] ${className}`}>
-      <div className="flex items-baseline justify-between gap-3">
-        <div>
-          <p className="text-xs font-extrabold uppercase tracking-widest text-emas">Your hand</p>
-          <p className="text-sm font-bold text-white/70">{status}</p>
-        </div>
-        <span className="rounded-full border-2 border-garis bg-papan px-2 py-0.5 text-xs font-extrabold text-gading">{cards.length}/3</span>
+    <section aria-label="Your skills" className={`rounded-[22px] border-[3px] border-garis bg-dasar p-4 shadow-[0_6px_0_0_#040B10] sm:p-5 ${className}`}>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="font-display text-2xl text-gading">Your skills</h2>
+        <span className="font-display rounded-[7px] border-2 border-garis bg-emas px-1.5 text-sm text-garis">
+          {cards.length}/{HAND_MAX}
+        </span>
       </div>
+      <p className="mt-1 max-w-md text-sm font-semibold leading-relaxed text-white/70">
+        {cards.length === 0 ? "No skills in hand. You get one for every round you win." : statusLine(props)}
+      </p>
 
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        {cards.map((card) => {
-          const info = COPY[card.skill];
-          const inactive = cardDisabled(card, live, usedThisRound);
-          const active = card.id === selectedId;
+      <ul className="mt-4 grid max-w-md grid-cols-3 gap-3">
+        {cards.slice(0, HAND_MAX).map((card) => {
+          const block = cardBlock(card, props);
+          const active = card.id === selectedId && !block;
+          const note = `${card.id}-note`;
           return (
-            <button
-              key={card.id}
-              type="button"
-              disabled={inactive}
-              aria-pressed={active}
-              onClick={() => onSelect?.(card)}
-              title={card.disabledReason}
-              className={`group relative overflow-hidden rounded-xl border-[3px] text-left transition ${
-                active ? "-translate-y-1 border-emas bg-papan-terang shadow-[0_5px_0_#a17728]" : "border-garis bg-papan hover:-translate-y-0.5 hover:bg-papan-terang"
-              } ${inactive ? "cursor-not-allowed opacity-50 grayscale" : ""}`}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element -- game asset from public folder */}
-              <img src={art(card.skill)} alt="" className="mx-auto aspect-square w-full object-contain p-1" />
-              <span className="block border-t-2 border-garis bg-dasar px-1.5 py-1 text-center font-display text-sm text-gading">{info.label}</span>
-            </button>
+            <li key={card.id} className="flex flex-col">
+              <button
+                type="button"
+                disabled={Boolean(block) || pending}
+                aria-pressed={active}
+                aria-describedby={note}
+                aria-label={`${card.skill}${block ? `, ${block}` : ""}`}
+                onClick={() => {
+                  setSelectedId(active ? undefined : card.id);
+                  setCast(undefined);
+                }}
+                className={`rounded-[12px] transition-transform duration-150 ${
+                  active ? "-translate-y-2 outline outline-[3px] outline-offset-2 outline-emas" : "enabled:hover:-translate-y-1"
+                } ${block ? "cursor-not-allowed opacity-55 grayscale" : ""}`}
+              >
+                <SkillCardFace skill={card.skill} />
+              </button>
+              <p id={note} className={`mt-2 text-xs leading-snug ${block ? "font-extrabold text-emas" : "font-semibold text-white/70"}`}>
+                {block ?? SKILLS[card.skill].effect}
+              </p>
+            </li>
           );
         })}
-      </div>
+        {/* Empty slots show how big the hand can grow. */}
+        {Array.from({ length: Math.max(0, HAND_MAX - cards.length) }, (_, i) => (
+          <li key={`empty-${i}`} aria-hidden>
+            <span className="block aspect-[5/7] w-full rounded-[12px] border-[3px] border-dashed border-papan-terang bg-malam/60" />
+          </li>
+        ))}
+      </ul>
 
-      {selected && !disabled && (
-        <div className="mt-3 rounded-xl border-2 border-garis bg-papan p-3">
-          <p className="font-display text-lg text-gading">{COPY[selected.skill].label}</p>
-          <p className="text-sm font-bold text-white/70">{COPY[selected.skill].body}</p>
-          <div className="mt-2 flex flex-wrap gap-2" aria-label="Pick a target">
-            {targets.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                disabled={item.affected}
-                aria-pressed={item.id === selectedTargetId}
-                onClick={() => onTargetSelect?.(item)}
-                className={`rounded-lg border-2 border-garis px-2 py-1 text-sm font-extrabold ${
-                  item.id === selectedTargetId ? "bg-emas text-garis" : "bg-dasar text-gading hover:bg-papan-terang"
-                } ${item.affected ? "cursor-not-allowed opacity-45 line-through" : ""}`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-          <button
-            type="button"
-            disabled={!target || !onCast}
-            onClick={() => target && onCast?.(selected, target)}
-            className="mt-3 w-full rounded-lg border-2 border-garis bg-emas px-3 py-2 font-display text-lg text-garis disabled:cursor-not-allowed disabled:opacity-45"
-          >
-            Cast {COPY[selected.skill].label}
-          </button>
+      {selected && !selectedBlock && (
+        <div className="mt-4">
+          <SkillPicker
+            key={selected.id}
+            card={selected}
+            table={props}
+            pending={pending}
+            onCancel={() => setSelectedId(undefined)}
+            onConfirm={(target) => use(selected, target)}
+          />
         </div>
+      )}
+
+      {(cast?.state === "success" || cast?.state === "error") && (
+        <p
+          role={cast.state === "error" ? "alert" : "status"}
+          className={`mt-4 flex items-center gap-2 rounded-[14px] border-[3px] border-garis bg-malam px-3 py-2 text-sm font-extrabold ${
+            cast.state === "error" ? "text-turun" : "text-zamrud"
+          }`}
+        >
+          {cast.text}
+        </p>
       )}
     </section>
   );

@@ -25,18 +25,27 @@ const MARKET: Partial<Record<CoinSymbol, { open: number; vol: number }>> = {
   MON: { open: 0.42, vol: 4 },
 };
 
-type Seed = { id: string; name: string; color: string; isYou?: boolean; picks: [CoinSymbol, ScenePick["side"], SkillEffect?][] };
+export type FixturePick = Pick<ScenePick, "symbol" | "side" | "effect" | "effectBy" | "swappedFrom"> & {
+  /** LOCK or FREEZE: the coin's raw return when the skill landed. The pick stops following the price. */
+  heldBps?: number;
+};
+
+export type FixtureSeat = { id: string; name: string; color: string; isYou?: boolean; picks: FixturePick[] };
 
 const bot = (short: string) => HOUSE_BOTS.find((b) => b.short === short)!;
 
-const SEATS: Seed[] = [
-  { id: "you", name: "You", color: PLAYER_COLORS[0], isYou: true, picks: [["ETH", "Buy", "BOOST"], ["SOL", "Sell"], ["MON", "Buy"]] },
-  { id: "bruno", name: "Bruno", color: bot("Bruno").color, picks: [["BTC", "Buy"], ["DOGE", "Buy", "INSURANCE"]] },
-  { id: "bera", name: "Bera", color: bot("Bera").color, picks: [["XRP", "Sell"], ["ETH", "Sell"]] },
-  { id: "dex", name: "Dex", color: bot("Dex").color, picks: [["AVAX", "Buy"], ["BNB", "Sell"], ["DOGE", "Sell"]] },
+const seed = (symbol: CoinSymbol, side: ScenePick["side"], effect?: SkillEffect): FixturePick => ({ symbol, side, effect });
+
+export const FIXTURE_SEATS: FixtureSeat[] = [
+  { id: "you", name: "You", color: PLAYER_COLORS[0], isYou: true, picks: [seed("ETH", "Buy", "BOOST"), seed("SOL", "Sell"), seed("MON", "Buy")] },
+  { id: "bruno", name: "Bruno", color: bot("Bruno").color, picks: [seed("BTC", "Buy"), seed("DOGE", "Buy", "INSURANCE")] },
+  { id: "bera", name: "Bera", color: bot("Bera").color, picks: [seed("XRP", "Sell"), seed("ETH", "Sell")] },
+  { id: "dex", name: "Dex", color: bot("Dex").color, picks: [seed("AVAX", "Buy"), seed("BNB", "Sell"), seed("DOGE", "Sell")] },
 ];
 
-const SYMBOLS = [...new Set(SEATS.flatMap((s) => s.picks.map(([sym]) => sym)))];
+/** Every board coin ticks, so a SWAP can move to any of them. */
+export const FIXTURE_COINS = Object.keys(MARKET) as CoinSymbol[];
+const SYMBOLS = FIXTURE_COINS;
 
 function step(price: number, vol: number, rand: () => number) {
   // Sum of uniforms: a cheap bell curve with unit variance.
@@ -56,7 +65,8 @@ function initialPrices(phase: TablePhase): PriceSeries {
   return out;
 }
 
-function returnBps(series: readonly number[] | undefined) {
+/** The coin's raw return since the round opened, in bps (one decimal). */
+export function returnBps(series: readonly number[] | undefined) {
   if (!series || series.length < 2) return 0;
   return Math.round((series[series.length - 1] / series[0] - 1) * 100_000) / 10;
 }
@@ -77,10 +87,10 @@ function roundScore(picks: ScenePick[]) {
 }
 
 /**
- * The fixture round at `phase`. During Live every price takes a random-walk step each tick.
- * Remount (change `key`) to restart the round.
+ * The fixture round at `phase`, for `seats` (default FIXTURE_SEATS). During Live every price takes a
+ * random-walk step each tick. Remount (change `key`) to restart the round.
  */
-export function useFixtureTable(phase: TablePhase) {
+export function useFixtureTable(phase: TablePhase, seats: readonly FixtureSeat[] = FIXTURE_SEATS) {
   const [prices, setPrices] = useState(() => initialPrices(phase));
 
   useEffect(() => {
@@ -100,15 +110,15 @@ export function useFixtureTable(phase: TablePhase) {
   }, [phase]);
 
   return useMemo(() => {
-    const players: ScenePlayer[] = SEATS.map(({ picks, ...seat }) => {
-      const scenePicks = picks.map(([symbol, side, effect]): ScenePick => {
-        const r = returnBps(prices[symbol]);
-        return { symbol, side, effect, returnBps: r, void: Math.abs(r) < 1 };
+    const players: ScenePlayer[] = seats.map(({ picks, ...seat }) => {
+      const scenePicks = picks.map(({ heldBps, ...pick }): ScenePick => {
+        const r = heldBps ?? returnBps(prices[pick.symbol]);
+        return { ...pick, returnBps: r, void: Math.abs(r) < 1 };
       });
       return { ...seat, picks: scenePicks, score: roundScore(scenePicks) };
     });
     const best = Math.max(...players.map((p) => p.score ?? 0));
     const winnerIds = players.filter((p) => p.score === best).map((p) => p.id);
     return { players, prices, winnerIds };
-  }, [prices]);
+  }, [prices, seats]);
 }

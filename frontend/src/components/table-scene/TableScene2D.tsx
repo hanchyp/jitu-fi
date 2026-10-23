@@ -1,7 +1,9 @@
 // Flat fallback for <TableScene> (no WebGL, or reduced motion): one column per player, each pick
 // as a coin with a bar that rises or sinks with the call, and a mini ridge of its price line.
+// Skill effects play on the coin (components/skills SkillCoin).
 
-import { COIN, coinDataUrl } from "@/lib/coins";
+import { SkillCoin } from "@/components/skills/SkillEffect2D";
+import { COIN } from "@/lib/coins";
 import { formatBps, formatScore, isVoid, lift, ridgeHeights, seatPlayers, signedBps } from "./model";
 import type { PriceSeries, ScenePick, ScenePlayer, TableSceneProps } from "./types";
 
@@ -24,8 +26,8 @@ function PickRow({ pick, series, showReturn }: { pick: ScenePick; series: PriceS
   const l = showReturn ? lift(pick) : 0;
   return (
     <li className={`flex items-center gap-2 ${dead && showReturn ? "opacity-50 grayscale" : ""}`} data-effect={pick.effect}>
-      {/* eslint-disable-next-line @next/next/no-img-element -- inline SVG data URL, nothing to optimize */}
-      <img src={coinDataUrl(coin)} alt="" width={28} height={28} className="h-7 w-7 shrink-0 rounded-full border-2 border-garis" />
+      {/* Keyed by effect and coin, so a new spell replays when it lands. */}
+      <SkillCoin key={`${pick.effect}-${pick.symbol}`} symbol={pick.symbol} effect={pick.effect} swappedFrom={pick.swappedFrom} />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-1 text-xs font-extrabold">
           <span>
@@ -37,6 +39,7 @@ function PickRow({ pick, series, showReturn }: { pick: ScenePick; series: PriceS
         {pick.effect && (
           <span className="mt-0.5 inline-block rounded-md bg-dasar px-1.5 text-[10px] font-extrabold tracking-wide text-zamrud">
             {pick.effect}
+            {pick.effectBy && <span className="font-bold text-white/70"> by {pick.effectBy}</span>}
           </span>
         )}
       </div>

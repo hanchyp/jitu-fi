@@ -76,34 +76,4 @@ body {
   .logo-shine {
     display: none;
   }
-
-  .skill-effect > span {
-    animation: none !important;
-  }
 }
-
-.skill-effect {
-  display: inline-grid;
-  width: 3rem;
-  height: 3rem;
-  place-items: center;
-  border: 3px solid var(--color-garis);
-  border-radius: 999px;
-  background: var(--color-dasar);
-  color: var(--color-gading);
-  font-size: 1.5rem;
-  font-weight: 900;
-  box-shadow: 0 3px 0 var(--color-garis);
-}
-
-.skill-effect > span { animation: skill-pulse 1.1s ease-in-out infinite alternate; }
-.skill-effect-boost { color: var(--color-naik); }
-.skill-effect-insurance { color: var(--color-gading); box-shadow: 0 0 14px #f2ede188, 0 3px 0 var(--color-garis); }
-.skill-effect-lock { color: var(--color-emas); }
-.skill-effect-flip > span { animation-name: skill-flip; }
-.skill-effect-swap > span { animation-name: skill-swap; }
-.skill-effect-freeze { color: var(--color-kristal-terang); box-shadow: 0 0 14px #c4b8ff99, 0 3px 0 var(--color-garis); }
-
-@keyframes skill-pulse { to { transform: scale(1.12); } }
-@keyframes skill-flip { to { transform: rotate(180deg); } }
-@keyframes skill-swap { to { transform: translateX(0.3rem); } }

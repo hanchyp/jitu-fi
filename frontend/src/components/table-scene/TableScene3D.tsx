@@ -17,6 +17,7 @@ import { useGlowMaterial } from "@/components/world/glow";
 import { MonadCrystal } from "@/components/world/MonadCrystal";
 import { Sky } from "@/components/world/Sky";
 import { C, Toon, useToonGradient } from "@/components/world/toon";
+import { renderSkillEffect3D } from "@/components/skills/SkillEffect3D";
 import { formatBps, formatScore, isVoid, lift, seatPlayers, signedBps } from "./model";
 import { Ridge } from "./Ridge";
 import type { ScenePick, ScenePlayer, TableSceneProps } from "./types";
@@ -62,6 +63,8 @@ function Spirit({ pick, player, index, count, delay, phase, series, gradient, re
 } & Pick<SceneProps, "phase" | "renderEffect">) {
   const coin = COIN[pick.symbol];
   const dead = isVoid(pick);
+  // A frozen or locked pick's return is held, so its spirit holds still too.
+  const still = dead || pick.effect === "FREEZE" || pick.effect === "LOCK";
   const spacing = Math.min(0.66, ROW_WIDTH / count);
   const x = (index - (count - 1) / 2) * spacing;
   const target = phase === "reveal" ? REST_Y : REST_Y + lift(pick) * LIFT_RANGE;
@@ -69,6 +72,7 @@ function Spirit({ pick, player, index, count, delay, phase, series, gradient, re
   const halo = useGlowMaterial("radial", coin.rim, 1.5, 2.4);
   const spirit = useRef<THREE.Group>(null);
   const body = useRef<THREE.Group>(null);
+  const [coinGroup, setCoinGroup] = useState<THREE.Group | null>(null);
   const ridge = useRef<THREE.Group>(null);
   const born = useRef<number | null>(null);
   const y = useRef(REST_Y);
@@ -80,11 +84,11 @@ function Spirit({ pick, player, index, count, delay, phase, series, gradient, re
     const appear = THREE.MathUtils.clamp((t - born.current - delay) / POP_SECONDS, 0, 1);
     y.current = THREE.MathUtils.damp(y.current, target, 2.2, delta);
     if (spirit.current) {
-      const bob = dead ? 0 : Math.sin(t * 1.6 + index * 1.3) * 0.04;
+      const bob = still ? 0 : Math.sin(t * 1.6 + index * 1.3) * 0.04;
       spirit.current.position.y = y.current + bob;
       spirit.current.scale.setScalar(Math.max(0.0001, backOut(appear)));
     }
-    if (body.current) body.current.rotation.y = dead ? 0 : Math.sin(t * 0.9 + index) * 0.45;
+    if (body.current) body.current.rotation.y = still ? 0 : Math.sin(t * 0.9 + index) * 0.45;
     if (ridge.current) ridge.current.scale.y = Math.max(0.0001, appear);
     glow.current.uniforms.uStrength.value = dead ? 0 : 1.1 + 0.4 * Math.sin(t * 2 + index);
   });
@@ -99,9 +103,11 @@ function Spirit({ pick, player, index, count, delay, phase, series, gradient, re
           <planeGeometry args={[COIN_SIZE * 2.4, COIN_SIZE * 2.4]} />
         </mesh>
         <group ref={body} scale={COIN_SIZE}>
-          <Coin coin={coin} gradient={gradient} dim={dead} />
+          <group ref={setCoinGroup}>
+            <Coin coin={coin} gradient={gradient} dim={dead} />
+          </group>
           {/* Skill effect slot: unit-coin space, centered on the coin. */}
-          {pick.effect && renderEffect?.({ pick, player, index })}
+          {pick.effect && (renderEffect ?? renderSkillEffect3D)({ pick, player, index, coin: coinGroup, gradient })}
         </group>
         <Html center position={[0, COIN_SIZE * 0.85, 0]} zIndexRange={[20, 0]}>
           <SpiritChip pick={pick} showReturn={phase !== "reveal"} />
@@ -175,7 +181,8 @@ function Seat({ seat, player, phase, prices, winner, gradient, renderEffect }: {
       {phase === "commit" && <SealedPicks gradient={gradient} color={player.color} />}
       {picks.map((pick, i) => (
         <Spirit
-          key={`${pick.symbol}-${i}`}
+          // Keyed by slot, not coin, so a SWAP plays its trade instead of popping a new spirit in.
+          key={i}
           pick={pick}
           player={player}
           index={i}
