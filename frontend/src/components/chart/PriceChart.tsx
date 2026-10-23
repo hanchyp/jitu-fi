@@ -2,7 +2,8 @@
 
 import { useEffect, useId, useState } from "react";
 import { COIN, coinDataUrl } from "@/lib/coins";
-import { formatBps, formatBpsPercent, formatPrice, returnBps } from "./format";
+import { formatBps as formatBpsPercent } from "@/lib/format";
+import { formatBps, formatPrice, returnBps } from "./format";
 import type { PricePoint } from "./randomWalk";
 
 export type Side = "Buy" | "Sell";
@@ -113,7 +114,7 @@ export function PriceChart({ symbol, points, entryPrice, side, liveUntil, classN
             {last ? formatPrice(last.price) : "—"}
           </p>
           <p className="text-sm font-bold tabular-nums" style={{ color }}>
-            {formatBps(moveBps)} <span className="text-white/55">·</span> {formatBpsPercent(moveBps)}
+            {formatBps(moveBps)} <span className="text-white/55">·</span> {formatBpsPercent(Math.round(moveBps))}
             <span className="ml-1.5 font-semibold text-white/55">{entryPrice !== undefined ? "since entry" : "in view"}</span>
           </p>
         </div>

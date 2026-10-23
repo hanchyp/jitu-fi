@@ -214,11 +214,14 @@ function Spells({ round }: { round: number }) {
     <Board className="mt-6">
       <h2 className="font-display text-2xl text-gading">Spells, flat</h2>
       <p className="mt-1 text-sm font-semibold leading-relaxed text-white/70">The 2D effects the fallback table and the picker use.</p>
-      <ul className="mt-4 grid grid-cols-3 gap-6 sm:grid-cols-6">
+      <ul className="mt-4 grid grid-cols-3 gap-x-4 gap-y-6 sm:grid-cols-6">
         {SKILL_ORDER.map((skill) => (
-          <li key={`${skill}-${round}`} className="flex flex-col items-center gap-3">
-            <SkillCoin symbol={skill === "SWAP" ? "SOL" : "ETH"} swappedFrom="BNB" effect={skill} className="h-12 w-12" />
-            <span className="font-display text-sm text-gading">{skill}</span>
+          <li key={`${skill}-${round}`} className="flex flex-col items-center gap-2">
+            {/* The sprites spill to about 2.3x the coin, so the coin sits in a box that size and the label stays clear. */}
+            <div className="grid h-24 w-full place-items-center sm:h-28">
+              <SkillCoin symbol={skill === "SWAP" ? "SOL" : "ETH"} swappedFrom="BNB" effect={skill} className="h-10 w-10 sm:h-12 sm:w-12" />
+            </div>
+            <span className="relative font-display text-sm text-gading">{skill}</span>
           </li>
         ))}
       </ul>

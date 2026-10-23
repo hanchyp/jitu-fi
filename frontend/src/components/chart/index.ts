@@ -1,6 +1,6 @@
 export { PriceChart, type Side } from "./PriceChart";
 export { Sparkline } from "./Sparkline";
-export { formatBps, formatBpsPercent, formatPrice, returnBps } from "./format";
+export { formatBps, formatPrice, returnBps } from "./format";
 export {
   START_PRICES,
   VOLATILITY_BPS,

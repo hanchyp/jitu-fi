@@ -74,35 +74,42 @@ function resetTransform(node: THREE.Object3D | null) {
 
 // ---------- sprite hook ----------
 
-const textures = new Map<SkillFxName, Promise<THREE.Texture | null>>();
+const textures = new Map<string, Promise<THREE.Texture | null>>();
 
-function loadFx(name: SkillFxName) {
-  if (!SKILL_FX_READY.has(name)) return null;
-  let tex = textures.get(name);
+function loadTexture(url: string) {
+  let tex = textures.get(url);
   if (!tex) {
-    tex = new THREE.TextureLoader().loadAsync(skillFxUrl(name)).then(
+    tex = new THREE.TextureLoader().loadAsync(url).then(
       (t) => {
         t.colorSpace = THREE.SRGBColorSpace;
         return t;
       },
       () => null,
     );
-    textures.set(name, tex);
+    textures.set(url, tex);
   }
   return tex;
 }
 
-/** The sprite texture once it has loaded; null while loading, when missing, or when it failed. */
-function useFxTexture(name: SkillFxName) {
+/**
+ * A sprite texture by URL once it has loaded; null while loading, for a null URL, or when it
+ * failed. Pass null for art that hasn't shipped, so a missing file never logs a 404.
+ */
+export function useSpriteTexture(url: string | null) {
   const [tex, setTex] = useState<THREE.Texture | null>(null);
   useEffect(() => {
     let live = true;
-    loadFx(name)?.then((t) => live && setTex(t));
+    if (url) loadTexture(url).then((t) => live && setTex(t));
     return () => {
       live = false;
     };
-  }, [name]);
+  }, [url]);
   return tex;
+}
+
+/** The skill-fx sprite once it has loaded; null while loading, when missing, or when it failed. */
+function useFxTexture(name: SkillFxName) {
+  return useSpriteTexture(SKILL_FX_READY.has(name) ? skillFxUrl(name) : null);
 }
 
 /**

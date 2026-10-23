@@ -20,6 +20,7 @@ import { C, Toon, useToonGradient } from "@/components/world/toon";
 import { renderSkillEffect3D } from "@/components/skills/SkillEffect3D";
 import { formatBps, formatScore, isVoid, lift, seatPlayers, signedBps } from "./model";
 import { Ridge } from "./Ridge";
+import { Trail, type TrailKind } from "./Trail";
 import type { ScenePick, ScenePlayer, TableSceneProps } from "./types";
 
 type SceneProps = Omit<TableSceneProps, "view" | "className">;
@@ -28,8 +29,8 @@ const ARENA_Y = -0.6;
 const CRYSTAL_SCALE = 0.55;
 /** Spirit rest height above the podium top, and how far a full lift moves it either way. */
 const REST_Y = 0.9;
-const LIFT_RANGE = 0.55;
-const COIN_SIZE = 0.48;
+const LIFT_RANGE = 0.6;
+const COIN_SIZE = 0.6;
 const RIDGE_HEIGHT = 0.7;
 /** Row width a podium's spirits may use; spacing shrinks as picks are added. */
 const ROW_WIDTH = 2.4;
@@ -109,9 +110,11 @@ function Spirit({ pick, player, index, count, delay, phase, series, gradient, la
   const dead = isVoid(pick);
   // A frozen or locked pick's return is held, so its spirit holds still too.
   const still = dead || pick.effect === "FREEZE" || pick.effect === "LOCK";
-  const spacing = Math.min(0.66, ROW_WIDTH / count);
+  const spacing = Math.min(0.78, ROW_WIDTH / count);
   const x = (index - (count - 1) / 2) * spacing;
-  const target = phase === "reveal" ? REST_Y : REST_Y + lift(pick) * LIFT_RANGE;
+  const moving = phase === "live" || phase === "result";
+  const target = moving ? REST_Y + lift(pick) * LIFT_RANGE : REST_Y;
+  const trail: TrailKind | null = !moving ? null : dead ? "void" : lift(pick) >= 0 ? "up" : "down";
 
   const halo = useGlowMaterial("radial", coin.rim, 1.5, 2.4);
   const spirit = useRef<THREE.Group>(null);
@@ -143,6 +146,7 @@ function Spirit({ pick, player, index, count, delay, phase, series, gradient, la
         <Ridge series={series} width={spacing * 0.94} height={RIDGE_HEIGHT} tint={coin.rim} dim={dead} gradient={gradient} />
       </group>
       <group ref={spirit} position={[0, REST_Y, 0]} scale={0.0001}>
+        {trail && <Trail kind={trail} strength={dead ? 1 : Math.min(1, Math.abs(lift(pick)) * 1.6)} size={COIN_SIZE} />}
         <mesh material={halo} position={[0, 0, -0.08]} renderOrder={2}>
           <planeGeometry args={[COIN_SIZE * 2.4, COIN_SIZE * 2.4]} />
         </mesh>
@@ -244,22 +248,34 @@ function Seat({ seat, player, phase, prices, winner, gradient, labels, renderEff
   );
 }
 
-// Fixed view from the front, high enough (about 38 deg) that a front spirit at full lift stays clear of
-// the podium behind it, and low enough that rising and sinking still reads. All four podiums and their rows read at once.
-// Portrait screens widen the lens and step back.
+// Fixed view from the front, high enough (about 40 deg) that a front spirit at full lift stays clear of
+// the podium behind it, and low enough that rising and sinking still reads. The camera steps in as
+// close as the canvas allows while all four podiums and their rows still fit: wide canvases are
+// bound by the back spirits and front podiums, narrow ones by the outer rows. Portrait widens the lens.
+const VIEW_DIR = new THREE.Vector3(0, 9.6, 11.2).normalize();
+/** Half extents (world units) the frame keeps in view around the target, and how much nearer the front row sits. */
+const FIT_HALF_HEIGHT = 2.4;
+const FIT_HALF_WIDTH = 3.6;
+const FIT_HALF_WIDTH_PORTRAIT = 3.3;
+const FRONT_DEPTH = 1.4;
+
 function CameraRig() {
   const target = useMemo(() => new THREE.Vector3(), []);
   useFrame(({ camera, size, clock }) => {
-    const portrait = Math.max(0, 1 - size.width / size.height);
+    const aspect = size.width / size.height;
+    const portrait = Math.max(0, 1 - aspect);
     const cam = camera as THREE.PerspectiveCamera;
     const fov = 34 + portrait * 18;
     if (Math.abs(cam.fov - fov) > 0.01) {
       cam.fov = fov;
       cam.updateProjectionMatrix();
     }
-    const drift = Math.sin(clock.elapsedTime * 0.15) * 0.25;
-    camera.position.set(drift, 9.6 + portrait * 3, 11.2 + portrait * 5);
+    const t = Math.tan(THREE.MathUtils.degToRad(fov / 2));
+    const halfWidth = portrait > 0 ? FIT_HALF_WIDTH_PORTRAIT : FIT_HALF_WIDTH;
+    const dist = Math.max(FIT_HALF_HEIGHT / t, halfWidth / (t * aspect)) + FRONT_DEPTH;
     target.set(0, 0.7 - portrait * 0.4, 0);
+    camera.position.copy(VIEW_DIR).multiplyScalar(dist).add(target);
+    camera.position.x += Math.sin(clock.elapsedTime * 0.15) * 0.2;
     camera.lookAt(target);
   });
   return null;
