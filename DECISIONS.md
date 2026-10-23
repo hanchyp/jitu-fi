@@ -2,6 +2,16 @@
 
 Ambiguous design calls and known limitations, newest first. Each entry picks the simplest safe option. The full design rationale lives in `openspec/changes/build-crypto-draft-mvp/design.md`.
 
+## 2026-10-24 — Skill hand, pickers and spells (UI only)
+
+- **The hand owns only the pick-and-confirm flow.** `<SkillHand>` takes the cards, phase, live-deadline and used-this-round flags, your picks, the rivals' picks and the board coins, and calls `onUse(card, target)`. A returned promise keeps the confirm button pending; resolve shows the success line, reject shows the error. The page removes the card and sets `usedThisRound`.
+- **Disabled reasons, first match wins:** already used a skill this round → wrong phase ("Only at commit" for BOOST/INSURANCE, "Opens in Live" before Live, "Live is over" in result) → "Live deadline passed" → no valid target. Single targets show "Has FREEZE" or "Bera is already frozen" (a player is frozen at most once per round). SWAP offers only board coins you didn't pick this round.
+- **BOOST and INSURANCE sit in the same hand** and are added at commit through the same picker (button "Add BOOST"), because they come from the same deal and count as the round's one skill.
+- **Spells play once, then hold a still mark,** so there is no idle UI loop: ice stays on a frozen pick, a flipped coin stays upside down, a boosted one stays larger. Frozen and locked spirits stop bobbing in 3D, since their return is held. Reduced motion shows the end state at once.
+- **The 3D spells are `renderEffect`'s default** and load inside the scene's 3D chunk, so a page never imports three.js just for skills. The 2D table draws the same spells on its coins. Spirits are keyed by slot, so a SWAP plays its trade instead of popping a new spirit in. `ScenePick` gained `effectBy` (who cast it on you) and `swappedFrom`.
+- **Skill-fx sprites are opt-in by name** (`components/skills/fx.ts`); each effect keeps a procedural stand-in for a missing or failed file. The wisp is used for BOOST sparks only for now.
+- **Incoming FREEZE** is a toast ("Bera froze your MON", with the held return) plus the ice landing on your spirit; `/dev/skills?state=incoming-freeze` stages it 1.8 s into Live.
+
 ## 2026-10-24 — Leaderboard and profile (UI only)
 
 - **Only players with season points are ranked.** A depositor with 0 points has nothing to rank and no bonus share, so the board leaves them out; `you-not-ranked` shows a "not on the board yet" tile with Play. On the other tenor's board, the same tile explains that your deposit is in the other season (one position at a time).

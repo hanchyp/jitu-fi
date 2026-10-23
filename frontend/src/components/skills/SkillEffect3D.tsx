@@ -105,12 +105,20 @@ function useFxTexture(name: SkillFxName) {
   return tex;
 }
 
-/** Draws the skill-fx sprite as a camera-facing billboard when it exists, else the procedural children. */
-function FxSprite({ name, size, children }: { name: SkillFxName; size: number; children: ReactNode }) {
+/**
+ * Draws the skill-fx sprite as a camera-facing billboard when it exists, else the procedural
+ * children. `offset` moves only the sprite, for art drawn off-center (the insurance arc).
+ */
+function FxSprite({ name, size, offset, children }: {
+  name: SkillFxName;
+  size: number;
+  offset?: [number, number, number];
+  children: ReactNode;
+}) {
   const tex = useFxTexture(name);
   if (!tex) return <>{children}</>;
   return (
-    <sprite scale={[size, size, 1]} renderOrder={3}>
+    <sprite scale={[size, size, 1]} position={offset} renderOrder={3}>
       <spriteMaterial map={tex} transparent depthWrite={false} toneMapped={false} />
     </sprite>
   );
@@ -134,7 +142,7 @@ function Sparks({ color, count, radius }: { color: string; count: number; radius
   const group = useRef<THREE.Group>(null);
   useFrame(({ clock: c }) => {
     const { idle } = clock(c.elapsedTime);
-    const size = wisp ? 0.22 : 0.06;
+    const size = wisp ? 0.4 : 0.06;
     group.current?.children.forEach((s, i) => {
       const a = (i / count) * Math.PI * 2;
       const phase = (idle * 0.45 + i / count) % 1;
@@ -147,7 +155,7 @@ function Sparks({ color, count, radius }: { color: string; count: number; radius
       {Array.from({ length: count }, (_, i) =>
         wisp ? (
           <sprite key={i}>
-            <spriteMaterial map={wisp} transparent depthWrite={false} toneMapped={false} />
+            <spriteMaterial map={wisp} transparent depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
           </sprite>
         ) : (
           <mesh key={i}>
@@ -191,7 +199,7 @@ function Freeze({ gradient }: { gradient: THREE.Texture }) {
         ))}
       </group>
       <group ref={block} scale={0.0001}>
-        <FxSprite name="freeze-ice" size={1.9}>
+        <FxSprite name="freeze-ice" size={2.4}>
           <Glow color={ICE} size={2} strength={0.9} />
           {/* Detail 0 keeps face normals, so the toon shading breaks into flat ice facets. */}
           <mesh geometry={ice} scale={[1, 1.12, 0.62]} renderOrder={3}>
@@ -225,7 +233,7 @@ function Flip({ target }: { target: THREE.Group | null }) {
   });
   return (
     <group ref={swirl}>
-      <FxSprite name="flip-swirl" size={1.8}>
+      <FxSprite name="flip-swirl" size={2.3}>
         {[0, Math.PI].map((r, i) => (
           <group key={r} rotation={[0, 0, r]}>
             <mesh renderOrder={3}>
@@ -318,7 +326,7 @@ function Insurance({ gradient }: { gradient: THREE.Texture }) {
     // Tipped toward the camera, so the shield reads as a basin catching the coin.
     <group position={[0, -0.72, 0.05]} rotation={[0.45, 0, 0]}>
       <group ref={shield} scale={[0.0001, 1, 0.0001]}>
-        <FxSprite name="insurance-shield" size={1.7}>
+        <FxSprite name="insurance-shield" size={2} offset={[0, 0.55, 0]}>
           <group rotation={[-Math.PI / 2, 0, 0]}>
             <Glow color={C.gading} size={1.9} strength={1.1} z={0.06} />
           </group>
@@ -357,7 +365,7 @@ function Boost({ target }: { target: THREE.Group | null }) {
   return (
     <>
       <group ref={aura}>
-        <FxSprite name="boost-aura" size={2.6}>
+        <FxSprite name="boost-aura" size={3.2}>
           <Glow color={C.zamrud} size={2.8} strength={1.6} />
           <mesh position={[0, 0, -0.1]} renderOrder={3}>
             <ringGeometry args={[0.8, 0.86, 40]} />

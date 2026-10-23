@@ -30,13 +30,16 @@ function CoinFace({ symbol, className = "" }: { symbol: CoinSymbol; className?: 
   );
 }
 
-/** Overlay box a bit larger than the coin, so marks can sit on its edge. */
+/**
+ * Overlay box a bit larger than the coin, so marks can sit on its edge. The coin is positioned
+ * too, so DOM order sets the stack: aura and portal paint behind it, ice, swirl and lock in front.
+ */
 const OVER = "pointer-events-none absolute -inset-[30%]";
 
 function Ice({ t }: { t: Transition }) {
   return (
     <motion.div className={OVER} initial={{ scale: 0.3, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={t}>
-      <FxArt name="freeze-ice" className="h-full w-full">
+      <FxArt name="freeze-ice" className="h-full w-full max-w-none scale-[1.45]">
         <svg viewBox="0 0 40 40" className="h-full w-full" aria-hidden>
           {/* Thin facets over a light frost, so the coin still reads through the ice. */}
           <path d="M20 3 L33 10 L36 24 L27 36 L12 36 L4 24 L7 10 Z" className="fill-gading/20 stroke-garis" strokeWidth={2} strokeLinejoin="round" />
@@ -56,7 +59,7 @@ function Swirl({ reduce }: { reduce: boolean }) {
       animate={{ rotate: -360, opacity: 1 }}
       transition={reduce ? INSTANT : { duration: 0.9, ease: "easeOut" }}
     >
-      <FxArt name="flip-swirl" className="h-full w-full">
+      <FxArt name="flip-swirl" className="h-full w-full max-w-none scale-[1.4]">
         <svg viewBox="0 0 40 40" className="h-full w-full" aria-hidden>
           <path d="M8 14 A14 14 0 0 1 30 9" className="fill-none stroke-zamrud" strokeWidth={2.5} strokeLinecap="round" />
           <path d="M30 9 l-1 5 M30 9 l-5 -1" className="stroke-zamrud" strokeWidth={2.5} strokeLinecap="round" />
@@ -88,7 +91,7 @@ function Shield({ t }: { t: Transition }) {
       animate={{ scaleX: 1, opacity: 1 }}
       transition={t}
     >
-      <FxArt name="insurance-shield" className="h-full w-full object-contain">
+      <FxArt name="insurance-shield" className="absolute bottom-0 left-0 h-auto w-full max-w-none">
         <svg viewBox="0 0 40 20" className="h-full w-full" aria-hidden>
           <path d="M3 5 Q20 22 37 5 Q20 12 3 5 Z" className="fill-gading stroke-garis" strokeWidth={2} strokeLinejoin="round" />
           <path d="M3 5 Q20 12 37 5" className="fill-none stroke-emas" strokeWidth={2} />
@@ -101,7 +104,7 @@ function Shield({ t }: { t: Transition }) {
 function Aura({ t }: { t: Transition }) {
   return (
     <motion.div className={OVER} initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={t}>
-      <FxArt name="boost-aura" className="h-full w-full">
+      <FxArt name="boost-aura" className="h-full w-full max-w-none scale-[1.45]">
         <svg viewBox="0 0 40 40" className="h-full w-full" aria-hidden>
           <circle cx={20} cy={20} r={17} className="fill-zamrud/20 stroke-zamrud" strokeWidth={2.5} />
           <path d="M6 12 l2 -4 l2 4 M30 8 l2 -4 l2 4 M33 30 l2 -4 l2 4" className="fill-none stroke-zamrud" strokeWidth={2} strokeLinejoin="round" />
@@ -155,7 +158,7 @@ export function SkillCoin({ symbol, effect, swappedFrom, dim = false, className 
       case "FLIP":
         return (
           <motion.div
-            className="h-full w-full"
+            className="relative h-full w-full"
             initial={{ rotate: 0 }}
             animate={{ rotate: 540 }}
             transition={reduce ? INSTANT : { duration: 0.9, ease: [0.2, 0.8, 0.3, 1] }}
@@ -165,18 +168,18 @@ export function SkillCoin({ symbol, effect, swappedFrom, dim = false, className 
         );
       case "BOOST":
         return (
-          <motion.div className="h-full w-full" initial={{ scale: 1 }} animate={{ scale: 1.25 }} transition={t}>
+          <motion.div className="relative h-full w-full" initial={{ scale: 1 }} animate={{ scale: 1.12 }} transition={t}>
             <CoinFace symbol={symbol} className={face} />
           </motion.div>
         );
       case "SWAP":
         return (
-          <motion.div className="h-full w-full" initial={{ x: "110%", scale: 0.5, opacity: 0 }} animate={{ x: 0, scale: 1, opacity: 1 }} transition={reduce ? INSTANT : { duration: 0.7, ease: "easeOut" }}>
+          <motion.div className="relative h-full w-full" initial={{ x: "110%", scale: 0.5, opacity: 0 }} animate={{ x: 0, scale: 1, opacity: 1 }} transition={reduce ? INSTANT : { duration: 0.7, ease: "easeOut" }}>
             <CoinFace symbol={symbol} className={face} />
           </motion.div>
         );
       default:
-        return <CoinFace symbol={symbol} className={`${face} ${effect === "FREEZE" ? "saturate-50" : ""}`} />;
+        return <CoinFace symbol={symbol} className={`relative ${face} ${effect === "FREEZE" ? "saturate-50" : ""}`} />;
     }
   })();
 
