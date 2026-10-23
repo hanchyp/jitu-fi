@@ -30,7 +30,7 @@ export type FixturePick = Pick<ScenePick, "symbol" | "side" | "effect" | "effect
   heldBps?: number;
 };
 
-export type FixtureSeat = { id: string; name: string; color: string; isYou?: boolean; picks: FixturePick[] };
+export type FixtureSeat = { id: string; name: string; color: string; isYou?: boolean; forfeit?: boolean; picks: FixturePick[] };
 
 const bot = (short: string) => HOUSE_BOTS.find((b) => b.short === short)!;
 
@@ -115,10 +115,11 @@ export function useFixtureTable(phase: TablePhase, seats: readonly FixtureSeat[]
         const r = heldBps ?? returnBps(prices[pick.symbol]);
         return { ...pick, returnBps: r, void: Math.abs(r) < 1 };
       });
-      return { ...seat, picks: scenePicks, score: roundScore(scenePicks) };
+      // A forfeit scores 0 and cannot win the round (DECISIONS.md).
+      return { ...seat, picks: scenePicks, score: seat.forfeit ? 0 : roundScore(scenePicks) };
     });
-    const best = Math.max(...players.map((p) => p.score ?? 0));
-    const winnerIds = players.filter((p) => p.score === best).map((p) => p.id);
+    const best = Math.max(...players.filter((p) => !p.forfeit).map((p) => p.score ?? 0));
+    const winnerIds = players.filter((p) => !p.forfeit && p.score === best).map((p) => p.id);
     return { players, prices, winnerIds };
   }, [prices, seats]);
 }

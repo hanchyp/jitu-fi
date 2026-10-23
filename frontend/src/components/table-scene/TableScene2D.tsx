@@ -2,9 +2,11 @@
 // as a coin with a bar that rises or sinks with the call, and a mini ridge of its price line.
 // Skill effects play on the coin (components/skills SkillCoin).
 
+import Image from "next/image";
 import { SkillCoin } from "@/components/skills/SkillEffect2D";
 import { COIN } from "@/lib/coins";
-import { formatBps, formatScore, isVoid, lift, ridgeHeights, seatPlayers, signedBps } from "./model";
+import { Confetti } from "./Confetti";
+import { formatBps, formatScore, isVoid, lift, ridgeHeights, seatPlayers, signedBps, tableFxUrl } from "./model";
 import type { PriceSeries, ScenePick, ScenePlayer, TableSceneProps } from "./types";
 
 type Props = Omit<TableSceneProps, "view" | "renderEffect">;
@@ -56,11 +58,21 @@ function PickRow({ pick, series, showReturn }: { pick: ScenePick; series: PriceS
 }
 
 function Column({ player, phase, prices, winner }: { player: ScenePlayer; winner: boolean } & Pick<Props, "phase" | "prices">) {
+  const forfeit = player.forfeit && phase !== "commit";
   return (
     <section
-      className={`rounded-2xl border-[3px] border-garis p-3 ${winner ? "bg-papan-terang ring-4 ring-emas" : "bg-papan"}`}
+      className={`relative isolate rounded-2xl border-[3px] border-garis p-3 ${winner ? "bg-papan-terang ring-4 ring-emas" : "bg-papan"}`}
       aria-label={player.name}
     >
+      {winner && (
+        <Image
+          src={tableFxUrl("win-burst")}
+          alt=""
+          width={128}
+          height={128}
+          className="pointer-events-none absolute -right-8 -top-10 -z-10 h-32 w-32"
+        />
+      )}
       <header className="mb-2 flex items-center gap-2">
         <span className="h-3 w-3 rounded-full border-2 border-garis" style={{ background: player.color }} />
         <h3 className="font-display text-lg">{player.name}</h3>
@@ -74,6 +86,12 @@ function Column({ player, phase, prices, winner }: { player: ScenePlayer; winner
       )}
       {phase === "commit" ? (
         <p className="py-4 text-center text-sm font-bold text-white/60">Picks sealed</p>
+      ) : forfeit ? (
+        <div className="flex flex-col items-center py-2 text-center text-sm font-bold text-white/70">
+          <Image src={tableFxUrl("forfeit-seal")} alt="" width={72} height={72} className="h-16 w-16" />
+          <span className="font-display text-base text-turun">Forfeit</span>
+          <span className="text-xs">No reveal, 0 pts this round</span>
+        </div>
       ) : (
         <ul className="space-y-2">
           {player.picks.map((pick, i) => (
@@ -85,9 +103,18 @@ function Column({ player, phase, prices, winner }: { player: ScenePlayer; winner
   );
 }
 
-export function TableScene2D({ players, prices, phase, winnerIds, className }: Props) {
+// The night arena behind the columns, darkened so the cards and numbers stay readable.
+const BACKDROP = {
+  backgroundImage: `linear-gradient(rgba(7, 22, 36, 0.72), rgba(7, 22, 36, 0.72)), url(${tableFxUrl("table-backdrop")})`,
+};
+
+export function TableScene2D({ players, prices, phase, winnerIds, celebrate, className }: Props) {
   return (
-    <div className={`grid grid-cols-2 content-start items-start gap-3 p-3 md:grid-cols-4 ${className ?? ""}`}>
+    <div
+      className={`relative grid grid-cols-2 content-start items-start gap-3 bg-malam bg-cover bg-center p-3 md:grid-cols-4 ${className ?? ""}`}
+      style={BACKDROP}
+    >
+      {celebrate && <Confetti />}
       {seatPlayers(players).map(
         (p) =>
           p && (

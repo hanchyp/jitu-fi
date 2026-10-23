@@ -4,6 +4,9 @@ import { PLAYER_COLORS } from "@/components/world/toon";
 import type { ScenePick, ScenePlayer } from "./types";
 
 export const VOID_BPS = 1;
+
+/** Table game-feel art in public/assets/table-fx/. */
+export const tableFxUrl = (name: string) => `/assets/table-fx/${name}.webp`;
 /** A signed return of this size lifts a spirit about 3/4 of the way to the top. */
 const LIFT_BPS = 25;
 /** Ridges never zoom in further than ±this, so noise of a few bps stays a gentle line. */

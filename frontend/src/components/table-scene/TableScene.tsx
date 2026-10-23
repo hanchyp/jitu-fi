@@ -6,6 +6,7 @@
 import { useReducedMotion } from "motion/react";
 import dynamic from "next/dynamic";
 import { Component, useEffect, useState, type ReactNode } from "react";
+import { Confetti } from "./Confetti";
 import { TableScene2D } from "./TableScene2D";
 import type { TableSceneProps } from "./types";
 
@@ -59,6 +60,7 @@ export function TableScene({ view = "auto", className, ...data }: TableSceneProp
           <TableScene3D {...data} />
         </SceneBoundary>
       )}
+      {data.celebrate && <Confetti />}
     </div>
   );
 }

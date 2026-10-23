@@ -6,7 +6,8 @@
 
 import { Sparkles } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { useReducedMotion } from "motion/react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { COIN } from "@/lib/coins";
 import { Arena, PODIUM_SEATS, PODIUM_TOP_Y } from "@/components/world/Arena";
@@ -17,8 +18,8 @@ import { useGlowMaterial } from "@/components/world/glow";
 import { MonadCrystal } from "@/components/world/MonadCrystal";
 import { Sky } from "@/components/world/Sky";
 import { C, Toon, useToonGradient } from "@/components/world/toon";
-import { renderSkillEffect3D } from "@/components/skills/SkillEffect3D";
-import { formatBps, formatScore, isVoid, lift, seatPlayers, signedBps } from "./model";
+import { renderSkillEffect3D, useSpriteTexture } from "@/components/skills/SkillEffect3D";
+import { formatBps, formatScore, isVoid, lift, seatPlayers, signedBps, tableFxUrl } from "./model";
 import { Ridge } from "./Ridge";
 import { Trail, type TrailKind } from "./Trail";
 import type { ScenePick, ScenePlayer, TableSceneProps } from "./types";
@@ -179,6 +180,33 @@ function SealedPicks({ gradient, color }: { gradient: THREE.Texture; color: stri
   );
 }
 
+// Reveal on: a forfeit podium shows a broken wax seal where its spirits would be.
+function ForfeitSeal() {
+  const map = useSpriteTexture(tableFxUrl("forfeit-seal"));
+  if (!map) return null;
+  return (
+    <sprite scale={[1.1, 1.1, 1]} position={[0, REST_Y - 0.1, 0]} renderOrder={3}>
+      <spriteMaterial map={map} transparent depthWrite={false} toneMapped={false} />
+    </sprite>
+  );
+}
+
+// Round winner: a gold and emerald burst behind the podium's spirits, turning slowly.
+function WinBurst() {
+  const map = useSpriteTexture(tableFxUrl("win-burst"));
+  const reduce = useReducedMotion() ?? false;
+  const mat = useRef<THREE.SpriteMaterial>(null);
+  useFrame(({ clock }) => {
+    if (mat.current && !reduce) mat.current.rotation = clock.elapsedTime * 0.25;
+  });
+  if (!map) return null;
+  return (
+    <sprite scale={[2.8, 2.8, 1]} position={[0, REST_Y, -0.6]} renderOrder={1}>
+      <spriteMaterial ref={mat} map={map} transparent depthWrite={false} toneMapped={false} />
+    </sprite>
+  );
+}
+
 function WinnerBeam({ color }: { color: string }) {
   const beam = useGlowMaterial("beam", color, 1.6);
   const floor = useGlowMaterial("radial", color, 2.2, 2);
@@ -200,7 +228,13 @@ function WinnerBeam({ color }: { color: string }) {
 
 function SeatLabel({ player, phase, winner }: { player: ScenePlayer; phase: SceneProps["phase"]; winner: boolean }) {
   const sub =
-    phase === "commit" ? "Picks sealed" : phase === "result" && player.score !== undefined ? `${formatScore(player.score)} pts` : null;
+    phase === "commit"
+      ? "Picks sealed"
+      : player.forfeit
+        ? "Forfeit"
+        : phase === "result" && player.score !== undefined
+          ? `${formatScore(player.score)} pts`
+          : null;
   return (
     <div
       className={`${CHIP} flex items-center gap-1.5 px-2.5 py-1 text-xs ${winner ? "bg-emas text-garis" : "bg-malam/90 text-white"}`}
@@ -221,10 +255,13 @@ function Seat({ seat, player, phase, prices, winner, gradient, labels, renderEff
   labels: Labels;
 } & Pick<SceneProps, "phase" | "prices" | "renderEffect">) {
   const { x, z } = PODIUM_SEATS[seat];
-  const picks = phase === "commit" ? [] : player.picks;
+  const forfeit = player.forfeit && phase !== "commit";
+  const picks = phase === "commit" || forfeit ? [] : player.picks;
   return (
     <group position={[x, PODIUM_TOP_Y, z]}>
       {winner && <WinnerBeam color={player.color} />}
+      {winner && <WinBurst />}
+      {forfeit && <ForfeitSeal />}
       {phase === "commit" && <SealedPicks gradient={gradient} color={player.color} />}
       {picks.map((pick, i) => (
         <Spirit
@@ -249,18 +286,77 @@ function Seat({ seat, player, phase, prices, winner, gradient, labels, renderEff
 }
 
 // Fixed view from the front, high enough (about 40 deg) that a front spirit at full lift stays clear of
-// the podium behind it, and low enough that rising and sinking still reads. The camera steps in as
-// close as the canvas allows while all four podiums and their rows still fit: wide canvases are
-// bound by the back spirits and front podiums, narrow ones by the outer rows. Portrait widens the lens.
+// the podium behind it, and low enough that rising and sinking still reads. For each canvas size the
+// camera steps in as close as it can while every podium, its spirit row and its seat label still
+// project inside the frame, and the target slides so the slack splits evenly top and bottom.
+// Portrait widens the lens.
 const VIEW_DIR = new THREE.Vector3(0, 9.6, 11.2).normalize();
-/** Half extents (world units) the frame keeps in view around the target, and how much nearer the front row sits. */
-const FIT_HALF_HEIGHT = 2.4;
-const FIT_HALF_WIDTH = 3.6;
-const FIT_HALF_WIDTH_PORTRAIT = 3.3;
-const FRONT_DEPTH = 1.4;
+/** NDC the fit keeps clear of the canvas edge (labels and the idle sway need the room). */
+const FIT_MARGIN_X = 0.9;
+const FIT_MARGIN_Y = 0.88;
+
+/** World points that must stay in frame: podium bases, the top of each row at full lift, seat labels. */
+const FIT_POINTS = PODIUM_SEATS.flatMap(({ x, z }) => {
+  const top = ARENA_Y + PODIUM_TOP_Y;
+  const base = ARENA_Y + PODIUM_TOP_Y - 0.8;
+  const high = top + REST_Y + LIFT_RANGE + COIN_SIZE;
+  const out = Math.sign(x);
+  return [
+    new THREE.Vector3(x - 0.8, base, z + 0.8),
+    new THREE.Vector3(x + 0.8, base, z + 0.8),
+    new THREE.Vector3(x - ROW_WIDTH / 2, high, z),
+    new THREE.Vector3(x + ROW_WIDTH / 2, high, z),
+    new THREE.Vector3(x + out * 2.1, top - 0.35, z + 0.35),
+  ];
+});
+
+function placeCamera(cam: THREE.PerspectiveCamera, dist: number, targetY: number) {
+  cam.position.copy(VIEW_DIR).multiplyScalar(dist);
+  cam.position.y += targetY;
+  cam.lookAt(0, targetY, 0);
+  cam.updateMatrixWorld();
+}
+
+/** NDC y extent of the fit points, or null when any point leaves the frame. */
+function ndcBounds(cam: THREE.PerspectiveCamera, at: THREE.Vector3) {
+  let lo = Infinity;
+  let hi = -Infinity;
+  for (const p of FIT_POINTS) {
+    at.copy(p).project(cam);
+    if (Math.abs(at.x) > FIT_MARGIN_X || Math.abs(at.y) > FIT_MARGIN_Y) return null;
+    lo = Math.min(lo, at.y);
+    hi = Math.max(hi, at.y);
+  }
+  return { lo, hi };
+}
+
+/** Nearest distance (and centered target height) that fits FIT_POINTS for this lens and aspect. */
+function fitFrame(fov: number, aspect: number) {
+  const cam = new THREE.PerspectiveCamera(fov, aspect, 0.1, 140);
+  const at = new THREE.Vector3();
+  let targetY = 1;
+  let dist = 40;
+  for (let pass = 0; pass < 3; pass++) {
+    let near = 4;
+    let far = 60;
+    for (let i = 0; i < 24; i++) {
+      const mid = (near + far) / 2;
+      placeCamera(cam, mid, targetY);
+      if (ndcBounds(cam, at)) far = mid;
+      else near = mid;
+    }
+    dist = far;
+    placeCamera(cam, dist, targetY);
+    const b = ndcBounds(cam, at);
+    if (!b) break;
+    // Shift the target by the NDC imbalance, scaled to world height at the target's distance.
+    targetY += ((b.hi + b.lo) / 2) * dist * Math.tan(THREE.MathUtils.degToRad(fov / 2));
+  }
+  return { dist, targetY };
+}
 
 function CameraRig() {
-  const target = useMemo(() => new THREE.Vector3(), []);
+  const fit = useRef({ key: "", dist: 0, targetY: 0 });
   useFrame(({ camera, size, clock }) => {
     const aspect = size.width / size.height;
     const portrait = Math.max(0, 1 - aspect);
@@ -270,13 +366,12 @@ function CameraRig() {
       cam.fov = fov;
       cam.updateProjectionMatrix();
     }
-    const t = Math.tan(THREE.MathUtils.degToRad(fov / 2));
-    const halfWidth = portrait > 0 ? FIT_HALF_WIDTH_PORTRAIT : FIT_HALF_WIDTH;
-    const dist = Math.max(FIT_HALF_HEIGHT / t, halfWidth / (t * aspect)) + FRONT_DEPTH;
-    target.set(0, 0.7 - portrait * 0.4, 0);
-    camera.position.copy(VIEW_DIR).multiplyScalar(dist).add(target);
+    const key = `${size.width}x${size.height}`;
+    if (fit.current.key !== key) fit.current = { key, ...fitFrame(fov, aspect) };
+    const { dist, targetY } = fit.current;
+    placeCamera(cam, dist, targetY);
     camera.position.x += Math.sin(clock.elapsedTime * 0.15) * 0.2;
-    camera.lookAt(target);
+    camera.lookAt(0, targetY, 0);
   });
   return null;
 }
@@ -297,6 +392,7 @@ function LabelLayer({ labels, players, phase, winnerIds }: { labels: Labels } & 
                 <SeatLabel player={player} phase={phase} winner={isWinner(player, { phase, winnerIds })} />
               </div>
               {phase !== "commit" &&
+                !player.forfeit &&
                 player.picks.map((pick, i) => (
                   // Phones skip the per-spirit chips: they crowd, and the spirit's height still shows the call.
                   <div key={`${pick.symbol}-${i}`} ref={labels.node(`pick:${player.id}:${i}`)} className={`${at} max-[480px]:hidden`}>

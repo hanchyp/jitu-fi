@@ -12,19 +12,20 @@ import * as THREE from "three";
 import { skillFxUrl, SKILL_FX_READY } from "@/components/skills/fx";
 import { useSpriteTexture } from "@/components/skills/SkillEffect3D";
 import { useGlowMaterial } from "@/components/world/glow";
+import { tableFxUrl } from "./model";
 
 export type TrailKind = "up" | "down" | "void";
 
 type TableFxName = "buy-wisp" | "sell-wisp" | "void-mist";
 
 /** Art in public/assets/table-fx/ that has shipped. Add a name when its file lands. */
-const TABLE_FX_READY: ReadonlySet<TableFxName> = new Set<TableFxName>([]);
+const TABLE_FX_READY: ReadonlySet<TableFxName> = new Set<TableFxName>(["buy-wisp", "sell-wisp", "void-mist"]);
 
 const ART: Record<TrailKind, TableFxName> = { up: "buy-wisp", down: "sell-wisp", void: "void-mist" };
 const TINT: Record<TrailKind, string> = { up: "#7BE35A", down: "#FF6B5E", void: "#9AA7B4" };
 const MOTES = 4;
 
-const artUrl = (name: TableFxName) => (TABLE_FX_READY.has(name) ? `/assets/table-fx/${name}.webp` : null);
+const artUrl = (name: TableFxName) => (TABLE_FX_READY.has(name) ? tableFxUrl(name) : null);
 
 export function Trail({ kind, strength, size }: {
   kind: TrailKind;
@@ -39,7 +40,7 @@ export function Trail({ kind, strength, size }: {
   const mist = useGlowMaterial("radial", TINT.void, 0.9, 1.6);
   const tail = useGlowMaterial("radial", TINT[kind], 1.4, 2.4);
   // The shared wisp is ivory and emerald, so the tint is pushed past 1 to stay bright when added.
-  const tint = useMemo(() => new THREE.Color(TINT[kind]).multiplyScalar(art ? 1 : 1.6), [kind, art]);
+  const tint = useMemo(() => new THREE.Color(TINT[kind]).multiplyScalar(1.6), [kind]);
   const motes = useRef<THREE.Group>(null);
   const dir = kind === "up" ? 1 : -1;
 
@@ -66,19 +67,21 @@ export function Trail({ kind, strength, size }: {
 
   const map = art ?? wisp;
   const h = size * 2.2;
+  // The table-fx wisps are painted 1:2 portraits with their own colors and ink, so they keep
+  // normal blending and their aspect; the shared wisp is square and glows when added.
   return (
     <group>
       {map ? (
         // The wisp's bulb sits at the coin and its tail trails behind the move; a down wisp is the up one turned over.
-        <sprite scale={[h, h, 1]} position={[0, -dir * h * 0.38, -0.1]} renderOrder={1}>
+        <sprite scale={[art ? h * 0.5 : h, h, 1]} position={[0, -dir * h * 0.38, -0.1]} renderOrder={1}>
           <spriteMaterial
             map={map}
-            color={tint}
+            color={art ? "#FFFFFF" : tint}
             rotation={art || dir > 0 ? 0 : Math.PI}
             opacity={strength}
             transparent
             depthWrite={false}
-            blending={THREE.AdditiveBlending}
+            blending={art ? THREE.NormalBlending : THREE.AdditiveBlending}
             toneMapped={false}
           />
         </sprite>

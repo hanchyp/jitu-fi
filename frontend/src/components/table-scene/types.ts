@@ -46,6 +46,8 @@ export type ScenePlayer = {
   picks: ScenePick[];
   /** Round score, shown on the podium label in the result phase. */
   score?: number;
+  /** Missed commit or reveal: from Reveal on, the podium shows a broken seal instead of spirits. */
+  forfeit?: boolean;
 };
 
 /** Price series per picked coin, oldest first. The first point is the round's open price. */
@@ -78,6 +80,8 @@ export type TableSceneProps = {
    * always draws the matching flat effects.
    */
   renderEffect?: (ctx: SpiritEffectContext) => ReactNode;
+  /** Final podium: sprays confetti over the table (held still under reduced motion). */
+  celebrate?: boolean;
   /** "auto" picks 3D unless WebGL is missing or the user prefers reduced motion. */
   view?: "auto" | "3d" | "2d";
   className?: string;
