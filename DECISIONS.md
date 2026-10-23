@@ -2,6 +2,13 @@
 
 Ambiguous design calls and known limitations, newest first. Each entry picks the simplest safe option. The full design rationale lives in `openspec/changes/build-crypto-draft-mvp/design.md`.
 
+## 2026-10-24 — Table scene prototype (coin spirits)
+
+- **`<TableScene>` takes props only** (`frontend/src/components/table-scene/types.ts`). A pick's `returnBps` is the raw coin move, and the scene applies Buy/Sell itself. Effects plug in through a `renderEffect` slot.
+- **Players are seated by podium colour.** The ridge behind each spirit draws the literal price line, not one adjusted for side.
+- **In the table scene the Monad crystal is scaled to 0.55 and the camera pitched about 38°,** so the front spirits clear the back podiums. Changes to `world/` are additive only (Coin `dim` prop, exported `PODIUM_TOP_Y`), so the landing hero is unchanged.
+- **Dev preview routes** live under `frontend/src/app/dev/` (`/dev/table-scene`, `/dev/chart`) and return 404 in production.
+
 ## 2026-10-23 — Deposit screen (UI only)
 
 - **Screen order follows the flow:** wallet balance and faucet sit in the header (you need mUSD first), then one board with two numbered steps (pick a season, choose an amount) and the single gold "Lock deposit" button. The principal promise sits beside it. The tenor boards are the focal choice; they are native radios, so arrow keys move between them.
