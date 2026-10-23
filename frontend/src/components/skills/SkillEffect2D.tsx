@@ -38,9 +38,10 @@ function Ice({ t }: { t: Transition }) {
     <motion.div className={OVER} initial={{ scale: 0.3, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={t}>
       <FxArt name="freeze-ice" className="h-full w-full">
         <svg viewBox="0 0 40 40" className="h-full w-full" aria-hidden>
-          <path d="M20 3 L33 10 L36 24 L27 36 L12 36 L4 24 L7 10 Z" className="fill-gading/45 stroke-garis" strokeWidth={2} strokeLinejoin="round" />
-          <path d="M20 3 L17 17 L7 10 M17 17 L4 24 M17 17 L27 36 M17 17 L33 10 M17 17 L36 24" className="fill-none stroke-gading/90" strokeWidth={1.2} />
-          <path d="M20 3 L33 10 L17 17 Z" className="fill-zamrud/25" />
+          {/* Thin facets over a light frost, so the coin still reads through the ice. */}
+          <path d="M20 3 L33 10 L36 24 L27 36 L12 36 L4 24 L7 10 Z" className="fill-gading/20 stroke-garis" strokeWidth={2} strokeLinejoin="round" />
+          <path d="M20 3 L33 10 L17 17 Z M4 24 L12 36 L17 17 Z" className="fill-gading/35" />
+          <path d="M20 3 L17 17 L7 10 M17 17 L4 24 M17 17 L27 36 M17 17 L36 24" className="fill-none stroke-gading/70" strokeWidth={0.8} />
         </svg>
       </FxArt>
     </motion.div>
