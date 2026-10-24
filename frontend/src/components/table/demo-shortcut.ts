@@ -13,7 +13,10 @@ function isShortcut(event: ShortcutEvent, root: Root, key: string) {
 }
 
 /** N: next phase (local demo, and the season-manager skip on a server table). */
-export const isNextPhaseKey = (event: ShortcutEvent, root: Root) => isShortcut(event, root, "n");
+export const isNextPhaseKey = (event: ShortcutEvent, root: Root) => !event.shiftKey && isShortcut(event, root, "n");
+
+/** Shift+N on /table/[id]: leave at most five seconds of Live. */
+export const isShortenLiveKey = (event: ShortcutEvent, root: Root) => Boolean(event.shiftKey) && isShortcut(event, root, "n");
 
 /** Shift+R on /play: new testnet season (season managers only). */
 export const isNewSeasonKey = (event: ShortcutEvent, root: Root) => Boolean(event.shiftKey) && isShortcut(event, root, "r");

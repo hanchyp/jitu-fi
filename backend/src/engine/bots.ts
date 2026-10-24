@@ -73,7 +73,7 @@ export class HouseBots {
       this.later(this.int(Math.min(10_000, liveMs / 4), Math.max(liveMs - 8_000, liveMs / 2)), async () => {
         const now = this.deps.engine.get(tableId);
         const round = now?.rounds[now.round - 1];
-        if (!now || !round || now.phase !== "Live") return;
+        if (!now || !round || now.phase !== "Live" || now.round !== event.round || Date.now() >= round.liveEndMs!) return;
         if (skill === "LOCK") {
           const own = round.picks[seat.seat];
           if (!own?.length) return;

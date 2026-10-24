@@ -29,6 +29,13 @@ export function tableReducer(state: TableState, event: EngineEvent): TableState 
       if (state.phase === "Live" || round.results) return state;
       round = { ...round, startPrices: event.startPrices, liveStartMs: event.liveStartMs, liveEndMs: event.liveEndMs };
       next = { ...next, phase: "Live", phaseDeadlineMs: event.liveEndMs }; break;
+    case "liveShortened": {
+      if (state.phase !== "Live" || round.results) return state;
+      const deadline = Math.min(round.liveEndMs!, state.phaseDeadlineMs!, event.liveEndMs);
+      round = { ...round, liveEndMs: deadline };
+      next.phaseDeadlineMs = deadline;
+      break;
+    }
     case "skillUsed": {
       if (round.skills.some((s) => s.seat === event.skill.seat)) return state;
       round.skills = [...round.skills, event.skill];

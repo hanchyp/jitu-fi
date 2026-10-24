@@ -180,6 +180,23 @@ export class GameEngine {
     });
   }
 
+  /** Shorten Live without bypassing its normal settlement or extending an existing deadline. */
+  shortenLive(tableId: number, expected: { phase: "Live"; round: number }) {
+    return this.run(tableId, async () => {
+      const state = this.state(tableId);
+      if (state.phase !== expected.phase || state.round !== expected.round) return { shortened: false, reason: "PHASE_CHANGED" };
+      const round = this.current(state);
+      const deadline = Math.min(round.liveEndMs!, state.phaseDeadlineMs!, this.now() + 5_000);
+      if (deadline === round.liveEndMs && deadline === state.phaseDeadlineMs) return { shortened: false, reason: "ALREADY_SHORT" };
+      round.liveEndMs = deadline;
+      state.phaseDeadlineMs = deadline;
+      await this.persist(state);
+      this.schedule(state);
+      this.emit(state, { type: "liveShortened", round: round.n, liveEndMs: deadline });
+      return { shortened: true, liveEndMs: deadline };
+    });
+  }
+
   /** A seat's view: other seats' picks stay hidden during Commit, and other hands show only their size. */
   view(tableId: number, viewer?: string) {
     const state = this.state(tableId);

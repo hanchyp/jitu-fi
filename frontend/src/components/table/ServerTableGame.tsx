@@ -13,7 +13,7 @@ import { TableDock } from "./TableDock";
 import { ResultPopup } from "./ResultPopup";
 import { demoReducer, gameScores, roundResult, type DemoAction } from "./demo-engine";
 import { adminErrorMessage, adminPost } from "./admin-api";
-import { isNextPhaseKey } from "./demo-shortcut";
+import { isNextPhaseKey, isShortenLiveKey } from "./demo-shortcut";
 import styles from "./game-styles";
 
 export function ServerTableGame({ id }: { id: number }) {
@@ -30,24 +30,30 @@ export function ServerTableGame({ id }: { id: number }) {
   const [view3d, setView3d] = useState(false);
   const [sceneLoaded, setSceneLoaded] = useState(false);
   const { ensureToken } = useSession();
-  // Season managers: N asks the backend to end the current phase now. Phase + round make a retry a no-op.
+  // Season managers: N skips now; Shift+N shortens Live. Phase + round reject stale requests.
   const latest = useRef({ phase: table.state?.phase, round: table.state?.round, ensureToken, refetch: table.refetch });
   useEffect(() => { latest.current = { phase: table.state?.phase, round: table.state?.round, ensureToken, refetch: table.refetch }; });
-  const skipPhase = useCallback(async () => {
+  const skipPhase = useCallback(async (shorten = false) => {
     if (skipInFlight.current) return;
     const { phase, round, ensureToken, refetch } = latest.current;
     if (!phase || round === undefined) { setSkipFeedback("Waiting for table state."); return; }
     if (phase === "Finished") { setSkipFeedback("Game complete. No phase to skip."); return; }
+    if (shorten && phase !== "Live") { setSkipFeedback("Live 5s is available during Live only."); return; }
     const snapshot = `${id}:${round}:${phase}`;
     if (lastAdvanced.current === snapshot) { setSkipFeedback("Phase already advanced. Refreshing table…"); refetch(); return; }
     skipInFlight.current = true;
     setSkipping(true);
     setActionError("");
-    setSkipFeedback(`Skipping ${phase}, round ${round}… Approve sign-in if requested.`);
+    setSkipFeedback(`${shorten ? "Shortening" : "Skipping"} ${phase}, round ${round}… Approve sign-in if requested.`);
     try {
-      const { advanced } = await adminPost<{ advanced: boolean }>(`/tables/${id}/advance`, { phase, round }, ensureToken);
-      if (advanced) lastAdvanced.current = snapshot;
-      setSkipFeedback(advanced ? `${phase}, round ${round} advanced.` : "Phase already changed. Refreshing table; press N again when ready.");
+      if (shorten) {
+        const result = await adminPost<{ shortened: boolean; reason?: string }>(`/tables/${id}/shorten-live`, { phase, round }, ensureToken);
+        setSkipFeedback(result.shortened ? `Live, round ${round}: at most 5 seconds left.` : result.reason === "ALREADY_SHORT" ? "Live already has 5 seconds or less remaining." : "Phase already changed. Refreshing table.");
+      } else {
+        const { advanced } = await adminPost<{ advanced: boolean }>(`/tables/${id}/advance`, { phase, round }, ensureToken);
+        if (advanced) lastAdvanced.current = snapshot;
+        setSkipFeedback(advanced ? `${phase}, round ${round} advanced.` : "Phase already changed. Refreshing table; press N again when ready.");
+      }
       refetch();
     } catch (error) {
       const message = adminErrorMessage(error);
@@ -60,9 +66,10 @@ export function ServerTableGame({ id }: { id: number }) {
   }, [id]);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (!isNextPhaseKey(event, document)) return;
+      const shorten = isShortenLiveKey(event, document);
+      if (!shorten && !isNextPhaseKey(event, document)) return;
       event.preventDefault();
-      void skipPhase();
+      void skipPhase(shorten);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -103,7 +110,7 @@ export function ServerTableGame({ id }: { id: number }) {
   return <div className="jitu-table-app">
     <header className={styles.tableHeader}>
       <div><h1 className={styles.heading}>{state.preset.name} · {state.phase === "finished" ? "Game complete" : `Round ${state.round + 1}/${state.preset.caps.length}`}</h1>
-        <div className={styles.headerMeta}><span>{state.phase}</span><span>Table #{id}</span><span>Pick up to {state.preset.caps[state.round]}</span><button className="jitu-table-skip" type="button" disabled={skipping || state.phase === "finished"} onClick={() => void skipPhase()} title="Season managers: skip the current phase on your own table">{skipping ? "Skipping…" : "Skip phase (N)"}</button></div>
+        <div className={styles.headerMeta}><span>{state.phase}</span><span>Table #{id}</span><span>Pick up to {state.preset.caps[state.round]}</span><button className="jitu-table-skip" type="button" disabled={skipping || state.phase === "finished"} onClick={() => void skipPhase()} title="Season managers: skip the current phase on your own table">{skipping ? "Working…" : "Skip phase (N)"}</button>{state.phase === "live" && <button className="jitu-table-skip" type="button" disabled={skipping} onClick={() => void skipPhase(true)} title="Season managers: shorten Live to at most five seconds on your own table">Live 5s (Shift+N)</button>}</div>
         <div className="jitu-table-skipFeedback" role="status" aria-live="polite" aria-atomic="true">{skipFeedback}</div>
       </div>
       <div className="jitu-table-hudEnd"><div className="jitu-table-viewToggle" role="group" aria-label="Table view">{(["2D", "3D"] as const).map((view) => <button key={view} type="button" aria-pressed={view3d === (view === "3D")} onClick={() => { setView3d(view === "3D"); if (view === "3D") setSceneLoaded(true); }}>{view}</button>)}</div><span className={styles.clockValue} aria-label={`${state.remaining} seconds remaining`}>{state.remaining}s</span></div>

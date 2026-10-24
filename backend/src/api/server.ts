@@ -192,6 +192,17 @@ export async function buildServer(deps: ServerDeps) {
     return { advanced: await engine.skipPhase(tableId, body) };
   });
 
+  app.post("/tables/:id/shorten-live", async (req) => {
+    const user = await requireAdmin(req);
+    const tableId = id.parse((req.params as { id: string }).id);
+    const body = z.object({ phase: z.literal("Live"), round: z.number().int().positive() }).parse(req.body);
+    const table = await tableView(tableId, user);
+    if (table.seats[0]!.address !== user) throw new HttpError(403, "NOT_YOUR_TABLE", "Live 5s works on your own table only");
+    // Finished tables may have been restored only from the database after a restart.
+    if (table.phase === "Finished") return { shortened: false, reason: "PHASE_CHANGED" };
+    return engine.shortenLive(tableId, body);
+  });
+
   let creatingSeason = false;
   app.post("/admin/seasons", async (req) => {
     await requireAdmin(req);
