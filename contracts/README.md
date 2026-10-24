@@ -68,9 +68,13 @@ forge verify-contract <address> src/SeasonVault.sol:SeasonVault --chain 10143 --
 
 ## Deployments
 
+Monad testnet, deployed 2026-10-24 at block 73,722,191 by `0x51921009598763bDC1EA036403dcE294b84905E3` (also the keeper). Demo mode, K = 2. Season 1 ("1 week", 15 min) and season 2 ("1 month", 30 min) were created at deploy time, each with a 1,000 mUSD sponsor pot. Verified on MonadVision and Monadscan.
+
 | Contract | Monad testnet address |
 |---|---|
-| MockUSD | TBD |
-| MockYieldStrategy | TBD |
-| SeasonVault | TBD |
-| GameManager | TBD |
+| MockUSD | [`0x888054c88594D673f3C77CE99Aa73373ACfA1BdC`](https://testnet.monadvision.com/address/0x888054c88594D673f3C77CE99Aa73373ACfA1BdC) |
+| MockYieldStrategy | [`0xD3f940AF0AfA2fde97012A7aBd8eB4B95766F083`](https://testnet.monadvision.com/address/0xD3f940AF0AfA2fde97012A7aBd8eB4B95766F083) |
+| SeasonVault | [`0x87e83410FD37F6FfC37BC709DaA7DE7B64460266`](https://testnet.monadvision.com/address/0x87e83410FD37F6FfC37BC709DaA7DE7B64460266) |
+| GameManager | [`0x699834468547F56E38F87bFeeD15b3B2D6e343ff`](https://testnet.monadvision.com/address/0x699834468547F56E38F87bFeeD15b3B2D6e343ff) |
+
+To redeploy, run `bash script/deploy-testnet.sh <keystore account>`. It checks the chain id, prints the deployer's balance, and broadcasts with `--slow` and a 15% gas buffer.
