@@ -58,6 +58,7 @@
 
 - [ ] 5.1 App shell: providers (wagmi/RainbowKit limited to 10143/31337), i18n `id` dictionary, id-ID number formatting, testnet banner, mobile layout; verify wrong-network prompt and banner render in a component test
 - [ ] 5.2 Landing page `/` with pitch, 3 steps, season status + countdown, CTA routing; verify CTA test
+  - Started early, ahead of phase order. Done so far: static landing per `frontend/DESIGN.md` (bilyet hero animation, steps, yield split, demo season facts, guarantees). Still open: live season status and countdown from the backend, CTA routing by position, and the CTA test.
 - [ ] 5.3 `/deposit`: faucet with cooldown, amount validation, permit deposit with approve fallback, enrollment-closed state; verify locally against anvil
 - [ ] 5.4 `/lobby`: join/leave, queue status, auto-navigate to table; verify against local backend
 - [ ] 5.5 `/table/[id]` Commit: coin board, 3-pick + Buy/Sell, salt in localStorage, EIP-712 sign + relay; verify commit lands on-chain locally
