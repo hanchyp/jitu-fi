@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { GameShell } from "@/components/table/GameShell";
 import { PlayLobby, type LobbyState } from "@/components/table/PlayLobby";
+import "./lobby.css";
 
 export const metadata: Metadata = { title: "Choose your clash | jitu.fi" };
 
@@ -15,5 +15,5 @@ async function Lobby({ searchParams }: Props) {
 }
 
 export default function PlayPage(props: Props) {
-  return <GameShell><Suspense fallback={<p role="status">Preparing your clash…</p>}><Lobby {...props} /></Suspense></GameShell>;
+  return <main className="play-lobby"><Suspense fallback={<p role="status">Preparing your clash…</p>}><Lobby {...props} /></Suspense></main>;
 }

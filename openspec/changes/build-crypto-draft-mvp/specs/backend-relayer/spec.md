@@ -2,6 +2,8 @@
 
 ## Purpose
 
+> **Scope change (2026-10-24):** dropped. Players send picks and skills to the backend API with SIWE auth; nothing is relayed on-chain during play.
+
 Lets players play by signing messages only, with no wallet transaction popups during a game. The backend validates signed payloads and submits them on-chain, paying the gas. Deposits, the faucet and claims stay ordinary wallet transactions: the user has testnet MON.
 
 ## ADDED Requirements

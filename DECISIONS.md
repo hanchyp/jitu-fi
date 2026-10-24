@@ -2,6 +2,19 @@
 
 Ambiguous design calls and known limitations, newest first. Each entry picks the simplest safe option. The full design rationale lives in `openspec/changes/build-crypto-draft-mvp/design.md`.
 
+## 2026-10-24 — /play follows landing and tutorial motion
+
+- Preset selection and its checkmark reuse the tutorial's spring (stiffness 420, damping 20). Mode details and the primary-action label use its 0.25-second ease-out slide/fade; the controls enter with the landing CTA spring (380/16) and no interaction delay. Preset hover/focus and press follow the shared button's 100 ms lift and collapsing bevel.
+- Incoming text replaces immediately rather than waiting for an exit animation, preserving the latest selection during rapid changes without accumulating extra nodes or height. SSR and client initial attributes agree; reduced motion uses instant transitions and removes movement from the first frame. Layout, copy, routing and gameplay remain as before.
+- Chromium verification passed 32 production and four development cases, with 9,473 sampled frames showing no page overflow or browser errors. Checks covered rapid mode/state changes, keyboard focus, routing, pending/disabled controls and reduced-motion hydration. Physical devices and other browser engines were not tested.
+
+## 2026-10-24 — Centered /play lobby in one viewport
+
+- The approved lobby is one centered composition over the full arena background. Four compact mode cards sit above one central Play action; phones use a 2-by-2 grid. Quick starts selected and recommended, with selected-mode rounds, pick caps and duration shown below the cards.
+- `/play` accounts for the shared testnet banner and navigation within `100dvh`, hides only its shared footer, and reserves shrinking space for the crystal. Short screens reframe only the lobby canvas. Required controls fit without hiding document overflow; other routes keep their existing layout.
+- An active table uses the same primary action as "Return to table". Season closing disables Play, and practice routing after the first K games is preserved. Demo controls appear only in development with their own bottom space; query-string previews remain available in production.
+- Browser verification covered five viewport sizes, four lobby states, and Quick/Marathon selection (40 cases), plus keyboard selection, routing, wallet/menu, wrong-network and reduced-motion behavior. Chromium reported no overflow, console errors or hydration warnings. Physical devices and other browser engines were not tested. This completes the approved mock UI layout, not task 5.4's local-backend integration.
+
 ## 2026-10-24 — Arena is the game table; fixed viewport
 
 - Per Jeki's follow-up, animated coins now reuse the actual three.js `world/Coin` model from the landing. A single transparent WebGL layer follows the table, hand, flip and travel anchors; CSS faces are a capability fallback only. The stone table remains 2D. Live centers the player's sealed picks with a focused 3D coin, Buy/Sell, matching simulated quote/return and a price path; tabs expose every selected pick.
@@ -48,6 +61,47 @@ Ambiguous design calls and known limitations, newest first. Each entry picks the
 - **Players are seated by podium colour.** The ridge behind each spirit draws the literal price line, not one adjusted for side.
 - **In the table scene the Monad crystal is scaled to 0.55 and the camera pitched about 38°,** so the front spirits clear the back podiums. Changes to `world/` are additive only (Coin `dim` prop, exported `PODIUM_TOP_Y`), so the landing hero is unchanged.
 - **Dev preview routes** live under `frontend/src/app/dev/` (`/dev/table-scene`, `/dev/chart`) and return 404 in production.
+
+## 2026-10-24 — Plain pick submission; scoring lib ownership
+
+Decided by the project owner in the backend session.
+
+- **Picks are a plain submit.** During Commit, players POST their picks (and BOOST/INSURANCE choice) to the backend, which keeps them hidden from the other seats until Reveal. No commit hash and no salt. This replaces the commit-hash and salt rules in the 2026-10-23 redesign, design.md D9/D10/D15 and the game-table spec. The "lost local storage before Reveal means forfeit" limitation no longer applies; a player who submits nothing during Commit still forfeits the round.
+- **Hiding picks is a backend promise,** like scoring (see Known limitations: the backend is trusted).
+- **Scoring lib:** the backend session writes `packages/shared/src/scoring.ts` and `packages/shared/test-vectors/*`. The rest of `packages/shared` (scaffold, ABI exports, deployments) belongs to the contracts session.
+
+## 2026-10-24 — Contract details
+
+- **Strategy accounts are keyed by season id.** `IYieldStrategy` takes a season id on `deposit`, `withdrawAll` and `totalAssets`. With one shared account, finalizing the 1-week season would have withdrawn the 1-month season's principal too.
+- **`sweepDust` only after every depositor has claimed.** The spec's "or 30 days after finalize" branch is dropped: sweeping while claims are open could pay one season's dust out of another season's funds.
+- **`finalize` activates a season nobody activated,** so a season can always reach Finalized and claims never get stuck.
+- **`depositWithPermit` tolerates a failed permit** (for example a front-run one) and falls back to the existing allowance.
+- **The keeper holds `MINTER_ROLE` on mUSD** to seed bonus pots of renewed demo seasons. mUSD is a testnet mock with no value.
+- **Foundry 1.5.1.** CLAUDE.md asks for ≥ 1.8.0, but `foundryup` offers 1.5.1 as the current stable, and every test passes on it. OpenZeppelin v5.4.0 and forge-std are vendored in `contracts/lib` (sources only), so a fresh clone builds without submodules.
+
+## 2026-10-24 — Game runs in the backend; one on-chain tx per game
+
+Agreed with the project owner on Blitz day, with about 6 hours to the submission freeze. It replaces the on-chain table, commit-reveal, oracle and skill design.
+
+- **The game engine moves to the backend.** Tables, picks, the commit → reveal → live → settle phases, prices, skills and scoring all run in the backend, using the shared TS scoring library. The game rules themselves (presets, caps, scoring, void, the six skills) are unchanged.
+- **One transaction per finished game.** The keeper (`RESULT_POSTER_ROLE`) calls `GameManager.recordGame` once for the human seat with the game score and a hash of the full game log. Bots are never recorded.
+- **The contract still guards the money rules:** points = max(0, game score), only the first K games per season count, no points at or after season end or once Finalized (`PointsSkipped`), each game id is recorded once, and `seasonTotalWeighted` is kept for the vault. A game score above `MAX_GAME_SCORE` (10,000 bps) reverts, which limits what a leaked keeper key can do.
+- **Prices come from Pyth Hermes off-chain.** No on-chain oracle, coin registry or randomness contract. The Pyth contract address question goes away.
+- **No wallet popups during play.** Players send picks and skills to the backend over the API, authenticated with SIWE. Deposit, faucet and claim stay wallet transactions. EIP-712 meta-transactions are dropped.
+- **Correction 2 (per-table skill hands) now applies to the backend engine.** Corrections 1 and 3 stay on-chain.
+- **Rejected:** posting every round on-chain (more transparent, more keeper txs and build time) and the full on-chain engine (too slow to build safely today).
+- See Known limitations: the backend is trusted to score games honestly.
+
+## 2026-10-24 — FLIP and SWAP become traps on opponents
+
+Agreed with the project owner. FLIP and SWAP were self-help skills; they now target an opponent's pick, like FREEZE. This replaces the FLIP and SWAP rules in the 2026-10-23 redesign below.
+
+- **FLIP:** reverses an opponent's pick from now on (Buy becomes Sell, Sell becomes Buy). The pick's return is start → flip price in the old direction plus flip price → end in the new direction, each segment truncated separately.
+- **SWAP:** moves an opponent's pick onto another table coin the opponent didn't pick this round. The attacker chooses the coin; the victim keeps their direction. The return is the old coin start → now plus the new coin now → end. Letting the attacker also choose the direction was rejected because it makes SWAP a guaranteed hit.
+- **Skill roles:** BOOST, INSURANCE and LOCK help yourself; FREEZE, FLIP and SWAP attack an opponent.
+- **One attack per target per round:** a player can be hit by at most one of FREEZE, FLIP and SWAP in a round. This generalises the old "frozen at most once" rule, so 3 opponents can't pile onto one player.
+- **Counterplay:** a pick still carries at most one live effect, so locking a pick first makes it immune to attacks. INSURANCE still applies last, so an insured pick can't go below 0 after a FLIP or SWAP.
+- **Bots attack too.** House bots play by the same rules, so a bot's FLIP or SWAP can lower a human's game score and season points. Accepted, since it's the same for every human. Recorded under Known limitations.
 
 ## 2026-10-23 — Deposit screen (UI only)
 
@@ -149,7 +203,7 @@ Agreed with the project owner. It replaces the build spec's game rules: contrari
 ### Skills
 - **Six skills:** BOOST (pick weight ×2) and INSURANCE (pick floored at 0) are chosen at commit and hidden in the hash. LOCK, FLIP, SWAP and FREEZE are used in Live.
 - **Limits:** at most 1 skill per player per round, hand max 3, 1 random skill at the start, plus 1 for each round won.
-- **Interactions:** a pick carries at most one live effect. INSURANCE applies last. A player can be frozen at most once per round.
+- **Interactions:** a pick carries at most one live effect. INSURANCE applies last. A player can be frozen at most once per round. (FLIP and SWAP were changed to opponent attacks on 2026-10-24, see above.)
 - **No price cherry-picking:** live skills need a price no older than 5 s, supplied by the backend (not the client). They are blocked after the live deadline even while the round is still waiting to settle.
 
 ### Table and bots
@@ -171,9 +225,11 @@ Agreed with the project owner. It replaces the build spec's game rules: contrari
 
 - **PseudoRandomness is predictable.** Coin draws, live durations and skill deals derive from the previous blockhash, so they can be computed in advance. Accepted for the demo; the fix is Pyth Entropy behind `IRandomness`. (CLAUDE.md correction 4; GIFT_COIN, which it originally named, has since been removed.)
 - **Short-window direction is close to random.** Void picks, magnitude scoring, confidence through fewer picks and the K-game average reduce luck, but a single game is still noisy.
+- **The backend is trusted to score games.** Since 2026-10-24 the game runs off-chain and only the final score reaches the chain, so players can't prove their score on-chain. Mitigations: the contract caps a game score at `MAX_GAME_SCORE`, enforces first-K and the season cutoff, and stores a hash of the full game log that the backend serves for audit. Fix later: move commit-reveal and skills back on-chain, or post every round.
+- **House bots can hurt a human's points.** Bots may FREEZE, FLIP or SWAP a human's pick, which changes that human's game score and season points. It applies equally to every human, but it adds noise that doesn't come from the human's own calls.
 - **Sybil splitting.** One person can split a deposit across wallets to multiply the 1,000 mUSD weight cap. Not mitigated in the MVP.
 - **Trusted keeper timing.** The keeper chooses the exact settle moment within the oracle's max age. Possible hardening: `parsePriceFeedUpdates` with a publishTime window at the deadline.
-- **Lost local storage before Reveal means forfeit.** The salt lives only in the browser; the UI warns the player.
+- ~~**Lost local storage before Reveal means forfeit.**~~ Obsolete since 2026-10-24: picks are a plain submit with no salt.
 
 ## Corrections carried from CLAUDE.md
 

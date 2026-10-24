@@ -4,44 +4,38 @@
 
 - [ ] 0.1 Check dev tools (Node 20+, pnpm, Foundry ≥ 1.8.0, git) and verify `node -v`, `pnpm -v`, `forge --version` print supported versions
 - [ ] 0.2 Init git repo and pnpm workspace (root package name `jitu-fi`; product name "jitu.fi" in README and UI; game mode keeps the name "Crypto Draft") (`contracts`, `backend`, `frontend`, `packages/shared`, `bots`) with root `.gitignore` excluding `.env`; verify `pnpm -r ls` lists all workspaces
-- [ ] 0.3 Scaffold Foundry project in `contracts/` with OZ v5 and `solc ^0.8.24`; verify `forge build` succeeds
+- [x] 0.3 Scaffold Foundry project in `contracts/` with OZ v5 and `solc ^0.8.24`; verify `forge build` succeeds
 - [ ] 0.4 Scaffold `packages/shared` (TS, vitest), `backend` (Fastify skeleton), `frontend` (Next.js App Router + Tailwind), `bots` (TS); verify `pnpm -r build` succeeds
 - [ ] 0.5 Add ESLint + Prettier + `forge fmt`, a root `pnpm check` script (lint + build + test), `.env.example` files with `TODO_FILL_ME` for Pyth values; verify `pnpm check` passes
 - [ ] 0.6 Review `DECISIONS.md` (created during planning with the 2026-10-23 redesign) and finish the `README.md` skeleton; commit `chore: setup monorepo`
 
 ## 1. Core contracts: assets & vault (Phase 1)
 
-- [ ] 1.1 Implement `MockUSD` (ERC20Permit, 6 decimals, 1h-cooldown faucet, MINTER_ROLE); verify unit tests for metadata, faucet, cooldown, unauthorized mint
-- [ ] 1.2 Implement `IYieldStrategy` + `MockYieldStrategy` (onlyVault, aprBps setter incl. demo 17,520,000, accrual, withdrawAll mints accrued); verify accrual test (1,000 @ 10% × 365d = 1,100) and access-control reverts
-- [ ] 1.3 Implement `SeasonVault` season creation (concurrent tenors), deposit / depositWithPermit, min deposit, weight cap, one active position per address (`activeSeasonOf`), pause-only-deposits; verify unit tests incl. post-start, below-minimum and second-tenor reverts
-- [ ] 1.4 Implement `activate`, `isEligible`, `weightOf`; verify activation timing tests
-- [ ] 1.5 Implement `fundBonus` and `finalize` with fee/base/bonus split, sponsor funds outside the fee, zero-points fallback, and Shortfall path (D6) using a points-source interface (mocked until GameManager exists); verify split, sponsor and shortfall tests
-- [ ] 1.6 Implement `claim`, `previewClaim`, `sweepDust`; verify claim == preview, double-claim revert, claim-while-paused succeeds
-- [ ] 1.7 Write vault invariant suite (Σclaims ≤ withdrawn − fee, claimant ≥ principal unless shortfall) with ≥ 10,000 runs; verify `forge test` green; commit `feat(contracts): season vault`
+- [x] 1.1 Implement `MockUSD` (ERC20Permit, 6 decimals, 1h-cooldown faucet, MINTER_ROLE); verify unit tests for metadata, faucet, cooldown, unauthorized mint
+- [x] 1.2 Implement `IYieldStrategy` + `MockYieldStrategy` (onlyVault, aprBps setter incl. demo 17,520,000, accrual, withdrawAll mints accrued); verify accrual test (1,000 @ 10% × 365d = 1,100) and access-control reverts
+- [x] 1.3 Implement `SeasonVault` season creation (concurrent tenors), deposit / depositWithPermit, min deposit, weight cap, one active position per address (`activeSeasonOf`), pause-only-deposits; verify unit tests incl. post-start, below-minimum and second-tenor reverts
+- [x] 1.4 Implement `activate`, `isEligible`, `weightOf`; verify activation timing tests
+- [x] 1.5 Implement `fundBonus` and `finalize` with fee/base/bonus split, sponsor funds outside the fee, zero-points fallback, and Shortfall path (D6) using a points-source interface (mocked until GameManager exists); verify split, sponsor and shortfall tests
+- [x] 1.6 Implement `claim`, `previewClaim`, `sweepDust`; verify claim == preview, double-claim revert, claim-while-paused succeeds
+- [x] 1.7 Write vault invariant suite (Σclaims ≤ withdrawn − fee, claimant ≥ principal unless shortfall) with ≥ 10,000 runs; verify `forge test` green; commit `feat(contracts): season vault` (default profile runs 256 × 64 calls; the 10,000-run deep profile is `FOUNDRY_PROFILE=deep forge test`, run before 7.4)
 
-## 2. Game contracts (Phase 2)
+## 2. Game results contract (Phase 2)
 
-- [ ] 2.1 Add game constants (presets + cap tables, phase durations, live range, skill ids, K, max ages) to `packages/shared/src/config.ts` and mirror them in a Solidity constants file; add a consistency test; verify it passes
-- [ ] 2.2 Implement `CoinRegistry` (add/deactivate, active list); verify unit tests
-- [ ] 2.3 Implement `IPriceOracle`, `MockPriceOracle`, `PythPriceOracle` (15s max age, reject ≤ 0); verify mock tests and Pyth adapter tests against a mock Pyth contract
-- [ ] 2.4 Implement `IRandomness` + `PseudoRandomness` labelled NOT SECURE, DEMO ONLY; verify 8-distinct-coin draw test and live-duration-in-[60,120] fuzz
-- [ ] 2.5 Write shared scoring test vectors (`packages/shared/test-vectors/scoring.json`) covering every preset, Sell, void picks, all six skills (BOOST, INSURANCE, LOCK, FLIP, SWAP, FREEZE), forfeits, tied winners, negative rounding, first-K season points
-- [ ] 2.6 Implement TS scoring library in `packages/shared/src/scoring.ts`; verify vitest passes all vectors
-- [ ] 2.7 Implement Solidity scoring library; verify Foundry test reads the same vector file and matches; add fuzz for retBps, weighted averages, FLIP/SWAP segments, ties
-- [ ] 2.8 Implement `GameManager` table lifecycle: presets, createTable (MATCHMAKER_ROLE, house-bot registry, eligibility for humans, per-seat season, one unfinished table per human), startRound (coins + live duration), commit, permissionless reveal (cap, uniqueness), startLive (forfeit), settleRound chaining the next round, Finished with game scores; verify unit + revert-path tests
-- [ ] 2.9 Implement first-K season points (max(0, gameScore), bots excluded) with end-of-season cutoff + `PointsSkipped` (D3) and incremental `seasonTotalWeighted` (D4); wire vault to GameManager; verify K-limit test, bot test, late-settle test and late-points invariant (Σ bonus claims ≤ bonusPot)
-- [ ] 2.10 Implement per-table skill hands, round-winner skill rewards, commit-time BOOST and INSURANCE, and live LOCK, FLIP, SWAP, FREEZE with deadline and 5 s price checks (D10); verify skill tests incl. hand isolation, one skill per round, one live effect per pick, one freeze per target
-- [ ] 2.11 Implement EIP-712 `commitBySig` and `useSkillBySig` with deadline and state-based replay protection (D9); verify relay, replay and expiry tests
-- [ ] 2.12 Add "GameManager never transfers tokens" test, full-scenario test (deposit + sponsor fund → active → 1 Quick game with 3 bots → finalize → claim → balances), and `forge snapshot` check keeper calls < 2M gas and `forge build --sizes` < 128 KB; commit `feat(contracts): game manager`
+Re-scoped on 2026-10-24: the game engine runs in the backend and `GameManager` only records one result per finished game (see DECISIONS.md). Scoring, skills, prices and randomness move to `packages/shared` and the backend (Phase 4).
+
+- [x] 2.1 Implement `GameManager` as a results recorder: `RESULT_POSTER_ROLE`, `recordGame(gameId, player, gameScore, logHash)`, one record per game id, `MAX_GAME_SCORE` = 10,000 bps, player season from `vault.activeSeasonOf`; verify unit + revert-path tests
+- [x] 2.2 Implement first-K season points (max(0, gameScore), K set at deploy) with end-of-season cutoff + `PointsSkipped` (D3) and incremental `seasonTotalWeighted` (D4); wire vault to GameManager; verify K-limit test, negative-score test, late-record test and late-points invariant (Σ bonus claims ≤ bonusPot)
+- [x] 2.3 Add "GameManager never transfers tokens" test and full-scenario test (deposit + sponsor fund → active → recordGame → finalize → claim → balances); commit `feat(contracts): game results`
 
 ## 3. Deploy (Phase 3)
 
-- [ ] 3.1 Write `Deploy.s.sol` (deploy order per design, roles, cross-refs, house-bot registration, one funded demo season per tenor, mock oracle when Pyth is TODO_FILL_ME); verify `deploy:local` on anvil succeeds
-- [ ] 3.2 Export ABIs and `packages/shared/src/deployments/<chainId>.json` (31337, 10143 only); verify shared package builds and imports addresses
-- [ ] 3.3 Fill official Pyth address + feed IDs from docs (or keep TODO_FILL_ME and record in DECISIONS.md); verify `deploy:testnet` succeeds when keys are present, with chain id assertion refusing 143
-- [ ] 3.4 Document deploy commands in README; commit `feat(contracts): deploy scripts`
+- [x] 3.1 Write `Deploy.s.sol` (MockUSD → MockYieldStrategy → SeasonVault → GameManager, roles, cross-refs, one funded demo season per tenor, chain id assertion refusing 143); verify `deploy:local` on anvil succeeds
+- [x] 3.2 Export ABIs and `packages/shared/src/deployments/<chainId>.json` (31337, 10143 only); verify shared package builds and imports addresses
+- [x] 3.3 Deploy to Monad testnet with a Foundry keystore account (run by the owner), verify every contract on the explorer, and list the addresses in the README; commit `feat(contracts): deploy scripts`
 
 ## 4. Backend (Phase 4)
+
+Since 2026-10-24 the backend also hosts the game engine: shared constants and scoring (`packages/shared`: presets, caps, skill ids, K; scoring test vectors for every preset, Sell, void picks, all six skills incl. FLIP/SWAP attacks, forfeits, ties, rounding), the table state machine, per-table skill hands, Pyth Hermes prices and house bots. Picks and skills arrive over the API with SIWE auth, so tasks 4.7 (relayer) and the EIP-712 parts of 5.5 no longer apply. The keeper sends one `recordGame` tx per finished game instead of two txs per round.
 
 - [ ] 4.1 Set up config (Zod-validated env), pino logging, viem clients, Drizzle schema + migrations (`seasons, positions, tables, table_players, rounds, picks, skills_used, round_results, season_points, processed_blocks`); verify migration runs on SQLite
 - [ ] 4.2 Implement shared `sendTx` helper (per-key nonce queue, gas = ceil(estimate × 1.15)); verify unit test of gas limit math and concurrent nonce ordering
@@ -61,6 +55,7 @@
   - Started early, ahead of phase order. Done so far: game-style static landing per `frontend/DESIGN.md` (3D "Arena Jitu" title screen with the Monad-mark crystal, camera fly-in and pointer parallax, static fallback without WebGL; quest cards, yield loot bar, demo season banner, rules). Still open: live season status and countdown from the backend, CTA routing by position (deposit or play), the CTA test, and copy that still describes the old rules ("Pick 3 coins", x1.5 contrarian).
 - [ ] 5.3 `/deposit`: faucet with cooldown, tenor choice with bonus pots, amount validation, permit deposit with approve fallback, enrollment-closed and other-tenor states, estimated earnings; verify locally against anvil
 - [ ] 5.4 `/play`: preset picker, counted games n/K, Play → table, season-closing message; verify against local backend
+  - UI layout updated on 2026-10-24: centered arena background, compact responsive preset cards, one primary action, and a viewport-sized lobby without page scrolling. Build, lint, formatting, 13 existing tests and 40 Chromium viewport/state/mode cases passed. Local-backend integration and its verification remain open, so this task is not yet complete.
 - [ ] 5.5 `/table/[id]` Commit: header with round n/total, cap and live duration, coin board, 1..cap picks + Buy/Sell, optional BOOST/INSURANCE, salt in localStorage, EIP-712 sign + relay; verify commit lands on-chain locally
 - [ ] 5.6 `/table/[id]` Reveal: auto-reveal, missing-salt forfeit notice, reveal animation showing picks and commit-time skills; verify auto-reveal after page reload
 - [ ] 5.7 `/table/[id]` Live: player panels with shared-scoring live scores and void markers, price chart, skill hand with pickers for LOCK, FLIP, SWAP, FREEZE and their animations; verify live score equals settled score at round end
