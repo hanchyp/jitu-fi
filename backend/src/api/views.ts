@@ -142,9 +142,11 @@ export async function history(db: Db, chain: ChainReads, address: string) {
     const state = JSON.parse(row.state) as TableState;
     const scores = state.gameScores ?? [];
     const mine = scores[0] ?? 0;
-    const season = await chain.getSeason(row.seasonId);
+    // Practice (seasonId 0) has no season: no points, no on-chain record, not a counted game.
+    const season = row.seasonId === 0 ? null : await chain.getSeason(row.seasonId);
     let credit;
-    if (row.recordStatus === "skipped") credit = { kind: "after-end" as const };
+    if (!season) credit = { kind: "practice" as const };
+    else if (row.recordStatus === "skipped") credit = { kind: "after-end" as const };
     else {
       const n = (perSeason.get(row.seasonId) ?? 0) + 1;
       perSeason.set(row.seasonId, n);
@@ -153,7 +155,7 @@ export async function history(db: Db, chain: ChainReads, address: string) {
     games.push({
       tableId: row.id,
       seasonId: row.seasonId,
-      tenor: tenorOf(season),
+      tenor: season ? tenorOf(season) : null,
       preset: PRESETS[state.preset].name,
       endedAt: Math.floor((state.finishedAtMs ?? row.finishedAtMs ?? 0) / 1000),
       place: 1 + scores.filter((s, seat) => seat !== 0 && s > mine).length,

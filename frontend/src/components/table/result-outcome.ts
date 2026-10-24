@@ -24,6 +24,7 @@ export const EXPLORER_TX = "https://testnet.monadexplorer.com/tx/";
 
 /** Season credit + on-chain record copy for a finished server game; `game` undefined = not loaded yet. */
 export function recordLines(game: Pick<HistoryGame, "credit" | "recordStatus" | "recordTxHash"> | undefined, countedGames: number) {
+  if (game?.credit.kind === "practice") return { credit: "Practice game: no season points", note: "Not recorded on-chain.", txUrl: null, done: true };
   const status = game?.recordStatus;
   const final = status === "recorded" || status === "skipped" || status === "failed";
   const { credit } = game ?? {};

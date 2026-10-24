@@ -379,6 +379,14 @@ describe("tickRecords", () => {
     expect(chain.calls).toEqual([]);
   });
 
+  it("never records a practice table (seasonId 0), even one marked pending", async () => {
+    const { chain, ctx, db } = await setup();
+    const t = await insertTable(db, { seasonId: 0, recordStatus: "pending" });
+    await tickRecords(ctx);
+    expect(chain.calls).toEqual([]);
+    expect((await rowOf(db, t.id)).recordStatus).toBe("pending");
+  });
+
   it("ignores tables that are not queued", async () => {
     const { chain, ctx, db } = await setup();
     await insertTable(db, { recordStatus: "none" });

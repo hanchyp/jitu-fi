@@ -81,6 +81,20 @@ describe("GameEngine", () => {
     expect(row!.logHash).toBe(logHashOf(JSON.parse(row!.state)));
   });
 
+  it("plays a practice game (seasonId 0) to Finished without queueing recordGame", async () => {
+    const e = engine();
+    const table = await e.createTable({ human: HUMAN, bots: BOTS, seasonId: 0, preset: "quick" });
+    expect(table.practice).toBe(true);
+    await e.submitPicks(table.id, HUMAN, [{ coin: "BTC", side: "Buy" }]);
+    for (let i = 0; i < 3; i++) await advance(20_000 + 10_000 + 60_000);
+    expect(e.get(table.id)!.phase).toBe("Finished");
+    const [row] = await db.select().from(tables).where(eq(tables.id, table.id));
+    expect(row!.status).toBe("Finished");
+    expect(row!.seasonId).toBe(0);
+    expect(row!.recordStatus).toBe("none");
+    expect(JSON.parse(row!.state).practice).toBe(true);
+  });
+
   it("hides other seats' picks during Commit and shows them at Reveal", async () => {
     const e = engine();
     const table = await e.createTable({ human: HUMAN, bots: BOTS, seasonId: 1, preset: "quick" });

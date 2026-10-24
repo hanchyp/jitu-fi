@@ -47,7 +47,10 @@ export type RoundJson = {
 export type TableState = {
   id: number;
   preset: PresetId;
+  /** 0 for practice. */
   seasonId: number;
+  /** Practice game: no season points, never recorded on-chain. */
+  practice?: true;
   createdAtMs: number;
   phase: Phase;
   phaseDeadlineMs: number | null;

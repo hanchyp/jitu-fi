@@ -57,7 +57,7 @@ function useRecord(tableId: number | undefined) {
       let final = false;
       try {
         const found = (await fetchHistory(address)).find((g) => g.tableId === tableId);
-        if (live && found) { setGame(found); final = ["recorded", "skipped", "failed"].includes(found.recordStatus); }
+        if (live && found) { setGame(found); final = found.credit.kind === "practice" || ["recorded", "skipped", "failed"].includes(found.recordStatus); }
       } catch { /* keep polling */ }
       if (live && !final && ++tries < 10) timer = setTimeout(poll, 3000);
     };

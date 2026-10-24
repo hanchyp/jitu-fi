@@ -32,7 +32,9 @@ export async function fetchHistory(address: string, signal?: AbortSignal): Promi
     get<{ address: string; games: RecordedGame[] }>(`${path}/history`, signal),
     get<ProfileResponse["season"] & { position?: null }>(`${path}/position`, signal),
   ]);
-  return { ...history, season: position.position === null ? null : position };
+  // Practice games (seasonId 0) have no season to group or count under, so the season profile leaves them out.
+  const games = history.games.filter((g) => (g.credit as { kind: string }).kind !== "practice");
+  return { ...history, games, season: position.position === null ? null : position };
 }
 
 export function sessionAddress(): string | null {
