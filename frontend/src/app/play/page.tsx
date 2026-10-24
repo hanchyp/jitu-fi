@@ -11,7 +11,7 @@ async function Lobby({ searchParams }: Props) {
   const { state } = await searchParams;
   const valid: LobbyState[] = ["ready", "season-closing", "active-table", "outside-k"];
   const initialState = valid.includes(state as LobbyState) ? state as LobbyState : "ready";
-  return <PlayLobby initialState={initialState} />;
+  return <PlayLobby initialState={initialState} preview={valid.includes(state as LobbyState)} />;
 }
 
 export default function PlayPage(props: Props) {
