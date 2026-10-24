@@ -23,12 +23,15 @@ const envSchema = z
     MULTI_HUMAN_QUEUE: z.stringbool().default(false),
     PRICE_SOURCE: optional(z.enum(["hermes", "mock"])),
     PYTH_HERMES_URL: z.url().default("https://hermes.pyth.network"),
+    // Hermes requires a key since the 2026-08-26 Pyth Core upgrade (Pyth Terminal sign-up).
+    PYTH_API_KEY: optional(z.string().min(1)),
     // Keys and addresses are optional at boot; the module that needs one asserts it is set.
     KEEPER_PRIVATE_KEY: optional(bytes32),
     GAME_ID_SALT: optional(bytes32),
     MOCK_USD_ADDRESS: optional(address),
     SEASON_VAULT_ADDRESS: optional(address),
     GAME_MANAGER_ADDRESS: optional(address),
+    INDEXER_START_BLOCK: z.coerce.number().int().min(0).default(0),
     SIWE_DOMAIN: z.string().min(1).default("localhost:3000"),
     SESSION_SECRET: optional(z.string().min(32, "SESSION_SECRET must be at least 32 characters")),
     CORS_ORIGIN: z.string().min(1).default("http://localhost:3000"),
