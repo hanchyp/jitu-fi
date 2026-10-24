@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "a5ac83fe-c3f9-4b27-9a2d-cd216b1d2dca",
+  "id": "edca358b-79c2-4a00-ad63-5d02ed1139d3",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "bonus_fundings": {
@@ -157,84 +157,6 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "picks": {
-      "name": "picks",
-      "columns": {
-        "table_id": {
-          "name": "table_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "round": {
-          "name": "round",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "seat": {
-          "name": "seat",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "coin": {
-          "name": "coin",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "side": {
-          "name": "side",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "boosted": {
-          "name": "boosted",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": false
-        },
-        "insured": {
-          "name": "insured",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": false
-        },
-        "submitted_at_ms": {
-          "name": "submitted_at_ms",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {
-        "picks_table_id_round_seat_coin_pk": {
-          "columns": [
-            "table_id",
-            "round",
-            "seat",
-            "coin"
-          ],
-          "name": "picks_table_id_round_seat_coin_pk"
-        }
-      },
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
     "positions": {
       "name": "positions",
       "columns": {
@@ -345,237 +267,6 @@
             "log_index"
           ],
           "name": "processed_logs_tx_hash_log_index_pk"
-        }
-      },
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "round_prices": {
-      "name": "round_prices",
-      "columns": {
-        "table_id": {
-          "name": "table_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "round": {
-          "name": "round",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "coin": {
-          "name": "coin",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "start_price": {
-          "name": "start_price",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "start_expo": {
-          "name": "start_expo",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "start_publish_time": {
-          "name": "start_publish_time",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "end_price": {
-          "name": "end_price",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "end_expo": {
-          "name": "end_expo",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "end_publish_time": {
-          "name": "end_publish_time",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {
-        "round_prices_table_id_round_coin_pk": {
-          "columns": [
-            "table_id",
-            "round",
-            "coin"
-          ],
-          "name": "round_prices_table_id_round_coin_pk"
-        }
-      },
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "round_results": {
-      "name": "round_results",
-      "columns": {
-        "table_id": {
-          "name": "table_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "round": {
-          "name": "round",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "seat": {
-          "name": "seat",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "round_score": {
-          "name": "round_score",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "forfeit": {
-          "name": "forfeit",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "won": {
-          "name": "won",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {
-        "round_results_table_id_round_seat_pk": {
-          "columns": [
-            "table_id",
-            "round",
-            "seat"
-          ],
-          "name": "round_results_table_id_round_seat_pk"
-        }
-      },
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "rounds": {
-      "name": "rounds",
-      "columns": {
-        "table_id": {
-          "name": "table_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "round": {
-          "name": "round",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "cap": {
-          "name": "cap",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "coins": {
-          "name": "coins",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "live_duration": {
-          "name": "live_duration",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "commit_deadline_ms": {
-          "name": "commit_deadline_ms",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "reveal_deadline_ms": {
-          "name": "reveal_deadline_ms",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "live_start_ms": {
-          "name": "live_start_ms",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "live_end_ms": {
-          "name": "live_end_ms",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "settled_at_ms": {
-          "name": "settled_at_ms",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {
-        "rounds_table_id_round_pk": {
-          "columns": [
-            "table_id",
-            "round"
-          ],
-          "name": "rounds_table_id_round_pk"
         }
       },
       "uniqueConstraints": {},
@@ -757,170 +448,6 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "skill_hands": {
-      "name": "skill_hands",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": true
-        },
-        "table_id": {
-          "name": "table_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "seat": {
-          "name": "seat",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "skill": {
-          "name": "skill",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "dealt_round": {
-          "name": "dealt_round",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "used_round": {
-          "name": "used_round",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        }
-      },
-      "indexes": {
-        "skill_hands_table_seat": {
-          "name": "skill_hands_table_seat",
-          "columns": [
-            "table_id",
-            "seat"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "skills_used": {
-      "name": "skills_used",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": true
-        },
-        "table_id": {
-          "name": "table_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "round": {
-          "name": "round",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "seat": {
-          "name": "seat",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "skill": {
-          "name": "skill",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "target_seat": {
-          "name": "target_seat",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "target_coin": {
-          "name": "target_coin",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "swap_to_coin": {
-          "name": "swap_to_coin",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "price": {
-          "name": "price",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "price_expo": {
-          "name": "price_expo",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "publish_time": {
-          "name": "publish_time",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "at_ms": {
-          "name": "at_ms",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        }
-      },
-      "indexes": {
-        "skills_used_table_round": {
-          "name": "skills_used_table_round",
-          "columns": [
-            "table_id",
-            "round"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
     "table_players": {
       "name": "table_players",
       "columns": {
@@ -953,7 +480,15 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "table_players_address": {
+          "name": "table_players_address",
+          "columns": [
+            "address"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {
         "table_players_table_id_seat_pk": {
@@ -1082,6 +617,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false,
+          "autoincrement": false
+        },
+        "state": {
+          "name": "state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
           "autoincrement": false
         }
       },

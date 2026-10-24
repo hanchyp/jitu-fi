@@ -24,18 +24,6 @@ CREATE TABLE `indexer_cursor` (
 	`last_block` integer NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `picks` (
-	`table_id` integer NOT NULL,
-	`round` integer NOT NULL,
-	`seat` integer NOT NULL,
-	`coin` text NOT NULL,
-	`side` text NOT NULL,
-	`boosted` integer DEFAULT false NOT NULL,
-	`insured` integer DEFAULT false NOT NULL,
-	`submitted_at_ms` integer NOT NULL,
-	PRIMARY KEY(`table_id`, `round`, `seat`, `coin`)
-);
---> statement-breakpoint
 CREATE TABLE `positions` (
 	`season_id` integer NOT NULL,
 	`address` text NOT NULL,
@@ -53,43 +41,6 @@ CREATE TABLE `processed_logs` (
 	`log_index` integer NOT NULL,
 	`block_number` integer NOT NULL,
 	PRIMARY KEY(`tx_hash`, `log_index`)
-);
---> statement-breakpoint
-CREATE TABLE `round_prices` (
-	`table_id` integer NOT NULL,
-	`round` integer NOT NULL,
-	`coin` text NOT NULL,
-	`start_price` text NOT NULL,
-	`start_expo` integer NOT NULL,
-	`start_publish_time` integer NOT NULL,
-	`end_price` text,
-	`end_expo` integer,
-	`end_publish_time` integer,
-	PRIMARY KEY(`table_id`, `round`, `coin`)
-);
---> statement-breakpoint
-CREATE TABLE `round_results` (
-	`table_id` integer NOT NULL,
-	`round` integer NOT NULL,
-	`seat` integer NOT NULL,
-	`round_score` integer NOT NULL,
-	`forfeit` integer NOT NULL,
-	`won` integer NOT NULL,
-	PRIMARY KEY(`table_id`, `round`, `seat`)
-);
---> statement-breakpoint
-CREATE TABLE `rounds` (
-	`table_id` integer NOT NULL,
-	`round` integer NOT NULL,
-	`cap` integer NOT NULL,
-	`coins` text NOT NULL,
-	`live_duration` integer NOT NULL,
-	`commit_deadline_ms` integer NOT NULL,
-	`reveal_deadline_ms` integer,
-	`live_start_ms` integer,
-	`live_end_ms` integer,
-	`settled_at_ms` integer,
-	PRIMARY KEY(`table_id`, `round`)
 );
 --> statement-breakpoint
 CREATE TABLE `seasons` (
@@ -121,32 +72,6 @@ CREATE TABLE `siwe_nonces` (
 	`used` integer DEFAULT false NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `skill_hands` (
-	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-	`table_id` integer NOT NULL,
-	`seat` integer NOT NULL,
-	`skill` text NOT NULL,
-	`dealt_round` integer NOT NULL,
-	`used_round` integer
-);
---> statement-breakpoint
-CREATE INDEX `skill_hands_table_seat` ON `skill_hands` (`table_id`,`seat`);--> statement-breakpoint
-CREATE TABLE `skills_used` (
-	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-	`table_id` integer NOT NULL,
-	`round` integer NOT NULL,
-	`seat` integer NOT NULL,
-	`skill` text NOT NULL,
-	`target_seat` integer NOT NULL,
-	`target_coin` text NOT NULL,
-	`swap_to_coin` text,
-	`price` text,
-	`price_expo` integer,
-	`publish_time` integer,
-	`at_ms` integer NOT NULL
-);
---> statement-breakpoint
-CREATE INDEX `skills_used_table_round` ON `skills_used` (`table_id`,`round`);--> statement-breakpoint
 CREATE TABLE `table_players` (
 	`table_id` integer NOT NULL,
 	`seat` integer NOT NULL,
@@ -155,6 +80,7 @@ CREATE TABLE `table_players` (
 	PRIMARY KEY(`table_id`, `seat`)
 );
 --> statement-breakpoint
+CREATE INDEX `table_players_address` ON `table_players` (`address`);--> statement-breakpoint
 CREATE TABLE `tables` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`preset` text NOT NULL,
@@ -171,7 +97,8 @@ CREATE TABLE `tables` (
 	`log_hash` text,
 	`record_status` text DEFAULT 'none' NOT NULL,
 	`record_tx_hash` text,
-	`record_error` text
+	`record_error` text,
+	`state` text NOT NULL
 );
 --> statement-breakpoint
 CREATE INDEX `tables_human_status` ON `tables` (`human_address`,`status`);--> statement-breakpoint

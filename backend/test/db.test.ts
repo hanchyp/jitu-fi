@@ -16,9 +16,8 @@ describe("migrations", () => {
     const names = rows.map((r) => r.name).filter((n) => !n.startsWith("__") && !n.startsWith("sqlite"));
     expect(names.sort()).toEqual(
       [
-        "bonus_fundings", "game_results", "indexer_cursor", "picks", "positions", "processed_logs",
-        "round_prices", "round_results", "rounds", "seasons", "sessions", "siwe_nonces",
-        "skill_hands", "skills_used", "table_players", "tables",
+        "bonus_fundings", "game_results", "indexer_cursor", "positions", "processed_logs",
+        "seasons", "sessions", "siwe_nonces", "table_players", "tables",
       ].sort(),
     );
   });
@@ -48,7 +47,7 @@ describe("migrations", () => {
     const db = await freshDb();
     const [row] = await db
       .insert(tables)
-      .values({ preset: "Quick", status: "Running", humanAddress: "0x1", seasonId: 1, phase: "Waiting", createdAtMs: 0 })
+      .values({ preset: "Quick", status: "Running", humanAddress: "0x1", seasonId: 1, phase: "Commit", createdAtMs: 0, state: "{}" })
       .returning();
     expect(row!.id).toBe(1);
     expect(row!.recordStatus).toBe("none");

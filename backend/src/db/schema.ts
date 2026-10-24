@@ -88,7 +88,7 @@ export const tables = sqliteTable(
     humanAddress: text("human_address").notNull(),
     seasonId: integer("season_id").notNull(),
     currentRound: integer("current_round").notNull().default(0),
-    phase: text("phase", { enum: ["Waiting", "Commit", "Reveal", "Live", "Settled"] }).notNull(),
+    phase: text("phase", { enum: ["Commit", "Reveal", "Live", "Finished"] }).notNull(),
     phaseDeadlineMs: integer("phase_deadline_ms"),
     createdAtMs: integer("created_at_ms").notNull(),
     finishedAtMs: integer("finished_at_ms"),
@@ -101,6 +101,8 @@ export const tables = sqliteTable(
       .default("none"),
     recordTxHash: text("record_tx_hash"),
     recordError: text("record_error"),
+    /** Full engine state (engine/types.ts TableState) as JSON: restart source and the game log. */
+    state: text("state").notNull(),
   },
   (t) => [index("tables_human_status").on(t.humanAddress, t.status), index("tables_record_status").on(t.recordStatus)],
 );
@@ -113,107 +115,7 @@ export const tablePlayers = sqliteTable(
     address: text("address").notNull(),
     isBot: bool("is_bot").notNull(),
   },
-  (t) => [primaryKey({ columns: [t.tableId, t.seat] })],
-);
-
-export const rounds = sqliteTable(
-  "rounds",
-  {
-    tableId: integer("table_id").notNull(),
-    round: integer("round").notNull(),
-    cap: integer("cap").notNull(),
-    /** JSON array of coin symbols, in board order. */
-    coins: text("coins").notNull(),
-    liveDuration: integer("live_duration").notNull(),
-    commitDeadlineMs: integer("commit_deadline_ms").notNull(),
-    revealDeadlineMs: integer("reveal_deadline_ms"),
-    liveStartMs: integer("live_start_ms"),
-    liveEndMs: integer("live_end_ms"),
-    settledAtMs: integer("settled_at_ms"),
-  },
-  (t) => [primaryKey({ columns: [t.tableId, t.round] })],
-);
-
-/** Pyth prices used to score a round: integer price with its exponent and publish time. */
-export const roundPrices = sqliteTable(
-  "round_prices",
-  {
-    tableId: integer("table_id").notNull(),
-    round: integer("round").notNull(),
-    coin: text("coin").notNull(),
-    startPrice: text("start_price").notNull(),
-    startExpo: integer("start_expo").notNull(),
-    startPublishTime: integer("start_publish_time").notNull(),
-    endPrice: text("end_price"),
-    endExpo: integer("end_expo"),
-    endPublishTime: integer("end_publish_time"),
-  },
-  (t) => [primaryKey({ columns: [t.tableId, t.round, t.coin] })],
-);
-
-export const picks = sqliteTable(
-  "picks",
-  {
-    tableId: integer("table_id").notNull(),
-    round: integer("round").notNull(),
-    seat: integer("seat").notNull(),
-    coin: text("coin").notNull(),
-    side: text("side", { enum: ["Buy", "Sell"] }).notNull(),
-    boosted: bool("boosted").notNull().default(false),
-    insured: bool("insured").notNull().default(false),
-    submittedAtMs: integer("submitted_at_ms").notNull(),
-  },
-  (t) => [primaryKey({ columns: [t.tableId, t.round, t.seat, t.coin] })],
-);
-
-export const SKILLS = ["BOOST", "INSURANCE", "LOCK", "FLIP", "SWAP", "FREEZE"] as const;
-
-export const skillHands = sqliteTable(
-  "skill_hands",
-  {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    tableId: integer("table_id").notNull(),
-    seat: integer("seat").notNull(),
-    skill: text("skill", { enum: SKILLS }).notNull(),
-    /** 0 = dealt at table start, n = earned by winning round n. */
-    dealtRound: integer("dealt_round").notNull(),
-    usedRound: integer("used_round"),
-  },
-  (t) => [index("skill_hands_table_seat").on(t.tableId, t.seat)],
-);
-
-export const skillsUsed = sqliteTable(
-  "skills_used",
-  {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    tableId: integer("table_id").notNull(),
-    round: integer("round").notNull(),
-    seat: integer("seat").notNull(),
-    skill: text("skill", { enum: SKILLS }).notNull(),
-    targetSeat: integer("target_seat").notNull(),
-    targetCoin: text("target_coin").notNull(),
-    /** SWAP only: the coin the pick moved to. */
-    swapToCoin: text("swap_to_coin"),
-    /** Live skills: the backend price the effect was taken at. */
-    price: text("price"),
-    priceExpo: integer("price_expo"),
-    publishTime: integer("publish_time"),
-    atMs: integer("at_ms").notNull(),
-  },
-  (t) => [index("skills_used_table_round").on(t.tableId, t.round)],
-);
-
-export const roundResults = sqliteTable(
-  "round_results",
-  {
-    tableId: integer("table_id").notNull(),
-    round: integer("round").notNull(),
-    seat: integer("seat").notNull(),
-    roundScore: integer("round_score").notNull(),
-    forfeit: bool("forfeit").notNull(),
-    won: bool("won").notNull(),
-  },
-  (t) => [primaryKey({ columns: [t.tableId, t.round, t.seat] })],
+  (t) => [primaryKey({ columns: [t.tableId, t.seat] }), index("table_players_address").on(t.address)],
 );
 
 // ---------- Auth ----------
