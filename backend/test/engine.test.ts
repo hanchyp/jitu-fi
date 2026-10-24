@@ -145,3 +145,25 @@ describe("GameEngine", () => {
     expect(events.filter((x) => x.event.type === "roundSettled")).toHaveLength(1);
   });
 });
+
+describe("HouseBots", () => {
+  it("bots play a full Quick game with the human absent", async () => {
+    const { HouseBots, HOUSE_BOTS } = await import("../src/engine/bots.js");
+    let e!: GameEngine;
+    let seed = 7;
+    const random = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+    const bots = new HouseBots({ engine: { get: (id: number) => e.get(id), submitPicks: (...a: Parameters<GameEngine["submitPicks"]>) => e.submitPicks(...a), useSkill: (...a: Parameters<GameEngine["useSkill"]>) => e.useSkill(...a) } as unknown as GameEngine, log, random });
+    e = new GameEngine({ db, book, log, timing: TIMING, random, onEvent: (id, ev) => { events.push({ tableId: id, event: ev }); bots.handle(id, ev); } });
+    const table = await e.createTable({ human: HUMAN, bots: [...HOUSE_BOTS], seasonId: 1, preset: "quick" });
+    for (let s = 0; s < 3 * 90; s++) {
+      if (s % 2 === 0) publish({ BTC: s % 7, ETH: -(s % 5), SOL: s % 3 });
+      await advance(1_000);
+    }
+    const done = e.get(table.id)!;
+    expect(done.phase).toBe("Finished");
+    const botPicks = done.rounds.flatMap((r) => [1, 2, 3].map((seat) => r.picks[seat]?.length ?? 0));
+    expect(botPicks.every((n) => n >= 1)).toBe(true);
+    expect(done.rounds[0]!.results![0]!.forfeit).toBe(true);
+    bots.stop();
+  });
+});
