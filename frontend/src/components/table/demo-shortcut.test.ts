@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { getPreset } from "../../mocks/table";
 import { createDemo, demoReducer } from "./demo-engine";
-import { isNextPhaseKey } from "./demo-shortcut";
+import { isNewSeasonKey, isNextPhaseKey } from "./demo-shortcut";
 
 const empty = { querySelector: () => null };
 const key = (extra: Partial<Parameters<typeof isNextPhaseKey>[0]> = {}) => ({ key: "n", repeat: false, ctrlKey: false, metaKey: false, altKey: false, target: null, ...extra });
@@ -17,6 +17,14 @@ test("N advances; repeats, modifiers, editable targets and open dialogs are igno
   assert.equal(isNextPhaseKey(key({ target: input }), empty), false);
   assert.equal(isNextPhaseKey(key({ target: { isContentEditable: true } as unknown as EventTarget }), empty), false);
   assert.equal(isNextPhaseKey(key(), { querySelector: (s) => s.includes("dialog[open]") ? {} : null }), false);
+});
+
+test("Shift+R needs shift and follows the same ignore rules", () => {
+  assert.equal(isNewSeasonKey(key({ key: "R", shiftKey: true }), empty), true);
+  assert.equal(isNewSeasonKey(key({ key: "r" }), empty), false);
+  assert.equal(isNewSeasonKey(key({ key: "R", shiftKey: true, repeat: true }), empty), false);
+  assert.equal(isNewSeasonKey(key({ key: "R", shiftKey: true, metaKey: true }), empty), false);
+  assert.equal(isNewSeasonKey(key({ key: "R", shiftKey: true }), { querySelector: (s) => s.includes("aria-modal") ? {} : null }), false);
 });
 
 test("advance steps one phase at a time and finishes after the last results", () => {

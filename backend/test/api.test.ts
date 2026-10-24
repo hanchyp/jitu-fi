@@ -38,7 +38,9 @@ function fakeChain(season: Partial<SeasonInfo> = {}, eligible = true): ChainRead
   };
 }
 
-async function setup(chain = fakeChain()) {
+type Admin = NonNullable<Parameters<typeof buildServer>[0]["admin"]>;
+
+async function setup(chain = fakeChain(), admin?: Admin) {
   const db = createDb(":memory:");
   await migrateDb(db);
   const book = new PriceBook();
@@ -47,7 +49,7 @@ async function setup(chain = fakeChain()) {
   const engine = new GameEngine({ db, book, log, onEvent: (id, e) => listeners.forEach((l) => l(id, e)) });
   const matchmaker = new Matchmaker({ db, engine, chain });
   const auth = new Auth(db, DOMAIN, 10143);
-  const server = await buildServer({ db, engine, matchmaker, chain, auth, book, log, corsOrigin: "http://localhost:3000", priceTickMs: 0 });
+  const server = await buildServer({ db, engine, matchmaker, chain, auth, book, log, corsOrigin: "http://localhost:3000", priceTickMs: 0, admin });
   listeners.push(server.onEngineEvent);
   return { ...server, engine };
 }
@@ -151,5 +153,81 @@ describe("API", () => {
 
     expect(received.map((m) => m.type)).toEqual(["subscribed", "roundStarted", "picksSubmitted"]);
     expect(received.every((m) => m.room === "table:1")).toBe(true);
+  });
+
+  describe("admin controls", () => {
+    const manager = (overrides: Partial<Admin> = {}): Admin => ({
+      isSeasonManager: async (user) => user === account.address.toLowerCase(),
+      createSeason: async () => ({ seasonId: 7n, hash: "0xabc" }),
+      ...overrides,
+    });
+    async function adminSetup(admin?: Admin) {
+      await ctx.app.close();
+      ctx = await setup(fakeChain(), admin);
+      return { authorization: `Bearer ${(await signIn(ctx.app)).res.json().token}` };
+    }
+    const newSeason = (headers?: Record<string, string>) => ctx.app.inject({ method: "POST", url: "/admin/seasons", headers, payload: { tenor: "week" } });
+
+    it("refuses without a session, off testnet (no admin deps) and for wallets without SEASON_MANAGER_ROLE", async () => {
+      expect((await newSeason()).statusCode).toBe(401);
+      let auth = await adminSetup(undefined);
+      expect((await newSeason(auth)).json().error).toBe("ADMIN_DISABLED");
+      auth = await adminSetup(manager({ isSeasonManager: async () => false }));
+      const res = await newSeason(auth);
+      expect(res.statusCode).toBe(403);
+      expect(res.json().error).toBe("NOT_SEASON_MANAGER");
+      const skip = await ctx.app.inject({ method: "POST", url: "/tables/1/advance", headers: auth, payload: { phase: "Commit", round: 1 } });
+      expect(skip.json().error).toBe("NOT_SEASON_MANAGER");
+    });
+
+    it("creates a season for a manager, reports keeper-off and refuses a duplicate in flight", async () => {
+      let release!: () => void;
+      const calls: string[] = [];
+      const auth = await adminSetup(manager({
+        createSeason: async (tenor) => {
+          calls.push(tenor);
+          await new Promise<void>((r) => (release = r));
+          return { seasonId: 7n, hash: "0xabc" };
+        },
+      }));
+      const first = newSeason(auth);
+      await new Promise((r) => setTimeout(r, 20));
+      const second = await newSeason(auth);
+      expect(second.statusCode).toBe(409);
+      expect(second.json().error).toBe("SEASON_CREATE_PENDING");
+      release();
+      expect((await first).json()).toEqual({ seasonId: 7, hash: "0xabc", tenor: "week" });
+      expect(calls).toEqual(["week"]);
+
+      const failing = await adminSetup(manager({ createSeason: async () => { throw new Error("rpc down"); } }));
+      expect((await newSeason(failing)).json().error).toBe("SEASON_CREATE_FAILED");
+      const off = await adminSetup(manager({ createSeason: undefined }));
+      expect((await newSeason(off)).json().error).toBe("KEEPER_UNAVAILABLE");
+    });
+
+    it("skips exactly one phase of the manager's own table and ignores stale or repeated requests", async () => {
+      const auth = await adminSetup(manager());
+      const { tableId } = (await ctx.app.inject({ method: "POST", url: "/play", headers: auth, payload: { preset: "quick" } })).json();
+      const skip = (phase: string, round: number) => ctx.app.inject({ method: "POST", url: `/tables/${tableId}/advance`, headers: auth, payload: { phase, round } });
+
+      expect((await skip("Commit", 1)).json()).toEqual({ advanced: true });
+      expect(ctx.engine.get(tableId)!.phase).toBe("Reveal");
+      expect((await skip("Commit", 1)).json()).toEqual({ advanced: false });
+      expect((await skip("Reveal", 1)).json()).toEqual({ advanced: true });
+      expect((await skip("Live", 1)).json()).toEqual({ advanced: true });
+      const state = ctx.engine.get(tableId)!;
+      expect(state.rounds[0]!.results).toHaveLength(4);
+      expect([state.phase, state.round]).toEqual(["Commit", 2]);
+      expect((await ctx.app.inject({ method: "POST", url: "/tables/999/advance", headers: auth, payload: { phase: "Commit", round: 1 } })).statusCode).toBe(404);
+    });
+
+    it("refuses to skip another player's table", async () => {
+      const other = privateKeyToAccount("0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a");
+      const auth = await adminSetup(manager({ isSeasonManager: async () => true }));
+      const table = await ctx.engine.createTable({ human: other.address, bots: ["0x01", "0x02", "0x03"], seasonId: 1, preset: "quick" });
+      const res = await ctx.app.inject({ method: "POST", url: `/tables/${table.id}/advance`, headers: auth, payload: { phase: "Commit", round: 1 } });
+      expect(res.json().error).toBe("NOT_YOUR_TABLE");
+      expect(ctx.engine.get(table.id)!.phase).toBe("Commit");
+    });
   });
 });

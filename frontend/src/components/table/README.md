@@ -55,6 +55,12 @@ Press `N` to advance one phase (final Results to Finished). Repeats, Ctrl/Meta/A
 typing in fields and open dialogs are ignored. No backend writes, wallet or chain
 calls; production ignores the query.
 
+Season managers (wallets holding `SEASON_MANAGER_ROLE` on the vault, checked on-chain by
+the backend, Monad testnet only): `N` on `/table/[id]` ends the current phase of their own
+table through the engine; `Shift+R` on `/play` opens a confirm dialog that creates a new
+testnet season through the keeper. Other wallets get a permission error; nothing is sent
+until the explicit action.
+
 Preview URLs:
 
 - `/play?state=season-closing`
