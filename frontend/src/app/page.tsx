@@ -47,8 +47,8 @@ const SKILLS = [
   { name: "BOOST", body: "One pick counts double." },
   { name: "INSURANCE", body: "One pick can't score below 0." },
   { name: "LOCK", body: "Bank a pick's move right now." },
-  { name: "FLIP", body: "Turn a Buy into a Sell mid-round." },
-  { name: "SWAP", body: "Trade a pick for another coin." },
+  { name: "FLIP", body: "Turn a rival's Buy into a Sell." },
+  { name: "SWAP", body: "Move a rival's pick onto another coin." },
   { name: "FREEZE", body: "Stop a rival's pick in its tracks." },
 ] as const;
 

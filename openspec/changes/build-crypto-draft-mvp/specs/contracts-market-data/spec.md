@@ -2,6 +2,8 @@
 
 ## Purpose
 
+> **Scope change (2026-10-24):** no on-chain oracle, coin registry or randomness contract. The backend keeps the coin list, reads prices from Pyth Hermes off-chain and draws coins, live durations and skill deals itself. The requirements below apply to the backend prices module.
+
 Supplies the game with its coin universe, trustworthy prices, and a randomness source. Each sits behind an interface so the mock used in tests and the real provider used on testnet are interchangeable.
 
 ## ADDED Requirements
