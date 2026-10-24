@@ -84,5 +84,7 @@ export type TableSceneProps = {
   celebrate?: boolean;
   /** "auto" picks 3D unless WebGL is missing or the user prefers reduced motion. */
   view?: "auto" | "3d" | "2d";
+  /** Drawn instead of the built-in 2D view whenever the 3D scene is off (null draws nothing). */
+  fallback?: ReactNode;
   className?: string;
 };
