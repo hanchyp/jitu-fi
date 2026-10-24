@@ -19,6 +19,10 @@ Agreed with the project owner. The official logo is the "adventure crest": a nav
 - **Landing layout stays as it is.** The logo replaces the text logo in the nav and the hero wordmark, and the shield "J" becomes the favicon and app icon.
 - **A 3D version of the crest plays in the loading/intro moment** (the fly-in); after that the hero uses the 2D logo.
 
+- **The hero uses the logo wordmark, not the full lockup,** so the arena stays visible and the crest isn't doubled next to the nav crest. The 3D crest intro is skipped under reduced motion, without WebGL, or when the 3D chunk takes longer than 1.8 s, and it never delays the CTAs.
+- **Buy green is `#7BE35A`.** Extra tokens: papan `#18405E`, papan-terang `#225378`, dasar `#0A2235`, langit `#2E6A8E`, gading (ivory), zamrud (emerald), emas-tua (gold bevel). The scene's sky, fog and peaks moved from indigo to navy.
+- **Champion sprites render after the crystal glow** (renderOrder 3, no fog), so all four are equally readable.
+
 ## 2026-10-23 — Landing hero 3D details
 
 - **Toon outline** is a custom screen-space depth-Laplacian post effect, not drei `Outlines`. It roughly halves draw calls and keeps a constant line width. Glow meshes write no depth, so they get no outline.
