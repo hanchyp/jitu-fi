@@ -69,6 +69,7 @@ export type EngineEvent =
   | { type: "picksSubmitted"; round: number; seat: number }
   | { type: "revealed"; round: number; picks: Record<string, PickSubmission[]>; revealDeadlineMs: number }
   | { type: "liveStarted"; round: number; startPrices: Record<string, PriceJson>; liveStartMs: number; liveEndMs: number }
+  | { type: "liveShortened"; round: number; liveEndMs: number }
   | { type: "skillUsed"; round: number; skill: UsedSkill }
   | { type: "roundSettled"; round: number; results: SeatResult[]; winners: number[]; awarded: { seat: number; skill: Skill }[] }
   | { type: "gameFinished"; gameScores: number[] };

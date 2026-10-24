@@ -5,7 +5,7 @@ import { WS_URL } from "./config";
 import { tableReducer } from "./reducer";
 import type { EngineEvent, PriceJson, TableState } from "./types";
 
-const EVENTS = new Set(["roundStarted", "picksSubmitted", "revealed", "liveStarted", "skillUsed", "roundSettled", "gameFinished"]);
+const EVENTS = new Set(["roundStarted", "picksSubmitted", "revealed", "liveStarted", "liveShortened", "skillUsed", "roundSettled", "gameFinished"]);
 export function useTable(id: number) {
   const [state, setState] = useState<TableState | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error" | "notfound">("loading");
