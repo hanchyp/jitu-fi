@@ -29,3 +29,17 @@ test("outcome previews land on the requested rank", () => {
     assert.equal(state.earned.length, state.history.filter((round) => round.winners.includes("you")).slice(0, 2).length);
   }
 });
+
+import { recordLines } from "./result-outcome";
+test("recordLines maps history credit and status", () => {
+  assert.equal(recordLines(undefined, 5).credit, "Recording your result on-chain…");
+  const base = { recordTxHash: "0xabc" as string | null };
+  const counted = { kind: "counted" as const, gameNumber: 2, points: 120 };
+  assert.equal(recordLines({ ...base, recordStatus: "sent", credit: counted }, 5).credit, "Recording your result on-chain…");
+  const done = recordLines({ ...base, recordStatus: "recorded", credit: counted }, 5);
+  assert.deepEqual([done.credit, done.txUrl, done.done], ["+120 season points · Game 2/5", "https://testnet.monadexplorer.com/tx/0xabc", true]);
+  assert.equal(recordLines({ recordTxHash: null, recordStatus: "pending", credit: { kind: "outside-k" } }, 5).credit, "Outside your first 5 games: no points");
+  const ended = recordLines({ recordTxHash: null, recordStatus: "skipped", credit: { kind: "after-end" } }, 5);
+  assert.deepEqual([ended.credit, ended.note, ended.txUrl], ["Season ended: no points", "Result not recorded on-chain.", null]);
+  assert.match(recordLines({ recordTxHash: null, recordStatus: "failed", credit: counted }, 5).note!, /failed/);
+});

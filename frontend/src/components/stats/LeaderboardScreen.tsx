@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Board } from "@/components/ui/Board";
-import { GameButton } from "@/components/ui/GameButton";
+import { GameButton, GameActionButton } from "@/components/ui/GameButton";
 import { Tabs } from "@/components/ui/Tabs";
 import { formatMusd, shortAddress } from "@/lib/format";
 import type { LeaderboardEntry, LeaderboardResponse } from "@/mocks/leaderboard";
@@ -16,6 +16,11 @@ type LeaderboardScreenProps = {
   /** One board per tenor, in tab order. */
   boards: readonly LeaderboardResponse[];
   you: string;
+  simulated?: boolean;
+  onTenorChange?: (tenor: SeasonTenor) => void;
+  loading?: boolean;
+  error?: boolean;
+  onRetry?: () => void;
   /** Opens the season containing the connected wallet's position. */
   yourTenor?: SeasonTenor;
   medals?: readonly (string | undefined)[];
@@ -25,7 +30,7 @@ type LeaderboardScreenProps = {
 const TENOR_LABEL: Record<SeasonTenor, string> = { week: "1 week", month: "1 month" };
 const sameAddress = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 
-export function LeaderboardScreen({ boards, you, yourTenor, medals = [], emptyArt }: LeaderboardScreenProps) {
+export function LeaderboardScreen({ boards, you, yourTenor, medals = [], emptyArt, simulated = true, onTenorChange, loading, error, onRetry }: LeaderboardScreenProps) {
   const highlight = useSearchParams().get("highlight") === "you";
   const [tenor, setTenor] = useState<SeasonTenor>(yourTenor ?? boards[0].tenor);
   const board = boards.find((b) => b.tenor === tenor) ?? boards[0];
@@ -38,24 +43,25 @@ export function LeaderboardScreen({ boards, you, yourTenor, medals = [], emptyAr
         <div>
           <h1 className="font-display title-outline text-4xl text-gading sm:text-5xl">Hall of fame</h1>
           <p className="mt-2 max-w-xl font-semibold leading-relaxed text-white/75">
-            Your first {board.countedGames} games earn season points.
+            {board.countedGames ? `Your first ${board.countedGames} games earn season points.` : "Finish counted games to earn season points."}
           </p>
         </div>
       </header>
 
-      {highlight && <p role="status" className="mt-4 font-semibold text-emas">{yours ? `Your row is highlighted below: rank #${yours.rank}.` : "No ranked row in this season yet."} Standings are simulated.</p>}
+      {highlight && <p role="status" className="mt-4 font-semibold text-emas">{yours ? `Your row is highlighted below: rank #${yours.rank}.` : "No ranked row in this season yet."} {simulated && "Standings are simulated."}</p>}
       <Tabs
         label="Season tenor"
         tabs={boards.map((b) => ({ id: b.tenor, label: TENOR_LABEL[b.tenor] }))}
         value={tenor}
-        onChange={setTenor}
+        onChange={(next) => { setTenor(next); onTenorChange?.(next); }}
         className="mt-6"
       >
+        {loading ? <p role="status" className="py-10 font-semibold text-white/75">Loading standings…</p> : error ? <div role="status" className="py-10 font-semibold text-white/75">Couldn&apos;t load standings. Please try again.<div className="mt-4"><GameActionButton onClick={onRetry}>Retry</GameActionButton></div></div> : <>
         <div className="mb-5 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
           <h2 className="font-display text-2xl text-gading">{TENOR_LABEL[board.tenor]} season #{board.seasonId}</h2>
           <p className="text-sm font-semibold text-white/75">
             Bonus pot <span className="font-extrabold text-gading">{formatMusd(board.bonusPot)}</span>
-            <span className="ml-2">(simulated)</span>
+            {simulated && <span className="ml-2">(simulated)</span>}
           </p>
         </div>
 
@@ -114,7 +120,7 @@ export function LeaderboardScreen({ boards, you, yourTenor, medals = [], emptyAr
                         <dd className="font-extrabold text-gading">{formatMusd(yours.estimatedBonus)}</dd>
                       </div>
                     </dl>
-                    <p className="mt-2 text-sm font-semibold leading-relaxed text-white/70">Simulated, if the season ended now.</p>
+                    <p className="mt-2 text-sm font-semibold leading-relaxed text-white/70">{simulated ? "Simulated, if the season ended now." : "Estimate if the season ended now."}</p>
                     <GameButton href={yours.gamesCounted < board.countedGames ? "/play" : "/profile"} className="mt-5">
                       {yours.gamesCounted < board.countedGames ? "Play a game" : "View your games"}
                     </GameButton>
@@ -147,7 +153,7 @@ export function LeaderboardScreen({ boards, you, yourTenor, medals = [], emptyAr
                   </li>
                 ))}
               </ol>
-              <p className="mt-3 text-sm font-semibold text-white/70">Open a player for counted games, weight and simulated bonus.</p>
+              <p className="mt-3 text-sm font-semibold text-white/70">Open a player for counted games, weight and estimated bonus.</p>
             </section>
           </>
         )}
@@ -161,10 +167,11 @@ export function LeaderboardScreen({ boards, you, yourTenor, medals = [], emptyAr
             </p>
             <p className="max-w-md">
               Your share of the bonus pot follows points × deposit weight. Weight is your deposit capped at 1,000 mUSD.
-              Bonuses are simulated estimates until the season ends and are paid at maturity.
+              Bonuses are estimates until the season ends and are paid at maturity.
             </p>
           </div>
         </details>
+        </>}
       </Tabs>
     </section>
   );
@@ -228,7 +235,7 @@ function RankRow({ entry, mine, k }: { entry: LeaderboardEntry; mine: boolean; k
             <dd className="mt-1 font-extrabold text-gading">{formatMusd(entry.weight)}</dd>
           </div>
           <div className="col-span-2 sm:col-span-1">
-            <dt className="font-semibold text-white/70">Bonus estimate (simulated)</dt>
+            <dt className="font-semibold text-white/70">Bonus estimate</dt>
             <dd className="mt-1 font-extrabold text-gading">{formatMusd(entry.estimatedBonus)}</dd>
           </div>
         </dl>
