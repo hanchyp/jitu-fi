@@ -49,6 +49,12 @@ stays above the dock. Every screen size uses the interactive 2D table. Tap a sea
 pick/return breakdown. The lobby
 keeps its cut-stone preset cards and landing-style arena preview.
 
+Dev-only local demo: `/play?demo=1` (optional `&preset=standard|long|marathon`,
+default quick) runs `DemoTableGame` on the local reducer, with the normal timer.
+Press `N` to advance one phase (final Results to Finished). Repeats, Ctrl/Meta/Alt,
+typing in fields and open dialogs are ignored. No backend writes, wallet or chain
+calls; production ignores the query.
+
 Preview URLs:
 
 - `/play?state=season-closing`
