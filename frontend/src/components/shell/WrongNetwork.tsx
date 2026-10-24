@@ -7,6 +7,8 @@ import { GameActionButton } from "@/components/ui/GameButton";
 import { NetworkIcon } from "@/components/ui/icons";
 import { useDialog } from "@/components/ui/useDialog";
 import { DEV_STATE_PARAM, WRONG_NETWORK_STATE } from "@/lib/dev-state";
+import { CHAIN_ID } from "@/lib/web3/config";
+import { useWallet } from "./WalletProvider";
 
 const INSTANT = { duration: 0 } as const;
 
@@ -66,12 +68,22 @@ function Gate() {
   const pathname = usePathname();
   const [pending, setPending] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { address, chainId, switchChain } = useWallet();
+  const [switching, setSwitching] = useState(false);
   useEffect(
     () => () => {
       if (timer.current) clearTimeout(timer.current);
     },
     [],
   );
+  // A connected wallet on any other chain (mainnet 143 included) blocks the app until it switches.
+  if (address && chainId !== null && chainId !== CHAIN_ID) {
+    const onSwitch = () => {
+      setSwitching(true);
+      switchChain().finally(() => setSwitching(false));
+    };
+    return <WrongNetwork currentNetwork={`chain ${chainId}`} onSwitch={onSwitch} pending={switching} />;
+  }
   if (params.get(DEV_STATE_PARAM) !== WRONG_NETWORK_STATE) return null;
   // Dummy switch: pending for a moment, then drop only the dev state, as a real switch would resolve.
   const onSwitch = () => {

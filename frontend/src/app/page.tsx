@@ -1,4 +1,6 @@
 import Image from "next/image";
+import { LiveSeasonsPanel, PositionCta } from "@/components/landing/LiveLanding";
+import { USE_MOCKS } from "@/lib/web3/config";
 import { LiveSeasons } from "@/components/landing/LiveSeasons";
 import { YieldSplit } from "@/components/landing/YieldSplit";
 import { Nav } from "@/components/shell/Nav";
@@ -199,6 +201,7 @@ export default function Home() {
                   at {formatMusd(VAULT_RULES.weightCap)}.
                 </p>
               </div>
+              {USE_MOCKS ? (
               <DevStateSwitch
                 states={STATES}
                 views={{
@@ -208,6 +211,9 @@ export default function Home() {
                   ),
                 }}
               />
+              ) : (
+                <LiveSeasonsPanel />
+              )}
             </div>
           </div>
         </section>
@@ -229,6 +235,7 @@ export default function Home() {
 
           <div className="mt-20 flex flex-col items-center text-center">
             <h2 className="font-display title-outline text-4xl text-emas sm:text-6xl">Ready to enter the arena?</h2>
+            {USE_MOCKS ? (
             <DevStateSwitch
               states={STATES}
               views={{
@@ -250,6 +257,9 @@ export default function Home() {
                 ),
               }}
             />
+            ) : (
+              <PositionCta />
+            )}
           </div>
         </section>
       </main>

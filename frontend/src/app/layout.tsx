@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Bree_Serif, Nunito } from "next/font/google";
 import { ViewTransition } from "react";
-import { DummyWalletProvider } from "@/components/shell/DummyWallet";
+import { WalletProvider } from "@/components/shell/WalletProvider";
 import { Footer } from "@/components/shell/Footer";
 import { SiteNav } from "@/components/shell/SiteNav";
 import { TestnetBanner } from "@/components/shell/TestnetBanner";
@@ -30,7 +30,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${bree.variable} ${nunito.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <DummyWalletProvider>
+        <WalletProvider>
           <TestnetBanner />
           <SiteNav />
           {/* Update the existing content host without remounting cached pages or canvases. */}
@@ -39,7 +39,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </ViewTransition>
           <Footer />
           <WrongNetworkGate />
-        </DummyWalletProvider>
+        </WalletProvider>
       </body>
     </html>
   );

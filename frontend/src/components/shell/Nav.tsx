@@ -10,7 +10,7 @@ import { GameActionButton, GameButton } from "@/components/ui/GameButton";
 import { CloseIcon, MenuIcon } from "@/components/ui/icons";
 import { useDialog } from "@/components/ui/useDialog";
 import { shortAddress } from "@/lib/format";
-import { useDummyWallet } from "./DummyWallet";
+import { useWallet } from "./WalletProvider";
 
 const LINKS = [
   { href: "/play", label: "Play" },
@@ -37,7 +37,7 @@ function depositCta(current: string | undefined) {
   return isCurrent(current, "/deposit") ? ({ variant: "night", "aria-current": "page" } as const) : {};
 }
 
-/** The shared nav board: crest lockup, page links, dummy Connect and the Deposit CTA. */
+/** The shared nav board: crest lockup, page links, Connect and the Deposit CTA. */
 export function Nav({ floating = false, current }: NavProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const surface = floating ? "bg-malam/85 backdrop-blur-sm" : "bg-malam shadow-[0_6px_0_0_#040B10]";
@@ -93,10 +93,10 @@ export function Nav({ floating = false, current }: NavProps) {
 }
 
 function ConnectButton() {
-  const { address, connect, disconnect } = useDummyWallet();
+  const { ready, address, connect, disconnect } = useWallet();
   if (!address) {
     return (
-      <GameActionButton variant="night" size="sm" onClick={connect}>
+      <GameActionButton variant="night" size="sm" onClick={connect} disabled={!ready}>
         Connect
       </GameActionButton>
     );
