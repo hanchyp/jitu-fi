@@ -2,6 +2,13 @@
 
 Ambiguous design calls and known limitations, newest first. Each entry picks the simplest safe option. The full design rationale lives in `openspec/changes/build-crypto-draft-mvp/design.md`.
 
+## 2026-10-24 — Centered /play lobby in one viewport
+
+- The approved lobby is one centered composition over the full arena background. Four compact mode cards sit above one central Play action; phones use a 2-by-2 grid. Quick starts selected and recommended, with selected-mode rounds, pick caps and duration shown below the cards.
+- `/play` accounts for the shared testnet banner and navigation within `100dvh`, hides only its shared footer, and reserves shrinking space for the crystal. Short screens reframe only the lobby canvas. Required controls fit without hiding document overflow; other routes keep their existing layout.
+- An active table uses the same primary action as "Return to table". Season closing disables Play, and practice routing after the first K games is preserved. Demo controls appear only in development with their own bottom space; query-string previews remain available in production.
+- Browser verification covered five viewport sizes, four lobby states, and Quick/Marathon selection (40 cases), plus keyboard selection, routing, wallet/menu, wrong-network and reduced-motion behavior. Chromium reported no overflow, console errors or hydration warnings. Physical devices and other browser engines were not tested. This completes the approved mock UI layout, not task 5.4's local-backend integration.
+
 ## 2026-10-24 — Arena is the game table; fixed viewport
 
 - Per Jeki's follow-up, animated coins now reuse the actual three.js `world/Coin` model from the landing. A single transparent WebGL layer follows the table, hand, flip and travel anchors; CSS faces are a capability fallback only. The stone table remains 2D. Live centers the player's sealed picks with a focused 3D coin, Buy/Sell, matching simulated quote/return and a price path; tabs expose every selected pick.
