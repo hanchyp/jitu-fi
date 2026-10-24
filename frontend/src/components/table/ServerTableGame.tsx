@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "@/lib/auth/session";
 import { useTable } from "@/lib/game/useTable";
 import { postPicks, postSkill } from "@/lib/game/api";
@@ -21,6 +21,10 @@ export function ServerTableGame({ id }: { id: number }) {
   const [draft, setDraft] = useState<{ round: number; picks: Pick[] } | null>(null);
   const [pending, setPending] = useState(false);
   const [actionError, setActionError] = useState("");
+  const [skipping, setSkipping] = useState(false);
+  const [skipFeedback, setSkipFeedback] = useState("");
+  const skipInFlight = useRef(false);
+  const lastAdvanced = useRef("");
   const [dismissed, setDismissed] = useState(false);
   const [dismissedAttack, setDismissedAttack] = useState<string | null>(null);
   const [view3d, setView3d] = useState(false);
@@ -29,19 +33,40 @@ export function ServerTableGame({ id }: { id: number }) {
   // Season managers: N asks the backend to end the current phase now. Phase + round make a retry a no-op.
   const latest = useRef({ phase: table.state?.phase, round: table.state?.round, ensureToken, refetch: table.refetch });
   useEffect(() => { latest.current = { phase: table.state?.phase, round: table.state?.round, ensureToken, refetch: table.refetch }; });
+  const skipPhase = useCallback(async () => {
+    if (skipInFlight.current) return;
+    const { phase, round, ensureToken, refetch } = latest.current;
+    if (!phase || round === undefined) { setSkipFeedback("Waiting for table state."); return; }
+    if (phase === "Finished") { setSkipFeedback("Game complete. No phase to skip."); return; }
+    const snapshot = `${id}:${round}:${phase}`;
+    if (lastAdvanced.current === snapshot) { setSkipFeedback("Phase already advanced. Refreshing table…"); refetch(); return; }
+    skipInFlight.current = true;
+    setSkipping(true);
+    setActionError("");
+    setSkipFeedback(`Skipping ${phase}, round ${round}… Approve sign-in if requested.`);
+    try {
+      const { advanced } = await adminPost<{ advanced: boolean }>(`/tables/${id}/advance`, { phase, round }, ensureToken);
+      if (advanced) lastAdvanced.current = snapshot;
+      setSkipFeedback(advanced ? `${phase}, round ${round} advanced.` : "Phase already changed. Refreshing table; press N again when ready.");
+      refetch();
+    } catch (error) {
+      const message = adminErrorMessage(error);
+      setActionError(message);
+      setSkipFeedback(message);
+    } finally {
+      skipInFlight.current = false;
+      setSkipping(false);
+    }
+  }, [id]);
   useEffect(() => {
-    let skipping = false;
     const onKey = (event: KeyboardEvent) => {
-      const { phase, round, ensureToken, refetch } = latest.current;
-      if (!isNextPhaseKey(event, document) || skipping || !phase || phase === "Finished") return;
+      if (!isNextPhaseKey(event, document)) return;
       event.preventDefault();
-      skipping = true;
-      void adminPost(`/tables/${id}/advance`, { phase, round }, ensureToken).then(() => { setActionError(""); refetch(); })
-        .catch((err) => setActionError(adminErrorMessage(err))).finally(() => { skipping = false; });
+      void skipPhase();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [id]);
+  }, [skipPhase]);
   if (!table.state) return <div className="jitu-table-app"><p role="status">{table.status === "notfound" ? "Table not found" : table.error || "Preparing the arena…"}</p></div>;
   const state = toDemoState(table.state, table.now, table.prices);
   if (state.phase === "commit" && !state.locked && draft?.round === state.round) state.picks = draft.picks;
@@ -76,7 +101,13 @@ export function ServerTableGame({ id }: { id: number }) {
   const show3d = view3d && state.phase !== "commit";
   const ticks = Object.entries(table.prices).map(([coin, price]) => ({ coin, ...price }));
   return <div className="jitu-table-app">
-    <header className={styles.tableHeader}><div><h1 className={styles.heading}>{state.preset.name} · {state.phase === "finished" ? "Game complete" : `Round ${state.round + 1}/${state.preset.caps.length}`}</h1><div className={styles.headerMeta}><span>{state.phase}</span><span>Table #{id}</span><span>Pick up to {state.preset.caps[state.round]}</span></div></div><div className="jitu-table-hudEnd"><div className="jitu-table-viewToggle" role="group" aria-label="Table view">{(["2D", "3D"] as const).map((view) => <button key={view} type="button" aria-pressed={view3d === (view === "3D")} onClick={() => { setView3d(view === "3D"); if (view === "3D") setSceneLoaded(true); }}>{view}</button>)}</div><span className={styles.clockValue} aria-label={`${state.remaining} seconds remaining`}>{state.remaining}s</span></div></header>
+    <header className={styles.tableHeader}>
+      <div><h1 className={styles.heading}>{state.preset.name} · {state.phase === "finished" ? "Game complete" : `Round ${state.round + 1}/${state.preset.caps.length}`}</h1>
+        <div className={styles.headerMeta}><span>{state.phase}</span><span>Table #{id}</span><span>Pick up to {state.preset.caps[state.round]}</span><button className="jitu-table-skip" type="button" disabled={skipping || state.phase === "finished"} onClick={() => void skipPhase()} title="Season managers: skip the current phase on your own table">{skipping ? "Skipping…" : "Skip phase (N)"}</button></div>
+        <div className="jitu-table-skipFeedback" role="status" aria-live="polite" aria-atomic="true">{skipFeedback}</div>
+      </div>
+      <div className="jitu-table-hudEnd"><div className="jitu-table-viewToggle" role="group" aria-label="Table view">{(["2D", "3D"] as const).map((view) => <button key={view} type="button" aria-pressed={view3d === (view === "3D")} onClick={() => { setView3d(view === "3D"); if (view === "3D") setSceneLoaded(true); }}>{view}</button>)}</div><span className={styles.clockValue} aria-label={`${state.remaining} seconds remaining`}>{state.remaining}s</span></div>
+    </header>
     <div className="jitu-table-session"><div className="jitu-table-board">{sceneLoaded && <div className="jitu-table-stage3d" data-visible={show3d} aria-hidden={!show3d} inert={!show3d}><TableView3D source="server" state={table.state} options={{ ticks }} fallback={arena} /></div>}{!show3d && arena}</div>
       <TableDock key={`${state.phase}-${state.round}`} state={state} dispatch={dispatch} onShowResult={() => setDismissed(false)} />
       {state.phase === "finished" && !dismissed && <ResultPopup state={state} tableId={id} onClose={() => setDismissed(true)} />}

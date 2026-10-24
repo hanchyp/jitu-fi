@@ -193,6 +193,10 @@ body:has(.jitu-game-shell[data-game="true"]:not([style*="display: none"])) [data
 .jitu-table-phaseArt { width: 24px; height: 24px; flex-shrink: 0; pointer-events: none; }
 .jitu-table-app .jitu-game-tableHeader h1 { font-size: 24px; }
 .jitu-table-app .jitu-game-headerMeta { margin-top: 4px; font-size: 11px; gap: 9px; }
+.jitu-table-skip { color: var(--color-emas); text-decoration: underline; cursor: pointer; }
+.jitu-table-skip:disabled { opacity: .5; cursor: default; }
+.jitu-table-skip:focus-visible { outline: 2px solid var(--color-emas); outline-offset: 3px; }
+.jitu-table-skipFeedback { max-width: 60ch; color: var(--color-emas); font-size: 11px; overflow-wrap: anywhere; }
 .jitu-table-app .jitu-game-clockValue { width: 50px; height: 50px; font-size: 23px; border-color: var(--color-garis); background: var(--color-dasar); color: var(--color-gading); box-shadow: 0 3px var(--color-garis); }
 .jitu-table-app .jitu-game-clockValue[data-urgent="true"] { border-color: var(--color-garis); background: var(--color-emas); color: var(--color-garis); }
 .jitu-table-app > .jitu-game-footer { flex-shrink: 0; margin: 4px 140px 0 0; font-size: 10px; text-align: left; }
