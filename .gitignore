@@ -29,3 +29,6 @@ contracts/broadcast/*/31337/
 Thumbs.db
 .vscode/
 .idea/
+
+# Worker screenshots / previews
+frontend/.screenshots/
