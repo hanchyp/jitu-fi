@@ -1,11 +1,12 @@
 import { API_URL } from "./config";
 
-export type Credit = { kind: "counted" | "outside-k" | "after-end"; gameNumber?: number; points?: number };
+/** `practice`: seasonId 0, no season points and never recorded on-chain. */
+export type Credit = { kind: "counted" | "outside-k" | "after-end" | "practice"; gameNumber?: number; points?: number };
 export type RecordStatus = "none" | "pending" | "sent" | "recorded" | "skipped" | "failed";
 export type HistoryGame = { tableId: number; seasonId: number; place: number; gameScore: number; credit: Credit; recordStatus: RecordStatus; recordTxHash: string | null };
 
 const STATUSES: RecordStatus[] = ["none", "pending", "sent", "recorded", "skipped", "failed"];
-const KINDS = ["counted", "outside-k", "after-end"];
+const KINDS = ["counted", "outside-k", "after-end", "practice"];
 
 export function sessionAddress(): string | null {
   try {

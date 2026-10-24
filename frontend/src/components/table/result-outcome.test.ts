@@ -42,4 +42,6 @@ test("recordLines maps history credit and status", () => {
   const ended = recordLines({ recordTxHash: null, recordStatus: "skipped", credit: { kind: "after-end" } }, 5);
   assert.deepEqual([ended.credit, ended.note, ended.txUrl], ["Season ended: no points", "Result not recorded on-chain.", null]);
   assert.match(recordLines({ recordTxHash: null, recordStatus: "failed", credit: counted }, 5).note!, /failed/);
+  const practice = recordLines({ recordTxHash: null, recordStatus: "none", credit: { kind: "practice" } }, 5);
+  assert.deepEqual([practice.credit, practice.note, practice.done], ["Practice game: no season points", "Not recorded on-chain.", true]);
 });

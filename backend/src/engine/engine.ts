@@ -98,7 +98,7 @@ export class GameEngine {
       hand: [this.randomSkill()],
     }));
     const draft: Omit<TableState, "id"> = {
-      preset, seasonId, createdAtMs, phase: "Commit", phaseDeadlineMs: null, round: 0, seats, rounds: [],
+      preset, seasonId, ...(seasonId === 0 ? { practice: true as const } : {}), createdAtMs, phase: "Commit", phaseDeadlineMs: null, round: 0, seats, rounds: [],
     };
     const [row] = await this.deps.db
       .insert(tables)
@@ -309,7 +309,7 @@ export class GameEngine {
     const human = state.gameScores[0]!;
     const clamped = clampGameScore(human);
     if (clamped !== human) this.deps.log.warn({ tableId: state.id, score: human }, "game score clamped to MAX_GAME_SCORE");
-    await this.persist(state, { status: "Finished", finishedAtMs: state.finishedAtMs, gameScore: clamped, logHash: logHashOf(state), recordStatus: "pending" });
+    await this.persist(state, { status: "Finished", finishedAtMs: state.finishedAtMs, gameScore: clamped, logHash: logHashOf(state), recordStatus: state.practice ? "none" : "pending" });
   }
 
   /** Builds the scoring input for a pick, applying the live effect that targets it. */

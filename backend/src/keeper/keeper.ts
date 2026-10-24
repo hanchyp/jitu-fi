@@ -2,7 +2,7 @@
 // tick never double-acts: activate due seasons, finalize ended ones, keep one open season per tenor in
 // DEMO_MODE (created and funded by the keeper), and post finished games with recordGame.
 import { gameManagerAbi, getDeployment, mockUSDAbi, seasonVaultAbi } from "@jitu-fi/shared";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, gt, inArray } from "drizzle-orm";
 import {
   encodeAbiParameters,
   formatEther,
@@ -186,7 +186,8 @@ export async function tickRecords(ctx: KeeperContext): Promise<void> {
   const rows = await ctx.db
     .select()
     .from(tables)
-    .where(inArray(tables.recordStatus, ["pending", "sent"]))
+    // Practice tables (seasonId 0) are never recorded, even if their status were ever queued.
+    .where(and(inArray(tables.recordStatus, ["pending", "sent"]), gt(tables.seasonId, 0)))
     .orderBy(tables.id)
     .limit(RECORD_BATCH);
   for (const row of rows) {

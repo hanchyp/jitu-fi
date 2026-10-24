@@ -51,7 +51,6 @@ export function PlayLobby({ initialState = "ready", preview = false }: { initial
     return () => { active = false; };
   }, [preview, ready, address]);
   const preset = getPreset(presetId);
-  const blocked = view === "season-closing";
   function selectPreset(id: string) {
     if (pending || id === presetId) return;
     setDirection(PRESETS.findIndex((item) => item.id === id) > PRESETS.findIndex((item) => item.id === presetId) ? 1 : -1);
@@ -60,7 +59,7 @@ export function PlayLobby({ initialState = "ready", preview = false }: { initial
   }
   const label = !address && demo !== null && !preview && view !== "active-table" ? "Connect wallet to play" : pending ? resuming ? "Resuming your table" : "Preparing arena…" : view === "active-table" ? "Return to table" : `Play ${preset.name}`;
   async function play() {
-    if (blocked || busy.current || pending || demo === null) return;
+    if (busy.current || pending || demo === null) return;
     setError(null);
     if (!address) { connect(); return; }
     busy.current = true;
@@ -86,7 +85,7 @@ export function PlayLobby({ initialState = "ready", preview = false }: { initial
     <GameArena lobby />
     <header className="lobby-title">
       <h1 className="font-display title-outline text-gading">Your next clash awaits.</h1>
-      <p>Face three house bots. Your principal stays safe.</p>
+      <p>Face three house bots. Your principal stays safe. Without an active season position, games are practice: no season points.</p>
     </header>
     <div className="lobby-crystal-space" aria-hidden="true" />
     <motion.section className="lobby-controls" aria-label="Choose your clash"
@@ -110,12 +109,12 @@ export function PlayLobby({ initialState = "ready", preview = false }: { initial
       {runningTable && !demo && <div className="lobby-resume"><GameButton href={`/table/${runningTable}`} variant="night" size="sm">Resume your table</GameButton></div>}
       {view !== "ready" && <motion.p key={view} role="status" className="lobby-notice"
         initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={reduce ? INSTANT : SLIDE}>
-        {view === "season-closing" && <>Season closing. A full game won’t fit before maturity. Play next season.</>}
+        {view === "season-closing" && <>Season closing. A full game won’t fit before maturity, so this one is practice: no season points.</>}
         {view === "active-table" && <>Your table is in progress. Finish it before starting another.</>}
         {view === "outside-k" && <>Counted games complete. Play for practice; no season points added.</>}
       </motion.p>}
       <div className="lobby-action">
-        <GameActionButton size="lg" disabled={blocked || pending || demo === null} onClick={play} aria-busy={pending}>
+        <GameActionButton size="lg" disabled={pending || demo === null} onClick={play} aria-busy={pending}>
           <motion.span key={label} className="lobby-changing-text" initial={{ opacity: 0, x: direction * 8 }} animate={{ opacity: 1, x: 0 }} transition={reduce ? INSTANT : SLIDE}>{label}</motion.span>
         </GameActionButton>
         <p>{demo && <>Counted games <strong>{view === "outside-k" ? DEMO_SEASON.countedGames : DEMO_SEASON.gamesPlayed}/{DEMO_SEASON.countedGames}</strong><span> / </span></>}No entry fee</p>

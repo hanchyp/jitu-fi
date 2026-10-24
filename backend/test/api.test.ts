@@ -18,7 +18,7 @@ const account = privateKeyToAccount("0x59c6995e998f97a5a0044966f0945389dc9e86dae
 const DOMAIN = "localhost:3000";
 const now = () => Math.floor(Date.now() / 1000);
 
-function fakeChain(season: Partial<SeasonInfo> = {}, eligible = true): ChainReads {
+function fakeChain(season: Partial<SeasonInfo> = {}, eligible = true, activeSeason = 1): ChainReads {
   const s: SeasonInfo = {
     seasonId: 1, enrollStart: now() - 300, start: now() - 60, end: now() + 3_600, status: "Active",
     shortfall: false, totalPrincipal: 500_000_000n, sponsorFunds: 1_000_000_000n, bonusPot: 1_000_000_000n, ...season,
@@ -26,8 +26,11 @@ function fakeChain(season: Partial<SeasonInfo> = {}, eligible = true): ChainRead
   return {
     demoMode: true,
     seasonCount: async () => 1,
-    getSeason: async () => s,
-    activeSeasonOf: async () => 1,
+    getSeason: async (id) => {
+      if (id === 0) throw new Error("getSeason(0)");
+      return s;
+    },
+    activeSeasonOf: async () => activeSeason,
     isEligible: async () => eligible,
     principalOf: async () => 500_000_000n,
     weightOf: async () => 500_000_000n,
@@ -115,26 +118,58 @@ describe("API", () => {
     expect(anon.rounds[0].picks).toEqual({});
   });
 
-  it("refuses a table that cannot finish before the season ends", async () => {
+  async function playAs(chain: ChainReads, preset = "quick") {
     await ctx.app.close();
-    ctx = await setup(fakeChain({ end: now() + 7 * 60 }));
-    const token = (await signIn(ctx.app)).res.json().token;
-    const res = await ctx.app.inject({ method: "POST", url: "/play", headers: { authorization: `Bearer ${token}` }, payload: { preset: "quick" } });
-    expect(res.json().error).toBe("SEASON_CLOSING");
+    ctx.engine.stop();
+    ctx = await setup(chain);
+    const auth = { authorization: `Bearer ${(await signIn(ctx.app)).res.json().token}` };
+    const res = await ctx.app.inject({ method: "POST", url: "/play", headers: auth, payload: { preset } });
+    expect(res.statusCode).toBe(200);
+    return { auth, tableId: res.json().tableId as number, state: ctx.engine.get(res.json().tableId)! };
+  }
+
+  it("starts a counted season game for an eligible player", async () => {
+    const { state } = await playAs(fakeChain());
+    expect(state.seasonId).toBe(1);
+    expect(state.practice).toBeUndefined();
   });
 
-  it("refuses play during enrollment and for ineligible players", async () => {
-    await ctx.app.close();
-    ctx = await setup(fakeChain({ status: "Enrollment", start: now() + 60 }));
-    let token = (await signIn(ctx.app)).res.json().token;
-    let res = await ctx.app.inject({ method: "POST", url: "/play", headers: { authorization: `Bearer ${token}` }, payload: { preset: "quick" } });
-    expect(res.json().error).toBe("SEASON_NOT_ACTIVE");
+  it.each([
+    ["no position", fakeChain({}, true, 0), "quick"],
+    ["enrollment", fakeChain({ status: "Enrollment", start: now() + 60 }), "quick"],
+    ["expired season", fakeChain({ start: now() - 7_200, end: now() - 60 }), "quick"],
+    ["finalized season", fakeChain({ status: "Finalized" }), "quick"],
+    ["not eligible", fakeChain({}, false), "quick"],
+    ["not enough time left", fakeChain({ end: now() + 7 * 60 }), "quick"],
+    ["long preset past season end", fakeChain({ end: now() + 20 * 60 }), "marathon"],
+  ])("starts a practice game immediately: %s", async (_name, chain, preset) => {
+    const { auth, tableId, state } = await playAs(chain, preset);
+    expect(state.seasonId).toBe(0);
+    expect(state.practice).toBe(true);
+    // Still one running table per wallet, and resume finds it.
+    const again = await ctx.app.inject({ method: "POST", url: "/play", headers: auth, payload: { preset: "quick" } });
+    expect(again.json()).toMatchObject({ error: "ALREADY_AT_TABLE", tableId });
+    const running = (await ctx.app.inject({ method: "GET", url: `/users/${account.address}/table` })).json();
+    expect(running).toEqual({ tableId });
+  });
 
-    await ctx.app.close();
-    ctx = await setup(fakeChain({}, false));
-    token = (await signIn(ctx.app)).res.json().token;
-    res = await ctx.app.inject({ method: "POST", url: "/play", headers: { authorization: `Bearer ${token}` }, payload: { preset: "quick" } });
-    expect(res.json().error).toBe("NOT_ELIGIBLE");
+  it("keeps practice out of season counts, even after the player deposits", async () => {
+    const chain = fakeChain({}, true, 0);
+    const finish = async (tableId: number) => {
+      for (let round = 1; round <= 3; round++) for (const phase of ["Commit", "Reveal", "Live"] as const) await ctx.engine.skipPhase(tableId, { phase, round });
+      expect(ctx.engine.get(tableId)!.phase).toBe("Finished");
+    };
+    const { auth, tableId: practice } = await playAs(chain);
+    await finish(practice);
+    // Deposits after practice: the next game counts, the practice one never does.
+    chain.activeSeasonOf = async () => 1;
+    const counted = (await ctx.app.inject({ method: "POST", url: "/play", headers: auth, payload: { preset: "quick" } })).json().tableId;
+    await finish(counted);
+    const body = (await ctx.app.inject({ method: "GET", url: `/users/${account.address}/history` })).json();
+    expect(body.games).toMatchObject([
+      { tableId: counted, seasonId: 1, tenor: "week", credit: { kind: "counted", gameNumber: 1 }, recordStatus: "pending" },
+      { tableId: practice, seasonId: 0, tenor: null, credit: { kind: "practice" }, recordStatus: "none" },
+    ]);
   });
 
   it("broadcasts table events to the table room", async () => {
