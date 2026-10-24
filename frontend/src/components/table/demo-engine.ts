@@ -29,6 +29,7 @@ export type DemoAction =
   | { type: "tick"; now: number }
   | { type: "select"; symbol: string }
   | { type: "direction"; symbol: string; direction: Pick["direction"] }
+  | { type: "choose"; symbol: string; direction: Pick["direction"] }
   | { type: "skill"; symbol: string; skill?: CommitSkill }
   | { type: "cast"; skill: LiveSkill; target: SkillTarget; now: number }
   | { type: "dismiss-incoming" }
@@ -291,6 +292,11 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
     if (state.picks.some((pick) => pick.symbol === action.symbol)) return { ...state, picks: state.picks.filter((pick) => pick.symbol !== action.symbol), error: "" };
     if (state.picks.length >= state.preset.caps[state.round]) return { ...state, error: `This round allows ${state.preset.caps[state.round]} coin${state.preset.caps[state.round] === 1 ? "" : "s"}. Remove a pick first.` };
     return { ...state, picks: [...state.picks, { symbol: action.symbol, direction: "Buy" }], error: "" };
+  }
+  // Add-or-update in one step so a server draft never reads stale state between select and direction.
+  if (action.type === "choose") {
+    const next = state.picks.some((pick) => pick.symbol === action.symbol) ? state : demoReducer(state, { type: "select", symbol: action.symbol });
+    return demoReducer(next, { type: "direction", symbol: action.symbol, direction: action.direction });
   }
   if (action.type === "direction") return { ...state, picks: state.picks.map((pick) => pick.symbol === action.symbol ? { ...pick, direction: action.direction } : pick) };
   if (action.type === "skill") {
