@@ -47,7 +47,7 @@ describe("migrations", () => {
     const db = await freshDb();
     const [row] = await db
       .insert(tables)
-      .values({ preset: "Quick", status: "Running", humanAddress: "0x1", seasonId: 1, phase: "Commit", createdAtMs: 0, state: "{}" })
+      .values({ preset: "quick", status: "Running", humanAddress: "0x1", seasonId: 1, phase: "Commit", createdAtMs: 0, state: "{}" })
       .returning();
     expect(row!.id).toBe(1);
     expect(row!.recordStatus).toBe("none");

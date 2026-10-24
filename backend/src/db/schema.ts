@@ -83,7 +83,7 @@ export const tables = sqliteTable(
   "tables",
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
-    preset: text("preset", { enum: ["Quick", "Standard", "Long", "Marathon"] }).notNull(),
+    preset: text("preset", { enum: ["quick", "standard", "long", "marathon"] }).notNull(),
     status: text("status", { enum: ["Running", "Finished", "Aborted"] }).notNull(),
     humanAddress: text("human_address").notNull(),
     seasonId: integer("season_id").notNull(),
