@@ -2,6 +2,48 @@
 
 Ambiguous design calls and known limitations, newest first. Each entry picks the simplest safe option. The full design rationale lives in `openspec/changes/build-crypto-draft-mvp/design.md`.
 
+## 2026-10-23 — Deposit screen (UI only)
+
+- **Screen order follows the flow:** wallet balance and faucet sit in the header (you need mUSD first), then one board with two numbered steps (pick a season, choose an amount) and the single gold "Lock deposit" button. The principal promise sits beside it. The tenor boards are the focal choice; they are native radios, so arrow keys move between them.
+- **Focus on a selected tenor board** uses a 6 px outline offset, so the focus ring stands apart from the gold "selected" ring instead of merging into one band.
+- **`has-position` means a live season** (enrollment closed, games counting): the position card becomes the main board with "Play a game", and the form is replaced by a note that one position is allowed at a time. A position still enrolling (`other-tenor-active`) keeps the form: picking its own tenor turns the button into "Add to deposit", picking the other tenor explains why it is blocked and links to `#position`.
+- **The bonus weight preview** shows min(principal, 1,000 mUSD) for whatever valid number is typed, even while an inline error shows, and adds any amount already locked in that season.
+- **Estimated earnings during enrollment** show 0 base yield and 0 bonus ("starts with the season"), since previewClaim has nothing to report before activation. Live estimates are labelled "Estimate, simulated".
+- **Dummy clock:** mocks use unix seconds relative to a fixed `MOCK_NOW`; countdowns then tick locally. When an enrollment countdown reaches zero on the page, that tenor flips to "Enrollment closed", so `default` changes after about 2 minutes. Reload to reset.
+- **The faucet button stays visible but disabled during the cooldown,** with the time left under it (frontend-vault-ui spec).
+- **Kit fixes made here:** the dev-state hooks are now defined in the `"use client"` module `src/lib/use-dev-state.ts` and re-exported from `src/lib/dev-state.ts` (same names and signatures), because a server component importing `dev-state.ts` failed the build (`useSearchParams` in a server module). `AmountInput`'s inner input now uses `focus-visible:outline-none!`: the global unlayered `:focus-visible` rule beat the layered utility and drew a second ring inside the field.
+- **One gold primary on /deposit:** the nav's "Deposit mUSD" CTA renders as `night` with `aria-current="page"` there (desktop bar and phone menu). It is still gold in the nav's Suspense fallback, which has no pathname.
+- **The chest is on screen before the deposit:** an open chest sits beside the amount step with the typed amount as a gold chip above it (static, no idle motion). On success, the same chip drops into the chest. That is still the screen's one orchestrated moment, and it is skipped under reduced motion.
+- **Pending is busy, not invalid:** the gold button keeps full strength with `aria-disabled` + `aria-busy` (clicks are ignored), and the faucet claim is blocked until the deposit resolves.
+- **Closed seasons look closed:** a tenor board whose enrollment closed uses `bg-dasar`, a dimmed label, no hover and no gold ring. The blocking notes sit directly under the season boards.
+- **Bonus pots are labelled as part simulated:** "Includes X from sponsors. The rest is simulated yield."
+
+## 2026-10-23 — Claim screen and live season card
+
+- **Claim dummy data is computed, not typed.** `src/mocks/claim.ts` runs the vault's finalize split (15% fee, 50/50, sponsor funds added to the bonus pot) and the claim formulas with truncating bigint math, so the breakdown always adds up: total = principal + base yield + bonus. The shortfall mock uses the same code path (CLAUDE.md correction 3): principal pro-rata, base yield 0, bonus from sponsor funds only.
+- **Bonus share = bonus ÷ bonus pot**, shown in bps as "1.68%". It is the same number as weighted points ÷ total weighted points, without exposing a second snapshot field. A share has no sign, so the claim components use their own `formatShare` instead of `formatBps` (which is for returns).
+- **The total shows truncated to 2 decimals, with the exact 6-decimal amount underneath** ("Exactly 287.153033 mUSD"), so the focal number stays readable and nothing is hidden.
+- **One orchestrated moment:** after pressing Claim (1.4 s dummy pending), the closed chest becomes the open treasure chest and the total counts up from the principal to the total. The count is bigint math on a 0–1000 progress, ending exactly on the total. A direct load of `?state=claimed` and reduced motion show the final state at once. After a claim, a one-line summary replaces the breakdown (spec: "the breakdown is replaced by a confirmation").
+- **Principal uses the crystal mark** (`NetworkIcon`) as its row marker, since principal is the Principal Crystal. Base yield and bonus use the landing loot bar's `langit` and `emas` swatches, and the player's own loot bar (base | bonus) follows the landing bar's recipe.
+- **`wrong-network` on /claim** renders the ready screen under the shell's overlay.
+- **Landing dev states:** `visitor` (default) and `has-position`. The page stays static, so a new kit component `DevStateSwitch` picks between server-built views on the client under `<Suspense>`, with the default view as the prerendered fallback. `has-position` also switches the season card to `CURRENT_SEASONS_WEEK_STARTED`, matching the position mock's live 1-week season.
+- **Only the bottom CTA is position-aware** ("Deposit mUSD" or "Play", plus a line from the position mock). The hero's "Play now" lives in `TitleScreen`, which the brief keeps unchanged; it should follow the same rule once wallet data is real.
+- **Season card countdown without hydration mismatches:** no render reads `Date.now()`. Server and client both start from the given clock (`MOCK_NOW`), and after mount the card adds its own elapsed-seconds counter, so the first client render matches the HTML. Status flips Enrolling → Live → Matured as the clock passes `start` and `end`. The real server clock replaces `MOCK_NOW` later.
+- **The season card dropped the static stat grid.** Season length now shows on each tenor tile, and enrollment, counted games and the weight cap became one quiet line under the intro copy.
+- **Components import mock types only** (`import type` from `src/mocks/`), because those files define the API shapes. Data still reaches components only through props.
+
+## 2026-10-23 — Shared shell and UI kit
+
+- **One nav for every page.** Links: How to play (opens the tutorial popup), Play, Leaderboard; then a dummy Connect button and the gold "Deposit mUSD" CTA, which is the Deposit entry. The landing's old in-page links (Yield, Season) are gone, so the landing nav differs in its links and the added Connect button; banner, footer and all section geometry are unchanged (measured before and after at 1280 px).
+- **The landing opts into the floating nav** by passing `<Nav floating />` into `TitleScreen`; the layout's `SiteNav` skips `/` (`FLOATING_NAV_ROUTES`). Only the floating variant keeps the translucent fill and `backdrop-blur`. Every other page gets the solid navy nav board with the 6 px hard shadow. `SiteNav` reads the pathname under `<Suspense>` with the same nav as fallback, because `usePathname` suspends on unknown dynamic params with `cacheComponents`.
+- **Phones get a menu board** (portalled, same board recipe) with the links and the Deposit CTA; Connect stays in the bar. How to play opened from the menu stacks above it, and Escape closes the top dialog first.
+- **The dummy wallet lives in a layout context** (`useDummyWallet`), so "connected" survives client navigation and pages can read it.
+- **Error color:** inline errors and the error toast use `turun` (coral). It was otherwise reserved for Sell and negative returns; a failure is the one other "negative" state, and coral passes AA on navy. Success uses `zamrud`, info uses `langit`, both only on the toast's edge bar.
+- **Urgent timers flip to a gold pill** (ink on gold) instead of turning red, so red stays tied to Sell and errors.
+- **Skeletons are static** (no pulse), since idle loops are banned.
+- **Money formatting truncates** fractions (never rounds up), default 2 decimals, trailing zeros dropped: a player is never shown more than they have.
+- **Dev states:** `?state=` is honored in every build, so a production preview can still show states; the `DevStateBar` and `/ui` exist only in development. `?state=wrong-network` is a shell-level state that works on any page.
+
 ## 2026-10-23 — No champions section; skills not tied to characters
 
 - **The "Meet the champions" landing section was removed.** The 3 bots are neutral "house bots" (`frontend/src/lib/bots.ts`). They have no signature skills or Buy/Sell bias. Their portraits appear only in the tutorial seat row: per user feedback, no characters stand on the 3D podiums, which show only their glowing tops and rings.
@@ -12,7 +54,7 @@ Ambiguous design calls and known limitations, newest first. Each entry picks the
 - **Podium seats:** gold front-right is the challenger (player), green is Bruno, coral is Dex, and blue is Bera.
 - **Champion sprites** are cylindrical (Y-axis) billboards, so their feet stay planted. Their idle is a squash-and-stretch breath anchored at the feet. They use alpha test 0.5 with premultiplied blending, so they write depth and get the toon outline with no halo.
 - **Calls are named Buy/Sell** everywhere. The old copy said Up/Down.
-- **Demo season stats follow the season-vault spec:** 15 or 30 minute seasons, a 2 minute enrollment, the first 2 games count, and max weight 1,000 mUSD. "Min. deposit 10 mUSD" was removed because the spec does not define it.
+- **Demo season stats follow the season-vault spec:** 15 or 30 minute seasons, a 2 minute enrollment, the first 2 games count, and max weight 1,000 mUSD. "Min. deposit 10 mUSD" was removed from the landing stats. *Correction: the specs do define a 10 mUSD minimum (`contracts-season-vault`, `frontend-vault-ui`), so the deposit screen enforces it; the landing simply doesn't list it.*
 - **Reduced-motion hydration fix:** `initial` is always the hidden state, and reduced motion uses a zero-duration transition.
 
 ## 2026-10-23 — Logo and palette from the crest
