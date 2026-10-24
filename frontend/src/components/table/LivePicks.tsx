@@ -3,11 +3,11 @@
 import { useEffect, useReducer } from "react";
 import { motion, useAnimationControls, useReducedMotion } from "motion/react";
 import Image from "next/image";
-import { COINS, PLAYERS, type Pick } from "@/mocks/table";
+import { COINS, PLAYERS } from "@/mocks/table";
 import { GameActionButton } from "@/components/ui/GameButton";
 import { ChevronIcon } from "@/components/stats/icons";
 import { coinDataUrl } from "@/lib/coins";
-import { bps, coinMove, liveProgress, marketMove, marketPrice, pickIsVoid, pickReturn, price, type DemoState } from "./demo-engine";
+import { bps, coinMove, liveProgress, marketMove, marketPrice, pickIsVoid, pickReturn, price, type DemoPick, type DemoState } from "./demo-engine";
 import { SkillCoin } from "@/components/skills/SkillEffect2D";
 import type { CoinSymbol } from "@/components/table-scene/types";
 import { CoinToken3D } from "./CoinToken3D";
@@ -40,7 +40,7 @@ export function LivePicks({ state, onInspect }: { state: DemoState; onInspect: (
   </section>;
 }
 
-export function LivePickDetail({ state, pick, onInspect }: { state: DemoState; pick: Pick; onInspect: (symbol: string) => void }) {
+export function LivePickDetail({ state, pick, onInspect }: { state: DemoState; pick: DemoPick; onInspect: (symbol: string) => void }) {
   const coin = COINS.find((item) => item.symbol === pick.symbol)!;
   const progress = liveProgress(state);
   const move = marketMove(state, pick.symbol);
