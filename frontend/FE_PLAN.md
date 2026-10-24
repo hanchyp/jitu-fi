@@ -163,7 +163,7 @@ Selesai kalau: spirit bergerak mengikuti harga dummy, keenam skill bisa dipilih 
 
 ## 6. Nanti, setelah UI selesai (bukan tahap ini)
 Dikerjakan setelah backend dan kontrak siap. Rinciannya ada di task 5.1–5.9 `tasks.md`:
-- Koneksi wallet (wagmi, viem, RainbowKit) untuk chain 10143 / 31337, dan gating chain salah.
+- Koneksi wallet (Privy + wagmi + viem; lihat docs/INTEGRATION_PLAN.md) untuk chain 10143 / 31337, dan gating chain salah.
 - Klien REST + WebSocket yang menggantikan `src/mocks/`.
 - Rumus skor dari `packages/shared` untuk skor live.
 - Tanda tangan EIP-712, relayer, penyimpanan salt, dan auto-reveal asli.
