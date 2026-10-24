@@ -115,7 +115,7 @@ export async function buildServer(deps: ServerDeps) {
 
   // ---------- Reads ----------
 
-  app.get("/health", async () => ({ ok: true, prices: COINS.map((c) => ({ coin: c, publishTime: book.latest(c)?.publishTime ?? null })) }));
+  app.get("/health", async () => ({ ok: true, prices: COINS.map((c) => ({ coin: c, source: book.latest(c)?.source ?? null, publishTime: book.latest(c)?.publishTime ?? null })) }));
   app.get("/config", async () => ({ presets: PRESETS, skills: SKILLS, coins: COINS }));
   app.get("/seasons/current", async () => currentSeasons(chain));
   app.get("/seasons/:id/leaderboard", async (req) => leaderboard(db, chain, id.parse((req.params as { id: string }).id)));

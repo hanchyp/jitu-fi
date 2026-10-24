@@ -21,7 +21,8 @@ const envSchema = z
     DATABASE_URL: z.string().min(1).default("file:./data/jitu.db"),
     DEMO_MODE: z.stringbool().default(false),
     MULTI_HUMAN_QUEUE: z.stringbool().default(false),
-    PRICE_SOURCE: optional(z.enum(["hermes", "mock"])),
+    PRICE_SOURCE: optional(z.enum(["hermes", "hybrid", "mock"])),
+    COINGECKO_POLL_MS: z.coerce.number().int().min(1).default(10_000),
     PYTH_HERMES_URL: z.url().default("https://hermes.pyth.network"),
     // Hermes requires a key since the 2026-08-26 Pyth Core upgrade (Pyth Terminal sign-up).
     PYTH_API_KEY: optional(z.string().min(1)),
