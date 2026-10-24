@@ -2,6 +2,14 @@
 
 Ambiguous design calls and known limitations, newest first. Each entry picks the simplest safe option. The full design rationale lives in `openspec/changes/build-crypto-draft-mvp/design.md`.
 
+## 2026-10-24 — Plain pick submission; scoring lib ownership
+
+Decided by the project owner in the backend session.
+
+- **Picks are a plain submit.** During Commit, players POST their picks (and BOOST/INSURANCE choice) to the backend, which keeps them hidden from the other seats until Reveal. No commit hash and no salt. This replaces the commit-hash and salt rules in the 2026-10-23 redesign, design.md D9/D10/D15 and the game-table spec. The "lost local storage before Reveal means forfeit" limitation no longer applies; a player who submits nothing during Commit still forfeits the round.
+- **Hiding picks is a backend promise,** like scoring (see Known limitations: the backend is trusted).
+- **Scoring lib:** the backend session writes `packages/shared/src/scoring.ts` and `packages/shared/test-vectors/*`. The rest of `packages/shared` (scaffold, ABI exports, deployments) belongs to the contracts session.
+
 ## 2026-10-24 — Contract details
 
 - **Strategy accounts are keyed by season id.** `IYieldStrategy` takes a season id on `deposit`, `withdrawAll` and `totalAssets`. With one shared account, finalizing the 1-week season would have withdrawn the 1-month season's principal too.
@@ -161,7 +169,7 @@ Agreed with the project owner. It replaces the build spec's game rules: contrari
 - **House bots can hurt a human's points.** Bots may FREEZE, FLIP or SWAP a human's pick, which changes that human's game score and season points. It applies equally to every human, but it adds noise that doesn't come from the human's own calls.
 - **Sybil splitting.** One person can split a deposit across wallets to multiply the 1,000 mUSD weight cap. Not mitigated in the MVP.
 - **Trusted keeper timing.** The keeper chooses the exact settle moment within the oracle's max age. Possible hardening: `parsePriceFeedUpdates` with a publishTime window at the deadline.
-- **Lost local storage before Reveal means forfeit.** The salt lives only in the browser; the UI warns the player.
+- ~~**Lost local storage before Reveal means forfeit.**~~ Obsolete since 2026-10-24: picks are a plain submit with no salt.
 
 ## Corrections carried from CLAUDE.md
 
