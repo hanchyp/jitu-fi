@@ -30,7 +30,7 @@ Re-scoped on 2026-10-24: the game engine runs in the backend and `GameManager` o
 ## 3. Deploy (Phase 3)
 
 - [x] 3.1 Write `Deploy.s.sol` (MockUSD → MockYieldStrategy → SeasonVault → GameManager, roles, cross-refs, one funded demo season per tenor, chain id assertion refusing 143); verify `deploy:local` on anvil succeeds
-- [ ] 3.2 Export ABIs and `packages/shared/src/deployments/<chainId>.json` (31337, 10143 only); verify shared package builds and imports addresses
+- [x] 3.2 Export ABIs and `packages/shared/src/deployments/<chainId>.json` (31337, 10143 only); verify shared package builds and imports addresses
 - [x] 3.3 Deploy to Monad testnet with a Foundry keystore account (run by the owner), verify every contract on the explorer, and list the addresses in the README; commit `feat(contracts): deploy scripts`
 
 ## 4. Backend (Phase 4)

@@ -11,7 +11,7 @@ A hackathon MVP on **Monad testnet**. Players deposit mUSD into a season vault a
 | `frontend/` | Next.js (App Router), Tailwind | Initialized |
 | `backend/` | Node, TypeScript (Fastify, Zod planned) | Initialized |
 | `contracts/` | Foundry, Solidity | Deployed and verified on Monad testnet |
-| `packages/shared/` | Constants, scoring, ABIs | Planned |
+| `packages/shared/` | Constants, contract ABIs, deployments (scoring coming from the backend session) | Scaffolded |
 | `bots/` | Demo and e2e players | Planned |
 
 The full plan is in `openspec/changes/build-crypto-draft-mvp/`. The product spec is `CRYPTO_DRAFT_BUILD_SPEC.md`.

@@ -1,0 +1,25 @@
+{
+  "name": "@jitu-fi/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Constants, contract ABIs, deployments and scoring shared by the jitu.fi backend, frontend and bots",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "sync:contracts": "node scripts/sync-contracts.mjs"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "vitest": "^3.2.4"
+  }
+}
