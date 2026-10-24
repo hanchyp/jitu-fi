@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useReducer, useState } from "react";
+import { useLivePrices } from "@/lib/game/livePrices";
 import Image from "next/image";
 import { LIVE_SECONDS, PHASES, SCENARIOS, type GamePreset, type Phase, type Scenario } from "@/mocks/table";
 import { TableView3D } from "@/components/table-scene";
 import { ArenaTable } from "./ArenaTable";
-import { createDemo, demoReducer, gameScores, OUTCOMES, roundResult, type DemoState, type Outcome } from "./demo-engine";
+import { createDemo, demoReducer, gameScores, OUTCOMES, roundResult, usingLivePrices, type DemoState, type Outcome } from "./demo-engine";
 import { ResultPopup } from "./ResultPopup";
 import { TableDock } from "./TableDock";
 import styles from "./game-styles";
@@ -16,6 +17,8 @@ export function TableGame({ preset, initialPhase = "commit", initialScenario = "
   preset: GamePreset; initialPhase?: Phase; initialScenario?: Scenario; initialOutcome?: Outcome; preview?: boolean;
 }) {
   const [state, dispatch] = useReducer(demoReducer, undefined, () => ({ ...createDemo(preset, initialPhase, initialScenario, initialOutcome), paused: preview || initialPhase !== "commit" }));
+  const feed = useLivePrices();
+  useEffect(() => { dispatch({ type: "prices", feed }); }, [feed]);
   // Each finish builds a new history, so a dismissed result reopens on the next game.
   const [dismissed, setDismissed] = useState<DemoState["history"] | null>(null);
   useEffect(() => {
@@ -35,7 +38,7 @@ export function TableGame({ preset, initialPhase = "commit", initialScenario = "
   return <div className="jitu-table-app">
     <header className={styles.tableHeader}>
       <div><h1 className={styles.heading}>{finished ? `${preset.name} · Game complete` : `${preset.name} · Round ${state.round + 1}/${preset.caps.length}`}</h1>
-        <div className={styles.headerMeta}><Image className="jitu-table-phaseArt" src={`/assets/table-fx/phase-${PHASE_ART[state.phase]}.webp`} alt="" width={24} height={24} /><span className={styles.phase} aria-live="polite">{state.phase === "results" ? "Round results" : state.phase}</span>{!finished && <><span>Pick up to {cap}</span><span>Live {LIVE_SECONDS[state.round]}s</span></>}<span>Demo table</span></div>
+        <div className={styles.headerMeta}><Image className="jitu-table-phaseArt" src={`/assets/table-fx/phase-${PHASE_ART[state.phase]}.webp`} alt="" width={24} height={24} /><span className={styles.phase} aria-live="polite">{state.phase === "results" ? "Round results" : state.phase}</span>{!finished && <><span>Pick up to {cap}</span><span>Live {LIVE_SECONDS[state.round]}s</span></>}<span>Demo table</span><small>{usingLivePrices(state) ? "Live prices" : "Simulated prices"}</small></div>
       </div>
       <div className="jitu-table-hudEnd">
       <div className="jitu-table-viewToggle" role="group" aria-label="Table view">{(["2D", "3D"] as const).map((view) => <button key={view} type="button" aria-pressed={view3d === (view === "3D")} onClick={() => { setView3d(view === "3D"); if (view === "3D") setSceneLoaded(true); }}>{view}</button>)}</div>
