@@ -2,10 +2,12 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GameActionButton, GameButton } from "@/components/ui/GameButton";
 import { DEMO_SEASON, durationRange, getPreset, PRESETS } from "@/mocks/table";
-import { getRunningTable, getSessionAddress, postPlay, type PlayError } from "@/lib/game/play";
+import { useWallet } from "@/components/shell/WalletProvider";
+import { useSession } from "@/lib/auth/session";
+import { getRunningTable, startPlay, type PlayError } from "@/lib/game/play";
 import { GameArena } from "./GameArena";
 
 export type LobbyState = "ready" | "season-closing" | "active-table" | "outside-k";
@@ -19,6 +21,11 @@ const INSTANT = { duration: 0 } as const;
 export function PlayLobby({ initialState = "ready", preview = false }: { initialState?: LobbyState; preview?: boolean }) {
   const router = useRouter();
   const reduce = useReducedMotion();
+  const { ready, address, connect } = useWallet();
+  const { ensureToken } = useSession();
+  const busy = useRef(false);
+  const currentAddress = useRef(address);
+  useEffect(() => { currentAddress.current = address; }, [address]);
   const [presetId, setPresetId] = useState("quick");
   const [direction, setDirection] = useState(1);
   const [view, setView] = useState(initialState);
@@ -29,18 +36,20 @@ export function PlayLobby({ initialState = "ready", preview = false }: { initial
   const [resuming, setResuming] = useState(false);
   useEffect(() => {
     let active = true;
-    const address = getSessionAddress();
+    if (!ready) return;
     const useDemo = preview || !address;
-    // Read browser storage after hydration.
+    // Wait for the wallet to load after hydration.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setDemo(useDemo);
+    // Wallet changed or disconnected: drop the previous wallet's table and errors.
+    setRunningTable(null);
+    setError(null);
+    // Mount lookup stays silent; errors surface only after an explicit Play.
     if (!useDemo && address) void getRunningTable(address).then((result) => {
-      if (!active) return;
-      if (result.ok) setRunningTable(result.data.tableId);
-      else setError(result);
+      if (active && result.ok) setRunningTable(result.data.tableId);
     });
     return () => { active = false; };
-  }, [preview]);
+  }, [preview, ready, address]);
   const preset = getPreset(presetId);
   const blocked = view === "season-closing";
   function selectPreset(id: string) {
@@ -49,25 +58,29 @@ export function PlayLobby({ initialState = "ready", preview = false }: { initial
     setPresetId(id);
     setError(null);
   }
-  const label = pending ? resuming ? "Resuming your table" : "Preparing arena…" : view === "active-table" ? "Return to table" : `Play ${preset.name}`;
+  const label = !address && demo !== null && !preview && view !== "active-table" ? "Connect wallet to play" : pending ? resuming ? "Resuming your table" : "Preparing arena…" : view === "active-table" ? "Return to table" : `Play ${preset.name}`;
   async function play() {
-    if (blocked || pending || demo === null) return;
-    setPending(true);
+    if (blocked || busy.current || pending || demo === null) return;
     setError(null);
-    if (!getSessionAddress()) {
-      setError({ ok: false, code: "UNAUTHORIZED", message: "Sign in to play" });
-      setPending(false);
-      return;
+    if (!address) { connect(); return; }
+    busy.current = true;
+    setPending(true);
+    let navigating = false;
+    try {
+      const result = await startPlay(preset.id, ensureToken);
+      // Wallet switched mid-request: never act on the previous wallet's result.
+      if (currentAddress.current !== address) return;
+      if (result.ok) { navigating = true; router.push(`/table/${result.data.tableId}`); return; }
+      if (result.code === "ALREADY_AT_TABLE" && result.tableId) {
+        navigating = true;
+        setResuming(true);
+        router.push(`/table/${result.tableId}`);
+        return;
+      }
+      setError(result);
+    } finally {
+      if (!navigating) { busy.current = false; setPending(false); }
     }
-    const result = await postPlay(preset.id);
-    if (result.ok) { router.push(`/table/${result.data.tableId}`); return; }
-    if (result.code === "ALREADY_AT_TABLE" && result.tableId) {
-      setResuming(true);
-      router.push(`/table/${result.tableId}`);
-      return;
-    }
-    setError(result);
-    setPending(false);
   }
   return <>
     <GameArena lobby />
