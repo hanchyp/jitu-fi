@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { TableScene } from "@/components/table-scene";
+import { useEffect, useReducer } from "react";
+import { TableScene, TableView3D } from "@/components/table-scene";
+import { createDemo, demoReducer } from "@/components/table/demo-engine";
+import { COINS, getPreset } from "@/mocks/table";
 import { FIXTURE_SEATS, useFixtureTable } from "@/components/table-scene/fixture";
 import type { TablePhase, TableSceneProps } from "@/components/table-scene";
 
@@ -23,7 +26,43 @@ function FixtureScene({ phase, view, state }: { phase: TablePhase; view: TableSc
   return <TableScene {...table} phase={phase} view={view} celebrate={state === "final"} className="h-full" />;
 }
 
+// ?source=demo: Jeki's demo reducer on its own timer, drawn through <TableView3D>. Your pick is
+// made and locked automatically each round so the seats always have spirits.
+function DemoScene({ preset }: { preset: string }) {
+  const [state, dispatch] = useReducer(demoReducer, undefined, () => createDemo(getPreset(preset)));
+  useEffect(() => {
+    dispatch({ type: "tick", now: Date.now() });
+    const timer = setInterval(() => dispatch({ type: "tick", now: Date.now() }), 200);
+    return () => clearInterval(timer);
+  }, []);
+  useEffect(() => {
+    if (state.phase !== "commit") return;
+    dispatch({ type: "select", symbol: COINS[state.round % COINS.length].symbol });
+    dispatch({ type: "lock", now: Date.now() });
+  }, [state.phase, state.round]);
+  return (
+    <>
+      <p className="absolute left-4 top-3 z-10 rounded-full bg-dasar px-3 py-1 text-sm font-extrabold text-gading">
+        Demo · round {state.round + 1}/{state.preset.caps.length} · {state.phase} · {state.remaining}s
+      </p>
+      <TableView3D state={state} fallback={<p className="p-6 text-gading">3D is off (no WebGL or reduced motion).</p>} />
+    </>
+  );
+}
+
 export function Preview() {
+  const params = useSearchParams();
+  if (params.get("source") === "demo") {
+    return (
+      <main className="relative h-[100svh] overflow-hidden bg-malam">
+        <DemoScene preset={params.get("preset") ?? "quick"} />
+      </main>
+    );
+  }
+  return <FixturePreview />;
+}
+
+function FixturePreview() {
   const params = useSearchParams();
   const phase = pick(params.get("phase"), PHASES, "live");
   const view = pick(params.get("view"), VIEWS, "auto");

@@ -19,7 +19,8 @@ When the spec and this file conflict, **this file wins**.
   - Rounds go commit 20 s → reveal 10 s → live (random 60–120 s) → settle.
   - Round score = cap × weighted average return in bps. Moves under 1 bps are void.
   - Season points = max(0, game score) over each player's first K games.
-  - Skills: BOOST, INSURANCE, LOCK, FLIP, SWAP, FREEZE.
+  - Skills: BOOST, INSURANCE, LOCK, FLIP, SWAP, FREEZE. Since 2026-10-24, FREEZE, FLIP and SWAP attack an opponent's pick.
+- **Since 2026-10-24 the game engine runs in the backend.** `GameManager` only records one result per finished game (`recordGame`) and keeps first-K points, the season cutoff and `seasonTotalWeighted` on-chain. No on-chain oracle, randomness or EIP-712. See `DECISIONS.md`.
 
 ## Conventions
 - Monorepo with pnpm workspaces: `contracts/` (Foundry ≥1.8.0), `backend/`, `frontend/`, `packages/shared/`, `bots/`.

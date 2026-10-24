@@ -1,0 +1,15 @@
+{
+  "GameManager": "0x699834468547F56E38F87bFeeD15b3B2D6e343ff",
+  "MockUSD": "0x888054c88594D673f3C77CE99Aa73373ACfA1BdC",
+  "MockYieldStrategy": "0xD3f940AF0AfA2fde97012A7aBd8eB4B95766F083",
+  "SeasonVault": "0x87e83410FD37F6FfC37BC709DaA7DE7B64460266",
+  "chainId": 10143,
+  "demoMode": true,
+  "deployBlock": 73722191,
+  "deployedAt": 1792816961,
+  "deployer": "0x51921009598763bDC1EA036403dcE294b84905E3",
+  "keeper": "0x51921009598763bDC1EA036403dcE294b84905E3",
+  "monthSeasonId": 2,
+  "pointsK": 2,
+  "weekSeasonId": 1
+}

@@ -30,6 +30,9 @@ Monad testnet facts that shape the design:
 
 ## Decisions
 
+### D0. Off-chain game engine, one result per game (2026-10-24)
+This overrides D5, D7–D11 and D13 wherever they place game logic on-chain. The backend runs tables, commit → reveal → live → settle, Pyth Hermes prices, randomness, skills and scoring with the `packages/shared` library. When a game finishes, the keeper calls `GameManager.recordGame(gameId, player, gameScore, logHash)` once for the human seat. On-chain, `GameManager` keeps only the money rules: first-K points, max(0, score), `MAX_GAME_SCORE`, the season cutoff (D3) and `seasonTotalWeighted` (D4). No oracle, registry, randomness or EIP-712 contracts are deployed. Picks are a plain submit to the backend, hidden until Reveal, with no commit hash or salt, so the salt and localStorage parts of D9, D10 and D15 no longer apply. Deploy order becomes MockUSD → MockYieldStrategy → SeasonVault → GameManager. The trade-off (a trusted backend scores games) is logged in DECISIONS.md.
+
 ### D1. Monorepo layout and tooling
 pnpm workspaces with `contracts/` (Foundry ≥ 1.8.0, Solidity ^0.8.24, OZ v5), `packages/shared/`, `backend/`, `frontend/` and `bots/`. `packages/shared` is built first. Every other TS package depends on it for constants, scoring, ABIs and deployments.
 *Alternative:* separate repos. Rejected because the ABI and scoring drift would be constant.
@@ -70,7 +73,7 @@ Test vectors in `packages/shared/test-vectors/scoring.json` are read by Foundry 
 ### D10. Skills
 Six skills, at most one used per player per round, hand max 3:
 - **BOOST** and **INSURANCE** are commit-time. Their pick index is inside the commit hash, they apply at reveal, and at most one of them is set per commit.
-- **LOCK** (own pick, end price = now), **FLIP** (own pick, segment start→now in the old direction plus now→end in the new one), **SWAP** (own pick, old coin start→now plus new coin now→end) and **FREEZE** (opponent pick, end price = now, max once per target per round) are live skills.
+- **LOCK** (own pick, end price = now) is the live self skill. **FREEZE** (end price = now), **FLIP** (segment start→now in the old direction plus now→end in the reversed one) and **SWAP** (old coin start→now plus an attacker-chosen coin now→end, same direction) are attacks on an opponent's pick. Each player takes at most one attack per round, and a locked pick can't be attacked. Changed on 2026-10-24, see DECISIONS.md.
 - Live skills are allowed only before the live deadline, with a price no older than 5 s and no earlier than live start. The backend supplies that price, not the client. A pick carries at most one live effect. The INSURANCE floor applies last.
 - Hands: 1 random skill at table creation, plus 1 per round won, if there is room.
 

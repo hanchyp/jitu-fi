@@ -2,6 +2,8 @@
 
 ## Purpose
 
+> **Scope change (2026-10-24):** the game engine runs in the backend. The rules below (presets, phases, scoring, winners, game score) still define the game, but the backend enforces them and only the final game score reaches the chain through `recordGame` (see contracts-game-results). Requirements about on-chain commit, reveal, live start, meta-transactions and roles apply to the backend engine and API instead. The season-points, cutoff and no-token-access requirements live in contracts-game-results.
+
 Runs the on-chain Crypto Draft game. A table seats 4 players: for the MVP, 1 human and 3 house bots. The table plays a preset number of rounds. In each round players commit picks, reveal them, and watch a live window of random length, and every pick is scored by its real price return. Each human's finished-game score feeds the season points the vault uses for the bonus pot. The contract never touches tokens.
 
 ## ADDED Requirements
