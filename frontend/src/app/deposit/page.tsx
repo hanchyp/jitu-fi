@@ -3,6 +3,8 @@ import { Suspense } from "react";
 import { DevStateBar } from "@/components/ui/DevStateBar";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { DepositScreen } from "@/components/vault/DepositScreen";
+import { LiveDeposit } from "@/components/vault/LiveDeposit";
+import { USE_MOCKS } from "@/lib/web3/config";
 import { readDevState, type SearchParams } from "@/lib/dev-state";
 import { scenarioFor, STATES } from "./scenarios";
 
@@ -12,6 +14,14 @@ export const metadata: Metadata = {
 };
 
 export default function DepositPage({ searchParams }: PageProps<"/deposit">) {
+  // Real data and transactions by default; NEXT_PUBLIC_USE_MOCKS=1 keeps the dev-state mocks.
+  if (!USE_MOCKS) {
+    return (
+      <main className="flex-1">
+        <LiveDeposit />
+      </main>
+    );
+  }
   return (
     <main className="flex-1">
       <Suspense fallback={<DepositSkeleton />}>

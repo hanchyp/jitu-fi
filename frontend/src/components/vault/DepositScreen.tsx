@@ -7,6 +7,8 @@ import { Board } from "@/components/ui/Board";
 import { GameActionButton, GameButton } from "@/components/ui/GameButton";
 import { Toast } from "@/components/ui/Toast";
 import { formatMusd, parseMusd } from "@/lib/format";
+import { explorerTxUrl } from "@jitu-fi/shared";
+import { txErrorMessage } from "@/lib/web3/tx";
 import { ChestDrop } from "./ChestDrop";
 import { FaucetCard } from "./FaucetCard";
 import { PositionCard } from "./PositionCard";
@@ -16,6 +18,12 @@ import type { PositionView, Tenor, TenorOption, VaultRules, WalletView } from ".
 import { WeightMeter } from "./WeightMeter";
 
 export type DepositPhase = "form" | "pending" | "success";
+
+/** On-chain actions. Without them the screen runs its simulated timings (dev states, mock mode). */
+export type DepositActions = {
+  faucet: () => Promise<string>;
+  deposit: (seasonId: number, amount: bigint) => Promise<string>;
+};
 
 type DepositScreenProps = {
   rules: VaultRules;
@@ -28,6 +36,7 @@ type DepositScreenProps = {
   initialPhase?: DepositPhase;
   /** For the "success" dev state: the amount that just dropped into the chest. */
   initialDeposited?: bigint;
+  actions?: DepositActions;
 };
 
 // Dummy wallet timings: no transactions in the UI-first phase.
@@ -71,7 +80,10 @@ export function DepositScreen({
   position: initialPosition,
   initialPhase = "form",
   initialDeposited,
+  actions,
 }: DepositScreenProps) {
+  const [error, setError] = useState<string | null>(null);
+  const [lastTx, setLastTx] = useState<string | null>(null);
   const [balance, setBalance] = useState(wallet.balance);
   const [faucetLeft, setFaucetLeft] = useState(wallet.faucetSecondsLeft);
   const [faucetPending, setFaucetPending] = useState(false);
@@ -121,6 +133,20 @@ export function DepositScreen({
 
   const claimFaucet = () => {
     setFaucetPending(true);
+    setError(null);
+    if (actions) {
+      actions
+        .faucet()
+        .then((hash) => {
+          setLastTx(hash);
+          setBalance((b) => b + rules.faucetAmount);
+          setFaucetLeft(rules.faucetCooldownSeconds);
+          setToast(true);
+        })
+        .catch((e) => setError(txErrorMessage(e)))
+        .finally(() => setFaucetPending(false));
+      return;
+    }
     later(() => {
       setFaucetPending(false);
       setBalance((b) => b + rules.faucetAmount);
@@ -132,7 +158,8 @@ export function DepositScreen({
   const deposit = () => {
     if (pending || !canDeposit || parsed === null) return;
     setPhase("pending");
-    later(() => {
+    setError(null);
+    const finish = () => {
       setBalance((b) => b - parsed);
       setPosition({
         seasonId: option.seasonId,
@@ -151,7 +178,21 @@ export function DepositScreen({
       setAmount("");
       movedToSuccess.current = true;
       setPhase("success");
-    }, DEPOSIT_MS);
+    };
+    if (!actions) {
+      later(finish, DEPOSIT_MS);
+      return;
+    }
+    actions
+      .deposit(option.seasonId, parsed)
+      .then((hash) => {
+        setLastTx(hash);
+        finish();
+      })
+      .catch((e) => {
+        setError(txErrorMessage(e));
+        setPhase("form");
+      });
   };
 
   const live = position?.status === "active";
@@ -183,6 +224,11 @@ export function DepositScreen({
               {formatMusd(deposited)} is in the Principal Crystal for the {asAdjective(position.tenorLabel)} season. All of it comes
               back at maturity.
             </p>
+            {lastTx && (
+              <a href={explorerTxUrl(lastTx)} target="_blank" rel="noreferrer" className={`${textLink} mt-2 inline-block`}>
+                View transaction
+              </a>
+            )}
           </div>
           <PositionCard
             id="position"
@@ -281,6 +327,11 @@ export function DepositScreen({
                   : ""}
             </p>
           </div>
+          {error && (
+            <p role="alert" className="mt-3 font-bold text-white">
+              {error}
+            </p>
+          )}
           <p className="mt-3 text-sm font-bold text-white/60">All of it comes back at maturity.</p>
         </div>
       </Board>

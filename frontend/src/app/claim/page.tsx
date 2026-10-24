@@ -6,6 +6,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { GameButton } from "@/components/ui/GameButton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ClaimScreen, type ClaimView } from "@/components/vault/ClaimScreen";
+import { LiveClaim } from "@/components/vault/LiveClaim";
+import { USE_MOCKS } from "@/lib/web3/config";
 import { readDevState, type SearchParams } from "@/lib/dev-state";
 import { CLAIM_NOT_MATURE, CLAIM_READY, CLAIM_SHORTFALL } from "@/mocks/claim";
 import { MOCK_NOW } from "@/mocks/season";
@@ -17,6 +19,13 @@ export const metadata: Metadata = {
 const STATES = ["ready", "pending", "claimed", "not-mature", "shortfall", "no-position", "wrong-network"] as const;
 
 export default function ClaimPage({ searchParams }: PageProps<"/claim">) {
+  if (!USE_MOCKS) {
+    return (
+      <main className="flex-1">
+        <LiveClaim />
+      </main>
+    );
+  }
   return (
     <main className="flex-1">
       <Suspense fallback={<ClaimSkeleton />}>

@@ -6,7 +6,9 @@ import { useEffect, useState } from "react";
 import { Board } from "@/components/ui/Board";
 import { Countdown } from "@/components/ui/Countdown";
 import { GameActionButton, GameButton } from "@/components/ui/GameButton";
+import { explorerTxUrl } from "@jitu-fi/shared";
 import { formatMusd, shortAddress } from "@/lib/format";
+import { txErrorMessage } from "@/lib/web3/tx";
 import type { ClaimSnapshot } from "@/mocks/claim";
 import { ClaimBreakdown, formatShare } from "./ClaimBreakdown";
 import { ClaimPayoutReveal } from "./ClaimPayoutReveal";
@@ -17,6 +19,8 @@ type ClaimScreenProps = {
   view: ClaimView;
   snapshot: ClaimSnapshot;
   secondsToMaturity?: number;
+  /** Sends SeasonVault.claim and resolves with the tx hash. Without it the claim is simulated. */
+  onClaim?: () => Promise<string>;
 };
 
 const TENOR = { week: "1-week", month: "1-month" } as const;
@@ -25,21 +29,39 @@ const BPS = BigInt(10_000);
 const ZERO = BigInt(0);
 type Phase = "idle" | "pending" | "claimed";
 
-export function ClaimScreen({ view, snapshot, secondsToMaturity = 0 }: ClaimScreenProps) {
+export function ClaimScreen({ view, snapshot, secondsToMaturity = 0, onClaim }: ClaimScreenProps) {
   const reduce = useReducedMotion() ?? false;
   const { season, position, payout, shortfall } = snapshot;
   const [phase, setPhase] = useState<Phase>(view === "pending" ? "pending" : view === "claimed" ? "claimed" : "idle");
   const [celebrate, setCelebrate] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [tx, setTx] = useState<string | null>(null);
+
+  const startClaim = () => {
+    if (phase === "pending") return;
+    setPhase("pending");
+    setError(null);
+    onClaim?.()
+      .then((hash) => {
+        setTx(hash);
+        setCelebrate(true);
+        setPhase("claimed");
+      })
+      .catch((e) => {
+        setError(txErrorMessage(e));
+        setPhase("idle");
+      });
+  };
 
   // Both a direct pending preview and a button press complete the same simulated claim.
   useEffect(() => {
-    if (phase !== "pending") return;
+    if (phase !== "pending" || onClaim) return;
     const timer = setTimeout(() => {
       setCelebrate(true);
       setPhase("claimed");
     }, PENDING_MS);
     return () => clearTimeout(timer);
-  }, [phase]);
+  }, [phase, onClaim]);
 
   const total = payout.principal + payout.baseYield + payout.bonus;
   const bonusShareBps = season.bonusPot > ZERO ? Number((payout.bonus * BPS) / season.bonusPot) : 0;
@@ -103,15 +125,16 @@ export function ClaimScreen({ view, snapshot, secondsToMaturity = 0 }: ClaimScre
             {claimed ? (
               <>
                 <GameButton href="/deposit" size="lg">Join next season</GameButton>
-                <p className="text-sm font-bold text-white/75" role="status">Simulated claim complete for {shortAddress(position.address)}.</p>
+                <p className="text-sm font-bold text-white/75" role="status">{onClaim ? "Claim complete for" : "Simulated claim complete for"} {shortAddress(position.address)}.{" "}
+                  {tx && <a href={explorerTxUrl(tx)} target="_blank" rel="noreferrer" className="font-extrabold text-emas underline">View transaction</a>}</p>
               </>
             ) : mature ? (
               <>
-                <GameActionButton size="lg" onClick={() => { if (!pending) setPhase("pending"); }} aria-disabled={pending} aria-busy={pending}>
+                <GameActionButton size="lg" onClick={startClaim} aria-disabled={pending} aria-busy={pending}>
                   {pending ? "Claiming…" : "Claim loot"}
                 </GameActionButton>
                 <p className="text-sm font-bold text-white/75" role="status">
-                  {pending ? "Simulating your claim. No wallet transaction." : "One claim for the full payout. Simulated."}
+                  {error ?? (pending ? (onClaim ? "Confirm the claim in your wallet." : "Simulating your claim. No wallet transaction.") : onClaim ? "One claim for the full payout." : "One claim for the full payout. Simulated.")}
                 </p>
               </>
             ) : (
