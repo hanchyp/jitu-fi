@@ -18,7 +18,8 @@ function StaticBackdrop() {
   return (
     <div className="absolute inset-0">
       <div className="absolute left-1/2 top-[55%] h-36 w-36 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#836EF9]/40 blur-3xl" />
-      <div className="absolute left-1/2 top-[55%] h-24 w-14 -translate-x-1/2 -translate-y-1/2 [clip-path:polygon(50%_0,100%_50%,50%_100%,0_50%)] bg-[linear-gradient(135deg,#C4B8FF,#836EF9_55%,#4B36D6)]" />
+      {/* The Monad mark: a squircle ring turned 45 degrees. */}
+      <div className="absolute left-1/2 top-[55%] h-24 w-24 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-[38%] border-[22px] border-[#836EF9] shadow-[0_0_40px_#836EF9]" />
     </div>
   );
 }
@@ -53,7 +54,7 @@ export function TitleScreen({ nav }: { nav: ReactNode }) {
   }, []);
 
   return (
-    <section className="relative isolate flex h-[100svh] max-h-[1000px] min-h-[640px] flex-col overflow-hidden bg-[radial-gradient(ellipse_at_50%_70%,#3A2F86_0%,#1B2552_38%,#0A1430_78%)]">
+    <section className="relative isolate flex h-[100svh] min-h-[640px] flex-col overflow-hidden bg-[radial-gradient(ellipse_at_50%_70%,#3A2F86_0%,#1B2552_38%,#0A1430_78%)]">
       {webgl ? (
         <SceneBoundary>
           <ArenaScene still={reduce} />
@@ -61,6 +62,16 @@ export function TitleScreen({ nav }: { nav: ReactNode }) {
       ) : (
         <StaticBackdrop />
       )}
+
+      {/* Dark scrims keep the wordmark and buttons readable over the full-bleed scene. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[38%] bg-[linear-gradient(to_bottom,rgba(10,20,48,0.72),rgba(10,20,48,0))]"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-[34%] bg-[linear-gradient(to_top,rgba(16,33,61,0.85),rgba(16,33,61,0))]"
+      />
 
       <div className="relative z-10">{nav}</div>
 
