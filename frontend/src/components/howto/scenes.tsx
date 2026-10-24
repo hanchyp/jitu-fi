@@ -12,7 +12,7 @@ const POP = { type: "spring", stiffness: 420, damping: 20 } as const;
 
 /** Advances through timeline steps at the given times (ms). With reduced motion it jumps to the end. */
 function useTimeline(times: number[], reduce: boolean) {
-  const [step, setStep] = useState(reduce ? times.length : 0);
+  const [step, setStep] = useState(0);
   useEffect(() => {
     if (reduce) return;
     const timers = times.map((t, i) => setTimeout(() => setStep(i + 1), t));
@@ -20,7 +20,7 @@ function useTimeline(times: number[], reduce: boolean) {
     // The timeline is fixed per scene; it restarts only when the scene remounts.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reduce]);
-  return step;
+  return reduce ? times.length : step;
 }
 
 function CoinToken({ coin, size = 44, className = "" }: { coin: Coin; size?: number; className?: string }) {
