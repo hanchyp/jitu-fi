@@ -225,6 +225,77 @@ function WinnerBeam({ color }: { color: string }) {
   );
 }
 
+// Final winner only: a soft halo rises off the podium and fades while a few gold coins spiral
+// up around it. Plays once, then hides; the canvas itself never remounts.
+const RISE_SECONDS = 2.4;
+const RISE_COINS = Array.from({ length: 7 }, (_, i) => ({
+  angle: i * 0.9 + Math.sin(i * 4.1) * 0.3,
+  radius: 0.5 + (i % 3) * 0.14,
+  delay: 0.15 + i * 0.1 + (i % 2) * 0.04,
+  size: 0.1 + (i % 3) * 0.03,
+  height: 2 + (i % 4) * 0.35,
+}));
+const easeOut = (t: number) => 1 - (1 - t) ** 3;
+
+function VictoryRise({ color, gradient }: { color: string; gradient: THREE.Texture }) {
+  const reduce = useReducedMotion() ?? false;
+  const halo = useGlowMaterial("radial", color, 2.4, 1.6, 0.55);
+  const column = useGlowMaterial("beam", C.emas, 1.8);
+  const mats = useRef({ halo, column });
+  const group = useRef<THREE.Group>(null);
+  const ring = useRef<THREE.Mesh>(null);
+  const light = useRef<THREE.Mesh>(null);
+  const coins = useRef<(THREE.Mesh | null)[]>([]);
+  const born = useRef<number | null>(null);
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    if (born.current === null) born.current = t;
+    const age = t - born.current;
+    if (!group.current) return;
+    group.current.visible = age < RISE_SECONDS + 0.8;
+    if (!group.current.visible) return;
+    const p = Math.min(1, age / RISE_SECONDS);
+    const { halo, column } = mats.current;
+    // Halo ring lifts and widens, fading as it goes; the column swells in and out once.
+    if (ring.current) {
+      ring.current.position.y = 0.1 + easeOut(p) * 2.8;
+      ring.current.scale.setScalar(1 + easeOut(p) * 0.7);
+    }
+    halo.uniforms.uStrength.value = 2.4 * (1 - p) * Math.min(1, age * 5);
+    if (light.current) light.current.scale.y = Math.max(0.0001, easeOut(Math.min(1, age / 0.7)));
+    column.uniforms.uStrength.value = 1.8 * Math.sin(Math.PI * p);
+    column.uniforms.uTime.value = t;
+    RISE_COINS.forEach((c, i) => {
+      const coin = coins.current[i];
+      if (!coin) return;
+      const k = THREE.MathUtils.clamp((age - c.delay) / (RISE_SECONDS - 0.5), 0, 1);
+      const r = c.radius * (1 - k * 0.35);
+      const a = c.angle + easeOut(k) * 4.4;
+      coin.position.set(Math.cos(a) * r, 0.2 + easeOut(k) * c.height, Math.sin(a) * r);
+      coin.rotation.set(Math.PI / 2, k * 7 + i, 0);
+      coin.scale.setScalar(c.size * Math.min(1, k * 8));
+      (coin.material as THREE.MeshToonMaterial).opacity = 1 - THREE.MathUtils.smoothstep(k, 0.6, 1);
+    });
+  });
+  if (reduce) return null;
+  return (
+    <group ref={group}>
+      <mesh ref={ring} material={halo} rotation={[-Math.PI / 2, 0, 0]} renderOrder={3}>
+        <planeGeometry args={[2.6, 2.6]} />
+      </mesh>
+      <mesh ref={light} material={column} position={[0, 1.5, 0]} renderOrder={2}>
+        <cylinderGeometry args={[0.55, 0.75, 3, 24, 1, true]} />
+      </mesh>
+      {RISE_COINS.map((_, i) => (
+        <mesh key={i} ref={(m) => { coins.current[i] = m; }} scale={0.0001}>
+          <cylinderGeometry args={[1, 1, 0.22, 20]} />
+          <meshToonMaterial color={C.emas} gradientMap={gradient} emissive={C.emasTua} emissiveIntensity={0.35} transparent />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function SeatLabel({ player, phase, winner }: { player: ScenePlayer; phase: SceneProps["phase"]; winner: boolean }) {
   const sub =
     phase === "commit"
@@ -246,13 +317,13 @@ function SeatLabel({ player, phase, winner }: { player: ScenePlayer; phase: Scen
   );
 }
 
-function Seat({ seat, player, phase, prices, winner, gradient, labels, renderEffect }: {
+function Seat({ seat, player, phase, prices, winner, celebrate, gradient, labels, renderEffect }: {
   seat: number;
   player: ScenePlayer;
   winner: boolean;
   gradient: THREE.Texture;
   labels: Labels;
-} & Pick<SceneProps, "phase" | "prices" | "renderEffect">) {
+} & Pick<SceneProps, "phase" | "prices" | "renderEffect" | "celebrate">) {
   const { x, z } = PODIUM_SEATS[seat];
   const forfeit = player.forfeit && phase !== "commit";
   const picks = phase === "commit" || forfeit ? [] : player.picks;
@@ -260,6 +331,7 @@ function Seat({ seat, player, phase, prices, winner, gradient, labels, renderEff
     <group position={[x, PODIUM_TOP_Y, z]}>
       {winner && <WinnerBeam color={player.color} />}
       {winner && <WinBurst />}
+      {winner && celebrate && <VictoryRise color={player.color} gradient={gradient} />}
       {forfeit && <ForfeitSeal />}
       {phase === "commit" && <SealedPicks gradient={gradient} color={player.color} />}
       {picks.map((pick, i) => (
@@ -405,7 +477,7 @@ function LabelLayer({ labels, players, phase, winnerIds }: { labels: Labels } & 
   );
 }
 
-function Scene({ players, prices, phase, winnerIds, labels, renderEffect }: SceneProps & { labels: Labels }) {
+function Scene({ players, prices, phase, winnerIds, celebrate, labels, renderEffect }: SceneProps & { labels: Labels }) {
   const gradient = useToonGradient();
   const seats = seatPlayers(players);
   return (
@@ -436,6 +508,7 @@ function Scene({ players, prices, phase, winnerIds, labels, renderEffect }: Scen
                 phase={phase}
                 prices={prices}
                 winner={isWinner(player, { phase, winnerIds })}
+                celebrate={celebrate}
                 gradient={gradient}
                 labels={labels}
                 renderEffect={renderEffect}

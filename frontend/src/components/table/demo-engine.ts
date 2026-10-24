@@ -14,8 +14,11 @@ export type RoundResult = { scores: Record<string, number>; winners: string[]; f
 export type DemoState = {
   preset: GamePreset; phase: Phase; round: number; scenario: Scenario;
   remaining: number; deadline: number; marketTick: number; picks: Pick[]; locked: boolean; lockingUntil: number;
-  hand: SkillName[]; effects: Record<string, LiveCast>; usedSkills: string[]; incoming: IncomingSkill | null; history: RoundResult[]; toast: string; error: string; paused: boolean;
+  hand: SkillName[]; effects: Record<string, LiveCast>; usedSkills: string[]; incoming: IncomingSkill | null; history: RoundResult[]; earned: SkillName[]; toast: string; error: string; paused: boolean;
 };
+/** Preview only: where your final rank lands. */
+export type Outcome = "win" | "tie" | "second" | "third" | "last";
+export const OUTCOMES: Outcome[] = ["win", "tie", "second", "third", "last"];
 export type DemoAction =
   | { type: "tick"; now: number }
   | { type: "select"; symbol: string }
@@ -26,24 +29,26 @@ export type DemoAction =
   | { type: "lock"; now: number }
   | { type: "advance"; now: number; preview?: boolean }
   | { type: "pause"; now: number }
-  | { type: "preview"; phase: Phase; scenario: Scenario; now: number };
+  | { type: "preview"; phase: Phase; scenario: Scenario; outcome?: Outcome; now: number };
 
 export function phaseSeconds(phase: Phase, round: number) {
   return phase === "commit" ? 20 : phase === "reveal" ? 10 : phase === "live" ? LIVE_SECONDS[round] : phase === "results" ? 8 : 0;
 }
 
-export function createDemo(preset: GamePreset, phase: Phase = "commit", scenario: Scenario = "default"): DemoState {
+export function createDemo(preset: GamePreset, phase: Phase = "commit", scenario: Scenario = "default", outcome?: Outcome): DemoState {
   const preview = phase !== "commit";
   const state: DemoState = {
     preset, phase, scenario, round: 0, remaining: phaseSeconds(phase, 0), deadline: 0, marketTick: 0,
     picks: preview && scenario !== "forfeit" ? [{ symbol: "BTC", direction: "Buy", ...(scenario === "insured-pick" ? { skill: "INSURANCE" as const } : {}) }] : [],
     locked: preview && scenario !== "forfeit", lockingUntil: 0,
-    hand: phase === "live" ? ["LOCK", "FLIP", "SWAP"] : [scenario === "insured-pick" ? "INSURANCE" : "BOOST"], effects: {}, usedSkills: [], incoming: null, history: [], toast: "", error: "", paused: preview,
+    hand: phase === "live" ? ["LOCK", "FLIP", "SWAP"] : [scenario === "insured-pick" ? "INSURANCE" : "BOOST"], effects: {}, usedSkills: [], incoming: null, history: [], earned: [], toast: "", error: "", paused: preview,
   };
   if (phase === "results") return settle(state);
   if (phase === "finished") {
-    const history = preset.caps.map((_, round) => roundResult({ ...state, round }));
-    return { ...state, round: preset.caps.length - 1, history };
+    const played = preset.caps.map((_, round) => roundResult({ ...state, round }));
+    const history = outcome ? forceOutcome(played, preset.caps, outcome) : played;
+    const earned = history.flatMap((result, round) => result.winners.includes("you") ? [REWARDS[round % REWARDS.length]] : []).slice(0, 2);
+    return { ...state, round: preset.caps.length - 1, history, earned };
   }
   return state;
 }
@@ -170,6 +175,19 @@ export function gameScores(state: DemoState): Record<string, number> {
   return Object.fromEntries(PLAYERS.map((player) => [player.id, Math.trunc(state.history.reduce((total, result) => total + result.scores[player.id], 0) / caps)]));
 }
 
+/** Preview only: sets your round scores to target × cap, so your game score is exactly the target. */
+function forceOutcome(history: RoundResult[], caps: readonly number[], outcome: Outcome): RoundResult[] {
+  const total = caps.reduce((sum, cap) => sum + cap, 0);
+  const [s1, s2, s3] = PLAYERS.filter((player) => !player.human).map((player) => Math.trunc(history.reduce((sum, result) => sum + result.scores[player.id], 0) / total)).sort((a, b) => b - a);
+  const target = { win: s1 + 6, tie: s1, second: Math.max(s2, s1 - 1), third: Math.max(s3, s2 - 1), last: s3 - 4 }[outcome];
+  return history.map((result, round) => {
+    const scores: Record<string, number> = { ...result.scores, you: target * caps[round] };
+    const eligible = PLAYERS.filter((player) => !result.forfeited.includes(player.id));
+    const best = Math.max(...eligible.map((player) => scores[player.id]));
+    return { ...result, scores, winners: eligible.filter((player) => scores[player.id] === best).map((player) => player.id) };
+  });
+}
+
 function settle(state: DemoState): DemoState {
   const result = roundResult(state);
   const won = result.winners.includes("you");
@@ -178,6 +196,7 @@ function settle(state: DemoState): DemoState {
   return {
     ...state, history: [...state.history, result],
     hand: won && hasRoom ? [...state.hand, skill] : state.hand,
+    earned: won && hasRoom ? [...state.earned, skill] : state.earned,
     toast: won ? hasRoom ? `Round won! You earned ${skill}.` : "Round won! Your skill hand is full." : "",
   };
 }
@@ -199,7 +218,7 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
   if (action.type === "dismiss-incoming") return { ...state, incoming: null };
   if (action.type === "cast") return castLiveSkill(state, "you", action.skill, action.target, action.now);
   if (action.type === "preview") {
-    const next = createDemo(state.preset, action.phase, action.scenario);
+    const next = createDemo(state.preset, action.phase, action.scenario, action.outcome);
     return { ...next, deadline: action.now + next.remaining * 1000, paused: true };
   }
   if (action.type === "pause") return { ...state, paused: !state.paused, deadline: action.now + state.remaining * 1000 };

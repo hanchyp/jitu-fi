@@ -5,7 +5,6 @@
 import Image from "next/image";
 import { SkillCoin } from "@/components/skills/SkillEffect2D";
 import { COIN } from "@/lib/coins";
-import { Confetti } from "./Confetti";
 import { formatBps, formatScore, isVoid, lift, ridgeHeights, seatPlayers, signedBps, tableFxUrl } from "./model";
 import type { PriceSeries, ScenePick, ScenePlayer, TableSceneProps } from "./types";
 
@@ -108,13 +107,12 @@ const BACKDROP = {
   backgroundImage: `linear-gradient(rgba(7, 22, 36, 0.72), rgba(7, 22, 36, 0.72)), url(${tableFxUrl("table-backdrop")})`,
 };
 
-export function TableScene2D({ players, prices, phase, winnerIds, celebrate, className }: Props) {
+export function TableScene2D({ players, prices, phase, winnerIds, className }: Props) {
   return (
     <div
       className={`relative grid grid-cols-2 content-start items-start gap-3 bg-malam bg-cover bg-center p-3 md:grid-cols-4 ${className ?? ""}`}
       style={BACKDROP}
     >
-      {celebrate && <Confetti />}
       {seatPlayers(players).map(
         (p) =>
           p && (

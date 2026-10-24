@@ -5,16 +5,19 @@ import Image from "next/image";
 import { LIVE_SECONDS, PHASES, SCENARIOS, type GamePreset, type Phase, type Scenario } from "@/mocks/table";
 import { TableView3D } from "@/components/table-scene";
 import { ArenaTable } from "./ArenaTable";
-import { createDemo, demoReducer, gameScores, roundResult } from "./demo-engine";
+import { createDemo, demoReducer, gameScores, OUTCOMES, roundResult, type DemoState, type Outcome } from "./demo-engine";
+import { ResultPopup } from "./ResultPopup";
 import { TableDock } from "./TableDock";
 import styles from "./game-styles";
 
 const PHASE_ART: Record<Phase, string> = { commit: "commit", reveal: "reveal", live: "live", results: "result", finished: "result" };
 
-export function TableGame({ preset, initialPhase = "commit", initialScenario = "default", preview = false }: {
-  preset: GamePreset; initialPhase?: Phase; initialScenario?: Scenario; preview?: boolean;
+export function TableGame({ preset, initialPhase = "commit", initialScenario = "default", initialOutcome, preview = false }: {
+  preset: GamePreset; initialPhase?: Phase; initialScenario?: Scenario; initialOutcome?: Outcome; preview?: boolean;
 }) {
-  const [state, dispatch] = useReducer(demoReducer, undefined, () => ({ ...createDemo(preset, initialPhase, initialScenario), paused: preview || initialPhase !== "commit" }));
+  const [state, dispatch] = useReducer(demoReducer, undefined, () => ({ ...createDemo(preset, initialPhase, initialScenario, initialOutcome), paused: preview || initialPhase !== "commit" }));
+  // Each finish builds a new history, so a dismissed result reopens on the next game.
+  const [dismissed, setDismissed] = useState<DemoState["history"] | null>(null);
   useEffect(() => {
     dispatch({ type: "tick", now: Date.now() });
     const timer = setInterval(() => dispatch({ type: "tick", now: Date.now() }), 200);
@@ -45,7 +48,8 @@ export function TableGame({ preset, initialPhase = "commit", initialScenario = "
       {sceneLoaded && <div className="jitu-table-stage3d" data-visible={show3d} aria-hidden={!show3d} inert={!show3d}><TableView3D state={state} fallback={arena} /></div>}
       {!show3d && arena}
     </div>
-    <TableDock key={`${state.phase}-${state.round}`} state={state} dispatch={dispatch} />
+    <TableDock key={`${state.phase}-${state.round}`} state={state} dispatch={dispatch} onShowResult={() => setDismissed(null)} />
+    {finished && dismissed !== state.history && <ResultPopup state={state} onClose={() => setDismissed(state.history)} />}
     </div>
     <p className={styles.footer}>Simulated game · No wallet prompts · House bots never earn season points</p>
     <details className={styles.preview} open={preview}>
@@ -53,6 +57,7 @@ export function TableGame({ preset, initialPhase = "commit", initialScenario = "
       <div className={styles.previewControls}>
         <label>Phase <select value={state.phase} onChange={(event) => dispatch({ type: "preview", phase: event.target.value as Phase, scenario: state.scenario, now: Date.now() })}>{PHASES.map((phase) => <option key={phase} value={phase}>{phase}</option>)}</select></label>
         <label>Scenario <select value={state.scenario} onChange={(event) => dispatch({ type: "preview", phase: state.phase === "commit" ? "reveal" : state.phase, scenario: event.target.value as Scenario, now: Date.now() })}>{SCENARIOS.map((scenario) => <option key={scenario} value={scenario}>{scenario}</option>)}</select></label>
+        {finished && <label>Outcome <select defaultValue="" onChange={(event) => dispatch({ type: "preview", phase: "finished", scenario: state.scenario, outcome: (event.target.value || undefined) as Outcome | undefined, now: Date.now() })}><option value="">as played</option>{OUTCOMES.map((outcome) => <option key={outcome} value={outcome}>{outcome}</option>)}</select></label>}
         <button disabled={finished} onClick={() => dispatch({ type: "pause", now: Date.now() })}>{state.paused ? "Resume timer" : "Pause timer"}</button>
         <button disabled={finished || Boolean(state.lockingUntil)} onClick={() => dispatch({ type: "advance", now: Date.now(), preview: true })}>Next phase</button>
         <span>Phase/scenario previews reset the demo and pause the timer.</span>
