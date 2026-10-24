@@ -2,6 +2,26 @@
 
 Ambiguous design calls and known limitations, newest first. Each entry picks the simplest safe option. The full design rationale lives in `openspec/changes/build-crypto-draft-mvp/design.md`.
 
+## 2026-10-24 — Arena is the game table; fixed viewport
+
+- After pulling the shared shell from main, `/play` uses its banner/nav/footer. The fixed in-game view keeps its compact HUD and hides the shared chrome through explicit DOM markers, preventing duplicate navigation and background page scrolling. The shared wallet and wrong-network gate remain available.
+- Coin motion now uses CSS 3D front/reverse faces and a layered rim on the 2D table. Reveal flips from the crest to the asset, with per-seat staggering and a glint. Deal/return travel uses sampled curves with eased endpoints and 3D tilt. Concealed hands omit front assets entirely; reduced motion skips flips and travel.
+- Hand visuals are frameless per design feedback: concealed picks show only the Jitu crest, without a question mark; revealed picks show the coin icon, symbol and colored Buy/Sell text. The travelling duplicate uses the same frameless treatment.
+- Picks now sit in hands beside avatars. Local human picks show their symbol and Buy/Sell; opponents show only backs and a count until Reveal, when symbols and directions open. Jeki explicitly confirmed Reveal as the disclosure boundary. Confirmation duplicates the central coin and deals the copy into the local hand; copies return to the center between rounds. Reduced motion skips travel effects.
+- Latest visual direction from Jeki: use an illustrated 2D stone arena for all in-game screen sizes. The playable table uses SVG/CSS, while the landing and lobby retain their existing 3D previews. Coin-chart dialogs, Buy/Sell confirmation and the fixed viewport remain part of the game UI. This supersedes the desktop 3D table direction below.
+- Per Jeki's clarification and seating-layout reference, the stone arena is the playable table. Eight selectable coins are anchored to its surface, four player panels attach to its rim, and the challenger occupies the near seat. The Principal Crystal remains protected at the center.
+- In-game stays within one fixed viewport, without page scrolling. The header, table and compact action dock share the screen; reveal, round results and final ranks reuse the same seats. Mobile seat details and round history open in place.
+- Per the subsequent UX request, enlarge the table and tokens. Clicking a coin opens a chart dialog; Buy/Sell confirms the pick and returns to the table. Closing without confirmation leaves picks unchanged. The chart stays readable after Commit, with actions disabled; its simulated quotes share the table's clock and Live scoring path.
+- Desktop uses the existing arena geometry with a table camera; smaller screens, reduced motion and unavailable WebGL use an interactive 2D table. Local pick tokens provide reveal/return feedback without editing the shared world or Mario's component folders.
+
+## 2026-10-24 — UI-first game flow, arena continuity
+
+- Jeki's `/play` and `/table/demo-<preset>` screens implement FE_PLAN items 9–16 using local deterministic fixtures. No wallet, backend or contract integration is implied. Reloading resets the demo.
+- Game screens reuse the existing floating stone arena and Principal Crystal, with podium signals responding to selection, lock, reveal and round winners. Preset cards use cut-stone silhouettes. Existing world components stay unchanged; Mario's coin spirits, live skill effects and charts remain separate work.
+- The initial demo hand has one BOOST; round wins award deterministic BOOST/INSURANCE cards, capped at three. Only held skills may be applied, at most one per round. These fixtures stand in for the eventual full six-skill hand.
+- Scores use cap × weighted average non-void signed returns in bps, with BOOST weight two and INSURANCE applied as a zero floor. Round and game scores truncate toward zero. Game scores normalize by total preset caps; negative scores credit zero season points. Preview controls cover ties, forfeits, void moves, used counted games and season cutoff.
+- Game-only navigation and explicit prefixed CSS stay in `components/table/` until the shared shell and UI kit are ready. This avoids changing teammates' files or the shared Tailwind/Turbopack loader, which currently drops CSS module exports.
+
 ## 2026-10-24 — Skill hand, pickers and spells (UI only)
 
 - **The hand owns only the pick-and-confirm flow.** `<SkillHand>` takes the cards, phase, live-deadline and used-this-round flags, your picks, the rivals' picks and the board coins, and calls `onUse(card, target)`. A returned promise keeps the confirm button pending; resolve shows the success line, reject shows the error. The page removes the card and sets `usedThisRound`.

@@ -43,6 +43,7 @@ export function Nav({ floating = false, current }: NavProps) {
 
   return (
     <nav
+      data-site-chrome="nav"
       aria-label="Main"
       className={`mx-auto mt-3 flex w-[calc(100%-1.5rem)] max-w-5xl items-center justify-between gap-3 rounded-[18px] border-[3px] border-garis px-3 py-2 sm:px-4 ${surface}`}
     >
