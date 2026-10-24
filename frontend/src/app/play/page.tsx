@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { PlayLobby, type LobbyState } from "@/components/table/PlayLobby";
 import { DemoTableGame } from "@/components/table/DemoTableGame";
 import { GameShell } from "@/components/table/GameShell";
+import { NewSeasonControl } from "@/components/table/NewSeasonControl";
 import { getPreset } from "@/mocks/table";
 import "./lobby.css";
 
@@ -18,7 +19,7 @@ async function Route({ searchParams }: Props) {
   if (DEV && demo === "1") return <GameShell game><DemoTableGame preset={getPreset(preset)} /></GameShell>;
   const valid: LobbyState[] = ["ready", "season-closing", "active-table", "outside-k"];
   const initialState = valid.includes(state as LobbyState) ? state as LobbyState : "ready";
-  return <main className="play-lobby"><PlayLobby initialState={initialState} preview={valid.includes(state as LobbyState)} /></main>;
+  return <main className="play-lobby"><PlayLobby initialState={initialState} preview={valid.includes(state as LobbyState)} /><NewSeasonControl /></main>;
 }
 
 export default function PlayPage(props: Props) {

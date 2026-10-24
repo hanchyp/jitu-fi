@@ -165,6 +165,21 @@ export class GameEngine {
     });
   }
 
+  /**
+   * Admin skip: ends the current phase now through the same transition its timer runs. False when the
+   * table already left `expected` (stale or repeated request), so one request moves at most one phase.
+   */
+  skipPhase(tableId: number, expected: { phase: TableState["phase"]; round: number }): Promise<boolean> {
+    return this.run(tableId, async () => {
+      const state = this.state(tableId);
+      if (state.phase === "Finished" || state.phase !== expected.phase || state.round !== expected.round) return false;
+      // Live ends now, so settle prices at the actual end.
+      if (state.phase === "Live") this.current(state).liveEndMs = this.now();
+      await this.advance(tableId, expected);
+      return true;
+    });
+  }
+
   /** A seat's view: other seats' picks stay hidden during Commit, and other hands show only their size. */
   view(tableId: number, viewer?: string) {
     const state = this.state(tableId);

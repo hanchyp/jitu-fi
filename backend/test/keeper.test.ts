@@ -21,7 +21,7 @@ import { createDb, migrateDb } from "../src/db/client.js";
 import { tables } from "../src/db/schema.js";
 import { createLogger } from "../src/logger.js";
 import { resetNonceQueues, type KeyedWallet } from "../src/chain/sendTx.js";
-import { createKeeperContext, DEMO_BONUS, DEMO_ENROLL_SECONDS, DEMO_TENORS, gameIdFor, tickRecords, tickSeasons, type KeeperContext } from "../src/keeper/keeper.js";
+import { createDemoSeason, createKeeperContext, DEMO_BONUS, startKeeper, DEMO_ENROLL_SECONDS, DEMO_TENORS, gameIdFor, tickRecords, tickSeasons, type KeeperContext } from "../src/keeper/keeper.js";
 
 const SALT = ("0x" + "ab".repeat(32)) as Hex;
 const account = privateKeyToAccount("0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d");
@@ -111,7 +111,11 @@ function fakeChain() {
       switch (functionName) {
         case "createSeason": {
           const [enrollStart, start, end] = args as [bigint, bigint, bigint];
-          seasons.set(BigInt(seasons.size + 1), { enrollStart, start, end, status: STATUS.Enrollment, sponsorFunds: 0n });
+          const seasonId = BigInt(seasons.size + 1);
+          seasons.set(seasonId, { enrollStart, start, end, status: STATUS.Enrollment, sponsorFunds: 0n });
+          const topics = encodeEventTopics({ abi: seasonVaultAbi, eventName: "SeasonCreated", args: { seasonId } });
+          const data = encodeAbiParameters([{ type: "uint64" }, { type: "uint64" }, { type: "uint64" }], [enrollStart, start, end]);
+          logs.push({ address: dep.SeasonVault, topics, data, blockNumber: 1n, logIndex: 0, transactionHash: hash, transactionIndex: 0, blockHash: hash, removed: false });
           break;
         }
         case "activate":
@@ -241,6 +245,32 @@ describe("tickSeasons", () => {
     expect(fns(chain.calls)).toEqual(["finalize", "finalize", "createSeason", "createSeason"]);
     expect(chain.seasons.get(3n)!.end - chain.seasons.get(3n)!.start).toBe(DEMO_TENORS.week);
     expect(chain.seasons.get(4n)!.end - chain.seasons.get(4n)!.start).toBe(DEMO_TENORS.month);
+  });
+
+  it("a manual demo season returns its id, is funded once and does not trigger a duplicate", async () => {
+    const { chain, ctx } = await setup({ demo: true, now: 50n });
+    chain.seasons.set(1n, { enrollStart: 0n, start: 100n, end: 100n + DEMO_TENORS.week, status: STATUS.Active, sponsorFunds: 1n });
+    chain.seasons.set(2n, { enrollStart: 0n, start: 200n, end: 200n + DEMO_TENORS.month, status: STATUS.Enrollment, sponsorFunds: 1n });
+    const created = await createDemoSeason(ctx, "week");
+    expect(created.seasonId).toBe(3n);
+    expect(chain.calls).toEqual([{ fn: "createSeason", args: [50n, 50n + DEMO_ENROLL_SECONDS, 50n + DEMO_ENROLL_SECONDS + DEMO_TENORS.week] }]);
+    // Season 1 stays Active and untouched; the new week season counts as the open week, so no auto create.
+    chain.calls.length = 0;
+    await tickSeasons(ctx);
+    await tickSeasons(ctx);
+    expect(fns(chain.calls)).toEqual(["mint", "approve", "fundBonus"]);
+    expect(chain.seasons.get(1n)!.status).toBe(STATUS.Active);
+  });
+
+  it("startKeeper runs a manual create between ticks, never inside one", async () => {
+    const { chain, publicClient, wallet, db } = await setup({ demo: true });
+    const config = loadConfig({ CHAIN_ID: "10143", RPC_URL: "http://localhost:8545", DEMO_MODE: "true", GAME_ID_SALT: SALT });
+    const keeper = startKeeper({ config, db, logger: createLogger("silent"), publicClient: { ...publicClient, getBalance: async () => 0n } as never, wallet: wallet as unknown as KeyedWallet, intervalMs: 60_000 });
+    const created = await keeper.createDemoSeason("week");
+    await keeper.stop();
+    // The first tick opened week (1) and month (2) before the manual week season (3).
+    expect(created.seasonId).toBe(3n);
+    expect(fns(chain.calls)).toEqual(["createSeason", "createSeason", "createSeason"]);
   });
 
   it("outside DEMO_MODE never creates or funds seasons", async () => {

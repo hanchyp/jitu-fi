@@ -30,7 +30,24 @@ export type ServerDeps = {
   corsOrigin: string;
   /** Price broadcast interval; 0 disables it (tests). */
   priceTickMs?: number;
+  /** Admin controls (phase skip, new season). Set only on Monad testnet; absent, they answer 403. */
+  admin?: {
+    /** On-chain SEASON_MANAGER_ROLE check on the vault. */
+    isSeasonManager(address: string): Promise<boolean>;
+    /** The keeper's serialized createSeason; absent when the keeper or DEMO_MODE is off. */
+    createSeason?: (tenor: "week" | "month") => Promise<{ seasonId: bigint; hash: string }>;
+  };
 };
+
+export class HttpError extends Error {
+  constructor(
+    readonly status: number,
+    readonly code: string,
+    message: string,
+  ) {
+    super(message);
+  }
+}
 
 const address = z.string().regex(/^0x[0-9a-fA-F]{40}$/);
 const id = z.coerce.number().int().positive();
@@ -45,6 +62,8 @@ const skillBody = z.object({
   targetCoin: z.string(),
   swapTo: z.string().optional(),
 });
+const advanceBody = z.object({ phase: z.enum(["Commit", "Reveal", "Live"]), round: z.number().int().positive() });
+const seasonBody = z.object({ tenor: z.enum(["week", "month"]) });
 const verifyBody = z.object({ message: z.string().min(1), signature: z.string().regex(/^0x[0-9a-fA-F]+$/) });
 
 const json = (value: unknown) => JSON.stringify(value, (_k, v) => (typeof v === "bigint" ? v.toString() : v));
@@ -85,6 +104,7 @@ export async function buildServer(deps: ServerDeps) {
 
   app.setErrorHandler((err, _req, reply) => {
     if (err instanceof z.ZodError) return reply.status(400).send({ error: "BAD_REQUEST", issues: err.issues });
+    if (err instanceof HttpError) return reply.status(err.status).send({ error: err.code, message: err.message });
     if (err instanceof AuthError) return reply.status(401).send({ error: "UNAUTHORIZED", message: err.message });
     if (err instanceof GameError) {
       const status = err.code === "ALREADY_AT_TABLE" ? 409 : err.code === "TABLE_NOT_RUNNING" ? 404 : 400;
@@ -98,6 +118,14 @@ export async function buildServer(deps: ServerDeps) {
     const header = req.headers.authorization;
     const user = await auth.session(header?.startsWith("Bearer ") ? header.slice(7) : undefined);
     if (!user) throw new AuthError("sign in with Ethereum first");
+    return user;
+  }
+
+  /** Signed-in wallet that holds SEASON_MANAGER_ROLE on-chain right now. */
+  async function requireAdmin(req: FastifyRequest): Promise<string> {
+    const user = await requireUser(req);
+    if (!deps.admin) throw new HttpError(403, "ADMIN_DISABLED", "admin controls run on Monad testnet only");
+    if (!(await deps.admin.isSeasonManager(user))) throw new HttpError(403, "NOT_SEASON_MANAGER", "this wallet does not hold SEASON_MANAGER_ROLE");
     return user;
   }
 
@@ -149,6 +177,38 @@ export async function buildServer(deps: ServerDeps) {
   app.post("/tables/:id/skill", async (req) => {
     const user = await requireUser(req);
     return { skill: await engine.useSkill(id.parse((req.params as { id: string }).id), user, skillBody.parse(req.body)) };
+  });
+
+  // ---------- Admin (season managers only) ----------
+
+  app.post("/tables/:id/advance", async (req) => {
+    const user = await requireAdmin(req);
+    const tableId = id.parse((req.params as { id: string }).id);
+    const body = advanceBody.parse(req.body);
+    // Own single-human bot table only: never another player's game.
+    const table = engine.get(tableId);
+    if (!table) throw new GameError("TABLE_NOT_RUNNING", "no such table");
+    if (table.seats[0]!.address !== user) throw new HttpError(403, "NOT_YOUR_TABLE", "skip works on your own table only");
+    return { advanced: await engine.skipPhase(tableId, body) };
+  });
+
+  let creatingSeason = false;
+  app.post("/admin/seasons", async (req) => {
+    await requireAdmin(req);
+    const { tenor } = seasonBody.parse(req.body);
+    const create = deps.admin?.createSeason;
+    if (!create) throw new HttpError(503, "KEEPER_UNAVAILABLE", "the keeper is not running with DEMO_MODE on");
+    if (creatingSeason) throw new HttpError(409, "SEASON_CREATE_PENDING", "a season is already being created");
+    creatingSeason = true;
+    try {
+      const { seasonId, hash } = await create(tenor);
+      return { seasonId: Number(seasonId), hash, tenor };
+    } catch (err) {
+      log.warn({ err, tenor }, "admin createSeason failed");
+      throw new HttpError(502, "SEASON_CREATE_FAILED", "createSeason failed on-chain; check the keeper balance and role");
+    } finally {
+      creatingSeason = false;
+    }
   });
 
   // ---------- WebSocket ----------

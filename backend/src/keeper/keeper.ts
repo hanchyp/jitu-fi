@@ -137,20 +137,30 @@ export async function tickSeasons(ctx: KeeperContext): Promise<void> {
   for (const tenor of Object.keys(DEMO_TENORS) as Tenor[]) {
     if (open.has(tenor)) continue;
     try {
-      const enrollStart = now;
-      const start = now + DEMO_ENROLL_SECONDS;
-      const end = start + DEMO_TENORS[tenor];
-      const hash = await mustSucceed(
-        sender,
-        { address: vault, abi: seasonVaultAbi, functionName: "createSeason", args: [enrollStart, start, end] },
-        `createSeason(${tenor})`,
-      );
-      // The new id is picked up by the seasonCount scan next tick, which also funds it.
-      logger.info({ tenor, start: start.toString(), end: end.toString(), hash }, "demo season created");
+      await createDemoSeason(ctx, tenor);
     } catch (err) {
       logger.warn({ err, tenor }, "createSeason failed; retrying next tick");
     }
   }
+}
+
+/** Opens one DEMO_MODE season now (normal enrollment window). The next tick's seasonCount scan tracks and funds it. */
+export async function createDemoSeason(ctx: KeeperContext, tenor: Tenor): Promise<{ seasonId: bigint; hash: Hex }> {
+  const enrollStart = ctx.nowSec();
+  const start = enrollStart + DEMO_ENROLL_SECONDS;
+  const end = start + DEMO_TENORS[tenor];
+  const { hash, receipt } = await ctx.sender.sendAndWait({
+    address: ctx.reader.addresses.vault,
+    abi: seasonVaultAbi,
+    functionName: "createSeason",
+    args: [enrollStart, start, end],
+  });
+  if (receipt.status !== "success") throw new Error(`createSeason(${tenor}) reverted (${hash})`);
+  const [created] = parseEventLogs({ abi: seasonVaultAbi, logs: receipt.logs, eventName: "SeasonCreated" });
+  if (!created) throw new Error(`createSeason(${tenor}) emitted no SeasonCreated (${hash})`);
+  const seasonId = created.args.seasonId;
+  ctx.logger.info({ tenor, seasonId: seasonId.toString(), start: start.toString(), end: end.toString(), hash }, "demo season created");
+  return { seasonId, hash };
 }
 
 async function fundSeason(ctx: KeeperContext, id: bigint) {
@@ -251,8 +261,15 @@ export interface KeeperDeps {
   intervalMs?: number;
 }
 
-/** Starts the keeper loop. The returned stop() resolves once any running tick has finished. */
-export function startKeeper(deps: KeeperDeps): () => Promise<void> {
+export interface Keeper {
+  /** Resolves once any running tick has finished. */
+  stop(): Promise<void>;
+  /** createDemoSeason, run between ticks so a tick never sees a half-created season. */
+  createDemoSeason(tenor: Tenor): Promise<{ seasonId: bigint; hash: Hex }>;
+}
+
+/** Starts the keeper loop. */
+export function startKeeper(deps: KeeperDeps): Keeper {
   const publicClient = deps.publicClient ?? createClients(deps.config).publicClient;
   const wallet = deps.wallet ?? (createKeeperWallet(deps.config) as KeyedWallet);
   const ctx = createKeeperContext({ ...deps, publicClient, wallet });
@@ -270,7 +287,13 @@ export function startKeeper(deps: KeeperDeps): () => Promise<void> {
 
   let stopped = false;
   let timer: NodeJS.Timeout | undefined;
-  let running: Promise<void> = Promise.resolve();
+  // Ticks and manual season creates share one chain, so they never interleave.
+  let running: Promise<unknown> = Promise.resolve();
+  const exclusive = <T>(fn: () => Promise<T>): Promise<T> => {
+    const next = running.catch(() => undefined).then(fn);
+    running = next.catch(() => undefined);
+    return next;
+  };
 
   const tick = async () => {
     try {
@@ -286,15 +309,18 @@ export function startKeeper(deps: KeeperDeps): () => Promise<void> {
   };
   const loop = () => {
     if (stopped) return;
-    running = tick().finally(() => {
+    void exclusive(tick).finally(() => {
       if (!stopped) timer = setTimeout(loop, intervalMs);
     });
   };
   loop();
 
-  return async () => {
-    stopped = true;
-    if (timer) clearTimeout(timer);
-    await running;
+  return {
+    async stop() {
+      stopped = true;
+      if (timer) clearTimeout(timer);
+      await running;
+    },
+    createDemoSeason: (tenor) => exclusive(() => createDemoSeason(ctx, tenor)),
   };
 }

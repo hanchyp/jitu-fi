@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSession } from "@/lib/auth/session";
 import { useTable } from "@/lib/game/useTable";
 import { postPicks, postSkill } from "@/lib/game/api";
 import { toDemoState } from "@/lib/game/toDemoState";
@@ -11,6 +12,8 @@ import { ArenaTable } from "./ArenaTable";
 import { TableDock } from "./TableDock";
 import { ResultPopup } from "./ResultPopup";
 import { demoReducer, gameScores, roundResult, type DemoAction } from "./demo-engine";
+import { adminErrorMessage, adminPost } from "./admin-api";
+import { isNextPhaseKey } from "./demo-shortcut";
 import styles from "./game-styles";
 
 export function ServerTableGame({ id }: { id: number }) {
@@ -22,6 +25,23 @@ export function ServerTableGame({ id }: { id: number }) {
   const [dismissedAttack, setDismissedAttack] = useState<string | null>(null);
   const [view3d, setView3d] = useState(false);
   const [sceneLoaded, setSceneLoaded] = useState(false);
+  const { ensureToken } = useSession();
+  // Season managers: N asks the backend to end the current phase now. Phase + round make a retry a no-op.
+  const latest = useRef({ phase: table.state?.phase, round: table.state?.round, ensureToken, refetch: table.refetch });
+  useEffect(() => { latest.current = { phase: table.state?.phase, round: table.state?.round, ensureToken, refetch: table.refetch }; });
+  useEffect(() => {
+    let skipping = false;
+    const onKey = (event: KeyboardEvent) => {
+      const { phase, round, ensureToken, refetch } = latest.current;
+      if (!isNextPhaseKey(event, document) || skipping || !phase || phase === "Finished") return;
+      event.preventDefault();
+      skipping = true;
+      void adminPost(`/tables/${id}/advance`, { phase, round }, ensureToken).then(() => { setActionError(""); refetch(); })
+        .catch((err) => setActionError(adminErrorMessage(err))).finally(() => { skipping = false; });
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [id]);
   if (!table.state) return <div className="jitu-table-app"><p role="status">{table.status === "notfound" ? "Table not found" : table.error || "Preparing the arena…"}</p></div>;
   const state = toDemoState(table.state, table.now, table.prices);
   if (state.phase === "commit" && !state.locked && draft?.round === state.round) state.picks = draft.picks;
