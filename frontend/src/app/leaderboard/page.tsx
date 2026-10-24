@@ -1,3 +1,4 @@
+import { LiveStats } from "@/components/stats/LiveStats";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { statsArt } from "@/components/stats/art";
@@ -30,6 +31,8 @@ export default function LeaderboardPage({ searchParams }: PageProps<"/leaderboar
 
 async function Leaderboard({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const state = await readDevState(searchParams, STATES);
+  const rawState = (await searchParams).state;
+  if (!STATES.includes(rawState as typeof STATES[number])) return <LiveStats kind="leaderboard" emptyArt={EMPTY_ART} medals={MEDALS} />;
   if (state === "loading") return <LeaderboardSkeleton />;
 
   const boards = state === "empty" ? LEADERBOARDS_EMPTY : state === "you-not-ranked" ? LEADERBOARDS_YOU_UNRANKED : LEADERBOARDS;

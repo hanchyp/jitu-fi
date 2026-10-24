@@ -1,3 +1,4 @@
+import { LiveStats } from "@/components/stats/LiveStats";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { statsArt } from "@/components/stats/art";
@@ -28,6 +29,8 @@ export default function ProfilePage({ searchParams }: PageProps<"/profile">) {
 
 async function Profile({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const state = await readDevState(searchParams, STATES);
+  const rawState = (await searchParams).state;
+  if (!STATES.includes(rawState as typeof STATES[number])) return <LiveStats kind="profile" emptyArt={EMPTY_ART} />;
   if (state === "loading") return <ProfileSkeleton />;
   return <ProfileScreen key={state} profile={state === "empty" ? PROFILE_EMPTY : PROFILE} emptyArt={EMPTY_ART} />;
 }
