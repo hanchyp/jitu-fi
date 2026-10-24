@@ -1,0 +1,10 @@
+packages:
+  - frontend
+  - backend
+  - packages/*
+  - bots
+
+allowBuilds:
+  esbuild: true
+  sharp: false
+  unrs-resolver: false

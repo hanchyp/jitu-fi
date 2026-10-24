@@ -38,4 +38,6 @@ No buy-in or entry fee. No spectator betting. Principal is never at risk. GameMa
 4. **GIFT_COIN outcomes are predictable with `PseudoRandomness`.** Accept this for the demo, and list it in `DECISIONS.md` as a known limitation (fixed later by Pyth Entropy).
 
 ## Status
-- Phase 0 (setup) has not started yet.
+- Phase 0 (setup) is partly done. The pnpm workspace, `frontend/` (Next.js 16 + Tailwind, initialized only) and `backend/` (TypeScript skeleton, no code yet) build with `pnpm build`.
+- `contracts/` has only a README. The Foundry scaffold waits until Foundry is installed.
+- `packages/shared/` and `bots/` have not been created yet.
