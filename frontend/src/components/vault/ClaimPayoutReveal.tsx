@@ -40,11 +40,11 @@ export function ClaimPayoutReveal({ from, total, countUp, className = "" }: Clai
   const shown = animated ? from + ((total - from) * BigInt(step)) / BigInt(STEPS) : total;
 
   return (
-    <p className={`font-display text-5xl leading-none text-emas tabular-nums sm:text-6xl ${className}`}>
+    <p className={`flex flex-wrap items-baseline gap-x-2 gap-y-2 font-display text-4xl leading-none min-[400px]:text-5xl text-emas tabular-nums sm:text-6xl ${className}`}>
       {/* Screen readers get the final amount once, not every frame. */}
       <span aria-hidden="true">{formatMusd(shown, { unit: false })}</span>
       <span className="sr-only">{formatMusd(total)}</span>
-      <span aria-hidden="true" className="ml-2 text-2xl text-white/70 sm:text-3xl">
+      <span aria-hidden="true" className="text-xl text-white/70 sm:text-3xl">
         mUSD
       </span>
     </p>

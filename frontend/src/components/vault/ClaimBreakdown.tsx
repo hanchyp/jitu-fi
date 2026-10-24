@@ -12,6 +12,7 @@ type ClaimBreakdownProps = {
   shortfall?: boolean;
   /** Not mature yet: every figure is an estimate. */
   estimate?: boolean;
+  simulated?: boolean;
 };
 
 const ZERO = BigInt(0);
@@ -28,9 +29,9 @@ function Row({ marker, label, note, amount }: { marker: ReactNode; label: string
       <span className="flex h-9 w-9 shrink-0 items-center justify-center">{marker}</span>
       <div className="min-w-0 flex-1">
         <dt className="font-extrabold text-white">{label}</dt>
-        <dd className="text-sm font-semibold leading-snug text-white/60">{note}</dd>
+        <dd className="text-sm font-semibold leading-snug text-white/75">{note}</dd>
       </div>
-      <dd className="font-display text-2xl text-white tabular-nums">{formatMusd(amount, { unit: false })}</dd>
+      <dd className="shrink-0 font-display text-xl text-gading tabular-nums sm:text-2xl">{formatMusd(amount, { unit: false })}</dd>
     </div>
   );
 }
@@ -45,7 +46,7 @@ const swatch = (fill: string) => (
  * landing's colors, so "where the yield goes" reads as "what you got". The total is not here: the
  * screen shows it as the focal number.
  */
-export function ClaimBreakdown({ payout, deposited, bonusShareBps, shortfall = false, estimate = false }: ClaimBreakdownProps) {
+export function ClaimBreakdown({ payout, deposited, bonusShareBps, shortfall = false, estimate = false, simulated = false }: ClaimBreakdownProps) {
   const loot = payout.baseYield + payout.bonus;
   const basePct = loot > ZERO ? Number((payout.baseYield * BigInt(10_000)) / loot) / 100 : 0;
 
@@ -57,22 +58,22 @@ export function ClaimBreakdown({ payout, deposited, bonusShareBps, shortfall = f
           label="Principal"
           note={
             shortfall
-              ? `Repaid pro-rata: ${formatMusd(payout.principal)} of the ${formatMusd(deposited)} you deposited.`
+              ? `Pro-rata return on your ${formatMusd(deposited)} deposit.`
               : estimate
-                ? "Comes back from the Principal Crystal in full at maturity."
-                : "Back from the Principal Crystal in full."
+                ? "Estimated return; strategy shortfalls can reduce principal."
+                : "Your deposit returned in full."
           }
           amount={payout.principal}
         />
         <Row
           marker={swatch("bg-langit")}
-          label={estimate ? "Base yield (simulated)" : "Base yield"}
-          note={shortfall ? "No yield this season, so there is no base yield." : "Shared by deposit size."}
+          label={simulated ? "Base yield (simulated)" : "Base yield"}
+          note={shortfall ? "No strategy yield this season." : "Shared by deposit size."}
           amount={payout.baseYield}
         />
         <Row
           marker={swatch("bg-emas")}
-          label={estimate ? "Bonus (simulated)" : "Bonus"}
+          label={simulated ? "Bonus (simulated)" : "Bonus"}
           note={
             shortfall
               ? `Sponsor funds only. Your share: ${formatShare(bonusShareBps)}.`
@@ -84,7 +85,7 @@ export function ClaimBreakdown({ payout, deposited, bonusShareBps, shortfall = f
 
       {loot > ZERO && (
         <div className="mt-4">
-          <p className="text-sm font-extrabold text-white/70">Your loot</p>
+          <p className="text-sm font-extrabold text-white/70">Earnings split (mUSD)</p>
           <div
             className="mt-1.5 flex h-8 w-full overflow-hidden rounded-[14px] border-[3px] border-garis shadow-[0_4px_0_0_#040B10]"
             role="img"

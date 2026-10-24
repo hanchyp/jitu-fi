@@ -38,7 +38,7 @@ async function Claim({ searchParams }: { searchParams: Promise<SearchParams> }) 
           <EmptyState
             art="/assets/landing/claim-treasure.webp"
             title="Your chest is waiting"
-            body="Deposit mUSD into a season and play your games. At maturity your principal, base yield and bonus land here, ready to claim."
+            body="Deposit mUSD into a season and play your games. At maturity, claim your returned principal, base yield and bonus here."
             action={
               <GameButton href="/deposit" size="lg">
                 Deposit mUSD
@@ -64,10 +64,7 @@ function ClaimSkeleton() {
     <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
       <Skeleton className="h-6 w-40" />
       <Skeleton className="mt-3 h-12 w-72 max-w-full" />
-      <div className="mt-8 grid items-start gap-6 lg:grid-cols-[1.45fr_1fr]">
-        <Skeleton className="h-96 w-full" label="Loading your claim" />
-        <Skeleton className="h-64 w-full" />
-      </div>
+      <Skeleton className="mt-8 h-[640px] w-full" label="Loading your claim" />
     </section>
   );
 }
