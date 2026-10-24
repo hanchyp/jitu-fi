@@ -5,7 +5,7 @@
 
 import { animate, AnimatePresence, motion, useMotionValue, useTransform } from "motion/react";
 import { useEffect, useState } from "react";
-import { CHAMPIONS } from "@/lib/champions";
+import { HOUSE_BOTS } from "@/lib/bots";
 import { COIN, TABLE_COINS, coinDataUrl, type Coin } from "@/lib/coins";
 
 const POP = { type: "spring", stiffness: 420, damping: 20 } as const;
@@ -133,7 +133,7 @@ export function DepositScene({ reduce }: { reduce: boolean }) {
   );
 }
 
-/* 2. Face the champions: you and the 3 house champions take their seats, then a preset is chosen. */
+/* 2. Take a seat: you and the 3 house bots take their seats, then a preset is chosen. */
 const SCENE_PRESETS = [
   { name: "Quick", caps: [1, 2, 3] },
   { name: "Standard", caps: [1, 1, 2, 2, 3] },
@@ -164,7 +164,7 @@ export function TableScene({ reduce }: { reduce: boolean }) {
   const step = useTimeline([300, 550, 800, 1050, 1700], reduce);
   const seats = [
     { name: "You", src: "/assets/landing/portrait-hero.webp", ring: "#DAAE4B", you: true },
-    ...CHAMPIONS.map((c) => ({ name: c.short, src: c.portrait, ring: c.color, you: false })),
+    ...HOUSE_BOTS.map((c) => ({ name: c.short, src: c.portrait, ring: c.color, you: false })),
   ];
   const chosen = step >= 5;
 

@@ -3,7 +3,6 @@ import Link from "next/link";
 import { HowToPlayTrigger } from "@/components/howto/HowToPlay";
 import { GameButton } from "@/components/ui/GameButton";
 import { TitleScreen } from "@/components/world/TitleScreen";
-import { CHAMPIONS } from "@/lib/champions";
 
 const ART = "/assets/landing";
 
@@ -17,7 +16,7 @@ const QUESTS = [
   },
   {
     title: "Play",
-    body: "Take on 3 house champions. Call Buy or Sell on the coins you trust, cast skills and climb the table.",
+    body: "Take on 3 house bots. Call Buy or Sell on the coins you trust, cast any of the 6 skills and climb the table.",
     art: `${ART}/play-cards.webp`,
     alt: "A smiling gold coin spirit rising from a stone podium",
     tilt: "md:rotate-1",
@@ -77,7 +76,7 @@ const RULES = [
   },
   {
     title: "Skill wins, not luck",
-    body: "Winners are ranked by score, never by lottery. The house champions never take points or bonus.",
+    body: "Winners are ranked by score, never by lottery. The 3 house bots never earn points or touch the bonus pot.",
     art: `${ART}/skill-wins.webp`,
     alt: "A gold trophy with a small crown",
   },
@@ -95,7 +94,6 @@ function Nav() {
         <HowToPlayTrigger look="link" className="font-extrabold hover:text-emas">
           How to play
         </HowToPlayTrigger>
-        <a href="#champions" className="hover:text-emas">Champions</a>
         <a href="#yield" className="hover:text-emas">Yield</a>
         <a href="#season" className="hover:text-emas">Season</a>
       </div>
@@ -177,8 +175,8 @@ export default function Home() {
             <div className="rounded-[22px] border-[3px] border-garis bg-malam p-5 shadow-[0_6px_0_0_#040B10] sm:p-6">
               <h3 className="font-display text-2xl text-gading">Cast a skill</h3>
               <p className="mt-1 font-semibold leading-relaxed text-white/70">
-                Start with one random skill and earn another for every round you win. One skill per round, so pick
-                your moment.
+                All 6 skills are open to every player, bots included. Use at most one per round, so pick your
+                moment.
               </p>
               <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {SKILLS.map((skill) => (
@@ -189,62 +187,6 @@ export default function Home() {
                 ))}
               </ul>
             </div>
-          </div>
-        </section>
-
-        {/* House champions */}
-        <section id="champions" className="border-t-[3px] border-garis bg-dasar">
-          <div className="mx-auto max-w-6xl scroll-mt-6 px-4 py-20 sm:px-6 sm:py-24">
-            <SectionTitle>Meet the champions</SectionTitle>
-            <p className="mt-3 max-w-2xl text-lg font-semibold text-white/75">
-              Every table is you against 3 house champions. They play to win, but they never earn points or touch the
-              bonus pot.
-            </p>
-            <ul className="mt-12 grid gap-8 md:grid-cols-3">
-              {CHAMPIONS.map((champ, i) => (
-                <li
-                  key={champ.name}
-                  className={`relative rounded-[22px] border-[3px] border-garis bg-papan p-6 pt-5 shadow-[0_8px_0_0_#040B10] ${
-                    ["md:rotate-1", "md:-rotate-1", "md:rotate-2"][i]
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <Image
-                      src={champ.portrait}
-                      alt={`Portrait of ${champ.name}`}
-                      width={256}
-                      height={256}
-                      sizes="112px"
-                      className="h-28 w-28 shrink-0 rounded-full border-[3px] border-garis bg-malam"
-                      style={{ boxShadow: `inset 0 0 0 4px ${champ.color}` }}
-                    />
-                    <div>
-                      <h3 className="font-display text-2xl leading-tight text-gading sm:text-3xl">{champ.name}</h3>
-                      <p className="mt-1 font-extrabold" style={{ color: champ.color }}>
-                        {champ.title}
-                      </p>
-                    </div>
-                  </div>
-                  <p className="mt-4 text-[17px] font-semibold leading-relaxed text-white/80">{champ.line}</p>
-                  <ul className="mt-4 flex flex-wrap gap-2" aria-label="Favorite moves">
-                    {champ.skills.map((skill) => (
-                      <li
-                        key={skill}
-                        className={`rounded-[10px] border-[3px] border-garis px-2 py-0.5 text-sm font-black ${
-                          skill === "Buy"
-                            ? "bg-naik text-garis"
-                            : skill === "Sell"
-                              ? "bg-turun text-garis"
-                              : "bg-dasar text-zamrud"
-                        }`}
-                      >
-                        {skill}
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              ))}
-            </ul>
           </div>
         </section>
 

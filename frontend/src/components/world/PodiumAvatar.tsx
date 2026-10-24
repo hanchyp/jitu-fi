@@ -2,7 +2,7 @@
 
 // One player's avatar, mounted on top of each podium (origin = podium top center): a full-body
 // sprite on a plane that turns around Y to face the camera, so the feet stay planted.
-// Seat 0 (front right, gold) is the challenger; the other seats hold the house champions.
+// Seat 0 (front right, gold) is the challenger; the other seats hold the house bots.
 
 import { useTexture } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
