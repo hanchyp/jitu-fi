@@ -3,13 +3,15 @@
 `<TableView3D>` draws the 3D coin-spirits scene from the same `DemoState` that drives
 `ArenaTable`, so a 3D/2D toggle needs no new state.
 
-In `TableGame.tsx`, swap the board line:
-
-```tsx
-import { TableView3D } from "@/components/table-scene";
-const [view3d, setView3d] = useState(false); // wire to a toggle button
-{view3d ? <TableView3D state={state} fallback={<ArenaTable state={state} dispatch={dispatch} winners={arenaWinners} />} /> : <ArenaTable state={state} dispatch={dispatch} winners={arenaWinners} />}
-```
+`TableGame.tsx` loads the scene on the first 3D selection, then keeps it mounted
+for the table's lifetime. The absolute `.jitu-table-stage3d` layer uses
+`visibility: hidden`, `aria-hidden`, and `inert` while 2D is selected or Commit
+is active. Its parent retains its size while the interactive 2D arena is shown.
+Do not conditionally remove the scene, key it by countdown/phase/round, or use
+`display: none`: toggles and phase transitions must retain the same canvas.
+The table renders directly with toon materials and glow meshes. The shared
+screen-space postprocessing composer produced intermittent black frames during
+timer updates even with a stable canvas; it is intentionally omitted here.
 
 ## Props
 

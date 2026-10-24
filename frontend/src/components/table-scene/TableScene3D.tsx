@@ -13,7 +13,6 @@ import { COIN } from "@/lib/coins";
 import { Arena, PODIUM_SEATS, PODIUM_TOP_Y } from "@/components/world/Arena";
 import { Backdrop } from "@/components/world/Backdrop";
 import { Coin } from "@/components/world/Coin";
-import { Effects } from "@/components/world/Effects";
 import { useGlowMaterial } from "@/components/world/glow";
 import { MonadCrystal } from "@/components/world/MonadCrystal";
 import { Sky } from "@/components/world/Sky";
@@ -447,7 +446,8 @@ function Scene({ players, prices, phase, winnerIds, labels, renderEffect }: Scen
       </group>
       <CameraRig />
       <ProjectLabels labels={labels} />
-      <Effects />
+      {/* Render directly: the shared screen-space composer intermittently clears
+          this updating table to black. Toon materials and glow meshes remain. */}
     </>
   );
 }
