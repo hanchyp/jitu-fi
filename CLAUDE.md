@@ -18,7 +18,6 @@ When the spec and this file conflict, **this file wins**.
 ## Conventions
 - Monorepo with pnpm workspaces: `contracts/` (Foundry ≥1.8.0), `backend/`, `frontend/`, `packages/shared/`, `bots/`.
 - Code and comments in English. UI text in Indonesian via a simple i18n file.
-- UI work follows `frontend/DESIGN.md` (bilyet + draft card direction, tokens, motion rules) and the `frontend-design` skill in `.claude/skills/`. Animations use `motion` (`motion/react`).
 - Integer money only. Stablecoin uses 6 decimals. Returns and scores are in bps.
 - Work phase by phase (spec §10). Tests must be green before commit and before moving to the next phase. Commit messages look like `feat(contracts): ...`. Never add a `Co-Authored-By: Claude` (or any AI attribution) trailer to commits or PRs.
 - Record every ambiguous design decision in `DECISIONS.md`, choosing the simplest safe option.
