@@ -24,7 +24,7 @@ const STEPS: { title: string; body: string; Scene: ComponentType<{ reduce: boole
   },
   {
     title: "Call it, cast a skill",
-    body: "Call Buy if you think the price rises, Sell if it falls. Then cast up to one skill per round. All 6 are open to everyone: BOOST, INSURANCE, LOCK, FLIP, SWAP and FREEZE.",
+    body: "Call Buy if you think the price rises, Sell if it falls. Then cast up to one skill: BOOST, INSURANCE, LOCK, FLIP, SWAP or FREEZE. You start with 1 random skill and earn 1 more for each round won, hand max 3. Skills aren't tied to any character, and bots follow the same rules.",
     Scene: CallScene,
   },
   {

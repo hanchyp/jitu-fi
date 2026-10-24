@@ -16,7 +16,7 @@ const QUESTS = [
   },
   {
     title: "Play",
-    body: "Take on 3 house bots. Call Buy or Sell on the coins you trust, cast any of the 6 skills and climb the table.",
+    body: "Take on 3 house bots. Call Buy or Sell on the coins you trust, cast skills and climb the table.",
     art: `${ART}/play-cards.webp`,
     alt: "A smiling gold coin spirit rising from a stone podium",
     tilt: "md:rotate-1",
@@ -175,8 +175,8 @@ export default function Home() {
             <div className="rounded-[22px] border-[3px] border-garis bg-malam p-5 shadow-[0_6px_0_0_#040B10] sm:p-6">
               <h3 className="font-display text-2xl text-gading">Cast a skill</h3>
               <p className="mt-1 font-semibold leading-relaxed text-white/70">
-                All 6 skills are open to every player, bots included. Use at most one per round, so pick your
-                moment.
+                Start with one random skill and earn another for every round you win, up to 3 in hand. One skill per
+                round, so pick your moment. Skills aren&apos;t tied to any character: bots play by the same rules.
               </p>
               <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {SKILLS.map((skill) => (
