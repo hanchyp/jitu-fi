@@ -3,15 +3,28 @@ import { Skeleton } from "@/components/ui/Skeleton";
 /** Static loading layouts (no pulse) for /leaderboard and /profile, also used as Suspense fallbacks. */
 export function LeaderboardSkeleton() {
   return (
-    <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
-      <Skeleton className="h-12 w-64 max-w-full" />
-      <Skeleton className="mt-3 h-6 w-full max-w-xl" />
-      <Skeleton className="mt-8 h-11 w-56" />
-      <div className="mt-4 space-y-2 rounded-[22px] border-[3px] border-garis bg-malam p-5 shadow-[0_6px_0_0_#040B10] sm:p-6">
-        <Skeleton className="h-7 w-48" label="Loading the leaderboard" />
-        {Array.from({ length: 6 }, (_, i) => (
-          <Skeleton key={i} className="h-16 w-full" />
-        ))}
+    <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12" aria-label="Loading the leaderboard" aria-busy="true">
+      <h1 className="font-display title-outline text-4xl text-gading sm:text-5xl">Hall of fame</h1>
+      <p role="status" className="mt-2 font-semibold text-white/75">Gathering the season standings…</p>
+      <Skeleton className="mt-6 h-14 w-56" />
+      <Skeleton className="mt-4 h-8 w-52" />
+      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="flex h-80 items-end gap-3 rounded-[22px] border-[3px] border-garis bg-dasar px-4 pt-8 sm:px-6" aria-hidden="true">
+          <Skeleton className="h-40 flex-1" />
+          <Skeleton className="h-56 flex-1" />
+          <Skeleton className="h-32 flex-1" />
+        </div>
+        <div className="space-y-5 rounded-[22px] border-[3px] border-garis bg-papan p-5 sm:p-6" aria-hidden="true">
+          <Skeleton className="h-8 w-40 max-w-full" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-6 w-full" />
+          <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-10 w-40 max-w-full" />
+        </div>
+      </div>
+      <div className="mt-9 space-y-2" aria-hidden="true">
+        <Skeleton className="h-8 w-36" />
+        {Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-14 w-full" />)}
       </div>
     </section>
   );
