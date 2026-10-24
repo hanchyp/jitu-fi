@@ -18,6 +18,20 @@ Ambiguous design calls and known limitations, newest first. Each entry picks the
 - **Closed seasons look closed:** a tenor board whose enrollment closed uses `bg-dasar`, a dimmed label, no hover and no gold ring. The blocking notes sit directly under the season boards.
 - **Bonus pots are labelled as part simulated:** "Includes X from sponsors. The rest is simulated yield."
 
+## 2026-10-23 — Claim screen and live season card
+
+- **Claim dummy data is computed, not typed.** `src/mocks/claim.ts` runs the vault's finalize split (15% fee, 50/50, sponsor funds added to the bonus pot) and the claim formulas with truncating bigint math, so the breakdown always adds up: total = principal + base yield + bonus. The shortfall mock uses the same code path (CLAUDE.md correction 3): principal pro-rata, base yield 0, bonus from sponsor funds only.
+- **Bonus share = bonus ÷ bonus pot**, shown in bps as "1.68%". It is the same number as weighted points ÷ total weighted points, without exposing a second snapshot field. A share has no sign, so the claim components use their own `formatShare` instead of `formatBps` (which is for returns).
+- **The total shows truncated to 2 decimals, with the exact 6-decimal amount underneath** ("Exactly 287.153033 mUSD"), so the focal number stays readable and nothing is hidden.
+- **One orchestrated moment:** after pressing Claim (1.4 s dummy pending), the closed chest becomes the open treasure chest and the total counts up from the principal to the total. The count is bigint math on a 0–1000 progress, ending exactly on the total. A direct load of `?state=claimed` and reduced motion show the final state at once. After a claim, a one-line summary replaces the breakdown (spec: "the breakdown is replaced by a confirmation").
+- **Principal uses the crystal mark** (`NetworkIcon`) as its row marker, since principal is the Principal Crystal. Base yield and bonus use the landing loot bar's `langit` and `emas` swatches, and the player's own loot bar (base | bonus) follows the landing bar's recipe.
+- **`wrong-network` on /claim** renders the ready screen under the shell's overlay.
+- **Landing dev states:** `visitor` (default) and `has-position`. The page stays static, so a new kit component `DevStateSwitch` picks between server-built views on the client under `<Suspense>`, with the default view as the prerendered fallback. `has-position` also switches the season card to `CURRENT_SEASONS_WEEK_STARTED`, matching the position mock's live 1-week season.
+- **Only the bottom CTA is position-aware** ("Deposit mUSD" or "Play", plus a line from the position mock). The hero's "Play now" lives in `TitleScreen`, which the brief keeps unchanged; it should follow the same rule once wallet data is real.
+- **Season card countdown without hydration mismatches:** no render reads `Date.now()`. Server and client both start from the given clock (`MOCK_NOW`), and after mount the card adds its own elapsed-seconds counter, so the first client render matches the HTML. Status flips Enrolling → Live → Matured as the clock passes `start` and `end`. The real server clock replaces `MOCK_NOW` later.
+- **The season card dropped the static stat grid.** Season length now shows on each tenor tile, and enrollment, counted games and the weight cap became one quiet line under the intro copy.
+- **Components import mock types only** (`import type` from `src/mocks/`), because those files define the API shapes. Data still reaches components only through props.
+
 ## 2026-10-23 — Shared shell and UI kit
 
 - **One nav for every page.** Links: How to play (opens the tutorial popup), Play, Leaderboard; then a dummy Connect button and the gold "Deposit mUSD" CTA, which is the Deposit entry. The landing's old in-page links (Yield, Season) are gone, so the landing nav differs in its links and the added Connect button; banner, footer and all section geometry are unchanged (measured before and after at 1280 px).
