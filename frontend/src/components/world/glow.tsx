@@ -18,15 +18,18 @@ void main() {
 }
 `;
 
-// Soft round falloff on a plane: halos, floor glows.
+// Soft round falloff on a plane: halos, floor glows. uInner > 0 fades the middle out, for a
+// backlight ring around a shape that should not be washed over.
 const RADIAL_FRAGMENT = /* glsl */ `
 uniform vec3 uColor;
 uniform float uStrength;
 uniform float uPower;
+uniform float uInner;
 varying vec2 vUv;
 void main() {
   float d = length(vUv - 0.5) * 2.0;
   float a = pow(max(1.0 - d, 0.0), uPower);
+  if (uInner > 0.0) a *= smoothstep(uInner * 0.6, uInner, d);
   gl_FragColor = vec4(uColor * uStrength, a);
 }
 `;
@@ -52,9 +55,10 @@ export type GlowUniforms = {
   uStrength: { value: number };
   uPower: { value: number };
   uTime: { value: number };
+  uInner: { value: number };
 };
 
-export function useGlowMaterial(kind: "radial" | "beam", color: string, strength: number, power = 2.2) {
+export function useGlowMaterial(kind: "radial" | "beam", color: string, strength: number, power = 2.2, inner = 0) {
   return useMemo(
     () =>
       new THREE.ShaderMaterial({
@@ -65,6 +69,7 @@ export function useGlowMaterial(kind: "radial" | "beam", color: string, strength
           uStrength: { value: strength },
           uPower: { value: power },
           uTime: { value: 0 },
+          uInner: { value: inner },
         } satisfies GlowUniforms,
         transparent: true,
         depthWrite: false,
@@ -72,6 +77,6 @@ export function useGlowMaterial(kind: "radial" | "beam", color: string, strength
         side: kind === "beam" ? THREE.DoubleSide : THREE.FrontSide,
         fog: false,
       }),
-    [kind, color, strength, power],
+    [kind, color, strength, power, inner],
   );
 }

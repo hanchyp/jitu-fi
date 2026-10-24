@@ -1,7 +1,7 @@
 "use client";
 
-// The Principal Crystal: the Monad mark (a squircle ring turned 45 degrees), cut into facets,
-// lit from inside, with a halo behind it, a beam onto the rune circle and orbiting light motes.
+// The Principal Crystal: the Monad mark (a squircle ring standing on its corner) as a cut gem,
+// lit from inside, backlit by a ring of glow, with a beam onto the rune circle and light motes.
 
 import { Billboard } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
@@ -13,46 +13,41 @@ import { C, hdr } from "./toon";
 export const CRYSTAL_Y = 2.75;
 const FLOOR_Y = 0.28;
 
-// Rounded square ("squircle") path centered on the origin. Holes need the opposite winding.
-function roundedSquare(target: THREE.Path, size: number, r: number, clockwise: boolean) {
-  const h = size / 2;
-  target.moveTo(-h + r, -h);
-  if (!clockwise) {
-    target.lineTo(h - r, -h);
-    target.quadraticCurveTo(h, -h, h, -h + r);
-    target.lineTo(h, h - r);
-    target.quadraticCurveTo(h, h, h - r, h);
-    target.lineTo(-h + r, h);
-    target.quadraticCurveTo(-h, h, -h, h - r);
-    target.lineTo(-h, -h + r);
-    target.quadraticCurveTo(-h, -h, -h + r, -h);
-  } else {
-    target.quadraticCurveTo(-h, -h, -h, -h + r);
-    target.lineTo(-h, h - r);
-    target.quadraticCurveTo(-h, h, -h + r, h);
-    target.lineTo(h - r, h);
-    target.quadraticCurveTo(h, h, h, h - r);
-    target.lineTo(h, -h + r);
-    target.quadraticCurveTo(h, -h, h - r, -h);
-    target.lineTo(-h + r, -h);
-  }
+// The Monad mark traced from the official 24x24 logo path (@web3icons/core): a squircle standing
+// on its corner with a rounded-square hole set slightly askew. Centered, y up, `scale` per unit.
+function monadMarkShape(scale: number) {
+  const p = (x: number, y: number) => [(x - 12) * scale, (12 - y) * scale] as const;
+  const shape = new THREE.Shape();
+  shape.moveTo(...p(12, 3));
+  shape.bezierCurveTo(...p(9.401, 3), ...p(3, 9.4), ...p(3, 12));
+  shape.bezierCurveTo(...p(3, 14.6), ...p(9.401, 21), ...p(12, 21));
+  shape.bezierCurveTo(...p(14.599, 21), ...p(21, 14.599), ...p(21, 12));
+  shape.bezierCurveTo(...p(21, 9.401), ...p(14.599, 3), ...p(12, 3));
+  const hole = new THREE.Path();
+  hole.moveTo(...p(10.598, 17.146));
+  hole.bezierCurveTo(...p(9.501, 16.848), ...p(6.555, 11.693), ...p(6.854, 10.597));
+  hole.bezierCurveTo(...p(7.153, 9.501), ...p(12.307, 6.555), ...p(13.403, 6.854));
+  hole.bezierCurveTo(...p(14.498, 7.152), ...p(17.445, 12.307), ...p(17.146, 13.403));
+  hole.bezierCurveTo(...p(16.848, 14.498), ...p(11.693, 17.445), ...p(10.598, 17.146));
+  shape.holes.push(hole);
+  return shape;
 }
 
-// Few curve segments and a two-step bevel read as cut facets instead of a smooth plastic ring.
+// The mark is 3 units corner to corner. A thin single-step chamfer gives a gem edge that
+// catches light without rounding off the silhouette.
+const MARK_SCALE = 3 / 18;
+// Anything closer to the center than this is the rim of the hole (its corners sit at ~0.89).
+const HOLE_EDGE = 1.05;
+
 function useMonadMarkGeometry() {
   return useMemo(() => {
-    const shape = new THREE.Shape();
-    roundedSquare(shape, 2.1, 0.85, false);
-    const hole = new THREE.Path();
-    roundedSquare(hole, 0.95, 0.34, true);
-    shape.holes.push(hole);
-    const geometry = new THREE.ExtrudeGeometry(shape, {
-      depth: 0.34,
+    const geometry = new THREE.ExtrudeGeometry(monadMarkShape(MARK_SCALE), {
+      depth: 0.3,
       bevelEnabled: true,
-      bevelThickness: 0.2,
-      bevelSize: 0.13,
-      bevelSegments: 2,
-      curveSegments: 4,
+      bevelThickness: 0.07,
+      bevelSize: 0.05,
+      bevelSegments: 1,
+      curveSegments: 20,
     });
     geometry.center();
     return geometry;
@@ -73,32 +68,41 @@ void main() {
 }
 `;
 
-// Flat facet normals from screen derivatives, three toon bands, a hot rim, an inner glow
-// on the facets that face the viewer and the odd facet glinting. uPulse (0..1) breathes it.
+// Flat normals from screen derivatives. The big front and back faces get one clean purple with a
+// soft top-to-bottom shade and a slow sheen; the chamfers are the bright gem edges (the hole's
+// edge glows, as if lit from inside); the side walls stay dark so the silhouette reads.
 const CRYSTAL_FRAGMENT = /* glsl */ `
 uniform float uPulse;
 uniform float uTime;
 uniform vec3 uDeep;
 uniform vec3 uMid;
+uniform vec3 uFace;
 uniform vec3 uLight;
 uniform vec3 uRim;
+uniform float uHoleEdge;
 varying vec3 vViewPos;
 varying vec3 vObjPos;
 varying vec3 vLight;
 void main() {
   vec3 objN = normalize(cross(dFdx(vObjPos), dFdy(vObjPos)));
-  float id = fract(sin(dot(floor(objN * 6.0), vec3(12.9898, 78.233, 37.719))) * 43758.5453);
-  float glint = smoothstep(0.92, 1.0, sin(uTime * 0.9 + id * 40.0)) * step(0.55, id);
   vec3 n = normalize(cross(dFdx(vViewPos), dFdy(vViewPos)));
-  vec3 v = normalize(-vViewPos);
   float ndl = dot(n, vLight);
-  vec3 col = ndl > 0.72 ? uLight : ndl > 0.05 ? uMid : uDeep;
-  float facing = max(dot(n, v), 0.0);
-  // Light seems to come from inside: strongest around the hole, fading toward the outer edge.
-  float core = 1.0 - smoothstep(0.45, 1.35, length(vObjPos.xy));
-  col += uRim * core * core * facing * (0.18 + 0.32 * uPulse);
-  col += uRim * pow(1.0 - facing, 3.0) * (1.3 + 1.5 * uPulse);
-  col += uRim * glint * 1.4;
+  float az = abs(objN.z);
+  float hole = 1.0 - step(uHoleEdge, length(vObjPos.xy));
+  vec3 col;
+  if (az > 0.97) {
+    float shade = smoothstep(-1.6, 1.6, vObjPos.y - vObjPos.x * 0.35);
+    col = mix(uMid, uFace, shade);
+    float sweep = fract(uTime * 0.12) * 5.0 - 2.5;
+    col += uLight * 0.16 * smoothstep(0.22, 0.0, abs(vObjPos.x + vObjPos.y * 0.6 - sweep));
+    col *= 0.96 + 0.08 * uPulse;
+  } else if (az > 0.2) {
+    col = ndl > 0.15 ? uLight : uMid;
+    col = mix(col, uRim * (0.85 + 0.35 * uPulse), hole);
+  } else {
+    col = ndl > 0.3 ? uMid : uDeep;
+    col = mix(col, uRim * 0.4, hole * 0.7);
+  }
   gl_FragColor = vec4(col, 1.0);
 }
 `;
@@ -114,9 +118,11 @@ function useCrystalMaterial() {
           uTime: { value: 0 },
           uLightDir: { value: new THREE.Vector3(-0.5, 0.8, 0.6).normalize() },
           uDeep: { value: new THREE.Color("#2A1C85") },
-          uMid: { value: new THREE.Color("#5F49E0") },
-          uLight: { value: new THREE.Color("#A08CFF") },
-          uRim: { value: hdr(C.kristalGlow, 1.45) },
+          uMid: { value: new THREE.Color("#6A55EE") },
+          uFace: { value: new THREE.Color(C.kristal).lerp(new THREE.Color(C.kristalGlow), 0.35) },
+          uLight: { value: new THREE.Color("#E6E0FF") },
+          uRim: { value: hdr(C.kristalGlow, 2.0) },
+          uHoleEdge: { value: HOLE_EDGE },
         },
       }),
     [],
@@ -128,9 +134,10 @@ const MOTES = 22;
 function moteMatrix(i: number, t: number, target: THREE.Matrix4, dummy: THREE.Object3D) {
   const orbit = i % 3;
   const k = Math.floor(i / 3);
-  const radius = [1.55, 1.95, 2.35][orbit];
+  // Steep tilts carry the motes over and under the mark instead of across its face.
+  const radius = [2.2, 2.5, 2.8][orbit];
   const speed = [0.9, -0.65, 0.5][orbit];
-  const tilt = [0.35, -0.5, 0.15][orbit];
+  const tilt = [-0.8, 0.8, -0.7][orbit];
   const a = (k / Math.ceil(MOTES / 3)) * Math.PI * 2 + t * speed + orbit;
   const x = Math.cos(a) * radius;
   const z = Math.sin(a) * radius;
@@ -172,14 +179,11 @@ function Motes({ still }: { still: boolean }) {
 export function MonadCrystal({ still }: { still: boolean }) {
   const geometry = useMonadMarkGeometry();
   const crystal = useCrystalMaterial();
-  const halo = useGlowMaterial("radial", C.kristal, 2.2, 2.0);
+  const halo = useGlowMaterial("radial", C.kristal, 2.6, 1.6, 0.48);
   const beam = useGlowMaterial("beam", C.kristalGlow, 1.5);
   const floor = useGlowMaterial("radial", C.kristal, 1.6, 2.2);
-  const shardColor = useMemo(() => hdr(C.kristalGlow, 1.4), []);
 
   const group = useRef<THREE.Group>(null);
-  const haloMesh = useRef<THREE.Mesh>(null);
-  const shards = useRef<THREE.Group>(null);
   const light = useRef<THREE.PointLight>(null);
   const mats = useRef({ crystal, halo, beam, floor });
 
@@ -190,30 +194,29 @@ export function MonadCrystal({ still }: { still: boolean }) {
     const m = mats.current;
     m.crystal.uniforms.uPulse.value = pulse;
     m.crystal.uniforms.uTime.value = t;
-    m.halo.uniforms.uStrength.value = 1.8 + pulse * 1.0;
+    m.halo.uniforms.uStrength.value = 2.2 + pulse * 0.8;
     m.beam.uniforms.uTime.value = t;
     m.beam.uniforms.uStrength.value = 1.2 + pulse * 0.6;
     m.floor.uniforms.uStrength.value = 1.2 + pulse * 0.8;
     if (group.current) {
-      group.current.rotation.y = t * 0.45;
+      // Sway rather than spin: the mark never turns edge-on, so it always reads as the logo.
+      group.current.rotation.y = Math.sin(t * 0.5) * 0.4;
       group.current.position.y = CRYSTAL_Y + Math.sin(t * 1.2) * 0.12;
     }
-    if (haloMesh.current) haloMesh.current.scale.setScalar(1 + pulse * 0.12);
-    if (shards.current) shards.current.rotation.y = -t * 0.6;
     if (light.current) light.current.intensity = 16 + pulse * 10;
   });
 
   return (
     <group>
-      {/* Halo behind the mark; it shows through the hole too. */}
+      {/* Backlight ring hugging the silhouette. Its core is dark, so the hole stays see-through. */}
       <Billboard position={[0, CRYSTAL_Y, 0]}>
-        <mesh ref={haloMesh} material={halo} renderOrder={2}>
+        <mesh material={halo} renderOrder={2}>
           <planeGeometry args={[6.4, 6.4]} />
         </mesh>
       </Billboard>
 
       <group ref={group} position={[0, CRYSTAL_Y, 0]}>
-        <mesh geometry={geometry} material={crystal} rotation={[0, 0, Math.PI / 4]} />
+        <mesh geometry={geometry} material={crystal} />
       </group>
 
       {/* Light falling from the crystal onto the rune circle. */}
@@ -224,23 +227,6 @@ export function MonadCrystal({ still }: { still: boolean }) {
         <planeGeometry args={[5.4, 5.4]} />
       </mesh>
 
-      {/* Small squircle shards orbiting the mark */}
-      <group ref={shards} position={[0, CRYSTAL_Y, 0]}>
-        {Array.from({ length: 6 }, (_, i) => {
-          const a = (i / 6) * Math.PI * 2;
-          return (
-            <mesh
-              key={i}
-              position={[Math.cos(a) * 1.85, Math.sin(a * 2) * 0.35, Math.sin(a) * 1.85]}
-              rotation={[0, -a, Math.PI / 4]}
-              scale={0.13}
-              geometry={geometry}
-            >
-              <meshBasicMaterial color={shardColor} toneMapped={false} />
-            </mesh>
-          );
-        })}
-      </group>
       <group position={[0, CRYSTAL_Y, 0]}>
         <Motes still={still} />
       </group>

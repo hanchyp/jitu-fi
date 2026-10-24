@@ -5,108 +5,67 @@
 // See frontend/DESIGN.md for the art direction.
 
 import { Sparkles } from "@react-three/drei";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { ARENA_COINS, coinDataUrl, type Coin as CoinDef } from "@/lib/coins";
+import { ARENA_COINS } from "@/lib/coins";
 import { Arena } from "./Arena";
 import { Backdrop } from "./Backdrop";
+import { Coin } from "./Coin";
 import { Effects } from "./Effects";
 import { MonadCrystal } from "./MonadCrystal";
 import { Sky } from "./Sky";
-import { C, Toon, useToonGradient } from "./toon";
+import { C, useToonGradient } from "./toon";
 
 const COINS = ARENA_COINS;
 
 const INTRO_SECONDS = 2.6;
 const ARENA_Y = -0.6;
 
-// Paints the token logo onto a round coin face. The SVG loads asynchronously, then the texture refreshes.
-function useCoinTexture(coin: CoinDef) {
-  const invalidate = useThree((s) => s.invalidate);
-  return useMemo(() => {
-    const size = 256;
-    const canvas = document.createElement("canvas");
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext("2d")!;
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.colorSpace = THREE.SRGBColorSpace;
+// Coin layout as [angle deg, height] around the crystal axis; 0 deg is screen right, 90 deg is
+// straight behind; `coin` is the coin radius. The coins stay on the back and side arc, so they never pass in front of the
+// crystal, the wordmark or the buttons. Wide screens spread them beside the crystal; portrait
+// screens tuck them in and lift the back ones into the gap between the tagline and the crystal.
+const COIN_SWAY = 0.14;
+const COIN_SLOTS = {
+  wide: { radius: 5.0, coin: 0.26, slots: [[-20, 2.5], [22, 3.6], [52, 3.1], [128, 3.1], [158, 3.6], [200, 2.5]] },
+  tall: { radius: 2.9, coin: 0.3, slots: [[-40, 2.0], [15, 4.4], [60, 5.0], [120, 5.0], [165, 4.4], [220, 2.0]] },
+} as const;
 
-    const paint = (img?: HTMLImageElement) => {
-      ctx.clearRect(0, 0, size, size);
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-      ctx.clip();
-      ctx.fillStyle = coin.rim;
-      ctx.fillRect(0, 0, size, size);
-      if (img) ctx.drawImage(img, 0, 0, size, size);
-      ctx.restore();
-      // Thin dark ring so the face reads as a separate disc on the rim.
-      ctx.lineWidth = 10;
-      ctx.strokeStyle = "rgba(11, 22, 38, 0.55)";
-      ctx.beginPath();
-      ctx.arc(size / 2, size / 2, size / 2 - 5, 0, Math.PI * 2);
-      ctx.stroke();
-      tex.needsUpdate = true;
-      // The reduced-motion still frame renders on demand, so ask for a frame once the logo lands.
-      invalidate();
-    };
-
-    paint();
-    const img = new Image();
-    img.onload = () => paint(img);
-    img.src = coinDataUrl(coin);
-    return tex;
-  }, [coin, invalidate]);
-}
-
-function Coin({ coin, gradient }: { coin: CoinDef; gradient: THREE.Texture }) {
-  const face = useCoinTexture(coin);
-  return (
-    <group>
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.5, 0.5, 0.13, 32]} />
-        <Toon color={coin.rim} gradient={gradient} emissive={coin.rim} emissiveIntensity={0.25} />
-      </mesh>
-      {[0.066, -0.066].map((z) => (
-        <mesh key={z} position={[0, 0, z]} rotation={[0, z < 0 ? Math.PI : 0, 0]}>
-          <circleGeometry args={[0.47, 40]} />
-          <meshBasicMaterial map={face} toneMapped={false} />
-        </mesh>
-      ))}
-    </group>
-  );
+function placeCoin(i: number, aspect: number, sway: number, coin: THREE.Object3D) {
+  const k = Math.min(1, Math.max(0, 1 - aspect) / 0.54);
+  const { wide, tall } = COIN_SLOTS;
+  const lerp = (a: number, b: number) => THREE.MathUtils.lerp(a, b, k);
+  const radius = lerp(wide.radius, tall.radius);
+  const a = THREE.MathUtils.degToRad(lerp(wide.slots[i][0], tall.slots[i][0])) + sway;
+  coin.position.set(Math.cos(a) * radius, lerp(wide.slots[i][1], tall.slots[i][1]), -Math.sin(a) * radius);
+  // Coin is unit size (radius 0.5); these radii are about half the old hero coins.
+  coin.scale.setScalar(lerp(wide.coin, tall.coin) * 2);
 }
 
 function CoinOrbit({ gradient, still }: { gradient: THREE.Texture; still: boolean }) {
-  const ring = useRef<THREE.Group>(null);
   const coins = useRef<(THREE.Group | null)[]>([]);
 
-  useFrame(({ clock }) => {
-    if (still) return;
-    const t = clock.elapsedTime;
-    if (ring.current) ring.current.rotation.y = t * 0.2;
+  useFrame(({ clock, camera, size }) => {
+    const t = still ? 0 : clock.elapsedTime;
+    const sway = Math.sin(t * 0.25) * COIN_SWAY;
     coins.current.forEach((c, i) => {
       if (!c) return;
-      c.rotation.y = t * 1.4 + i;
-      c.position.y = Math.sin(t * 1.5 + i * 1.7) * 0.18;
+      placeCoin(i, size.width / size.height, sway, c);
+      c.position.y += Math.sin(t * 1.5 + i * 1.7) * 0.12;
+      // Face the camera with a lazy wobble, so the logo stays readable and the rim still shows.
+      c.lookAt(camera.position);
+      c.rotateY(Math.sin(t * 0.9 + i * 1.3) * 0.6);
     });
   });
 
   return (
-    <group ref={ring} position={[0, 3.55, 0]}>
-      {COINS.map((coin, i) => {
-        const a = (i / COINS.length) * Math.PI * 2;
-        return (
-          <group key={coin.symbol} position={[Math.cos(a) * 3.6, 0, Math.sin(a) * 3.6]}>
-            <group ref={(el) => { coins.current[i] = el; }}>
-              <Coin coin={coin} gradient={gradient} />
-            </group>
-          </group>
-        );
-      })}
+    <group>
+      {COINS.map((coin, i) => (
+        <group key={coin.symbol} ref={(el) => { coins.current[i] = el; }}>
+          <Coin coin={coin} gradient={gradient} />
+        </group>
+      ))}
     </group>
   );
 }
