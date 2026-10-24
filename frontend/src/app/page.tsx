@@ -1,6 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
-import { HowToPlayTrigger } from "@/components/howto/HowToPlay";
+import { Nav } from "@/components/shell/Nav";
 import { GameButton } from "@/components/ui/GameButton";
 import { TitleScreen } from "@/components/world/TitleScreen";
 
@@ -82,28 +81,6 @@ const RULES = [
   },
 ] as const;
 
-function Nav() {
-  return (
-    <nav className="mx-auto mt-3 flex w-[calc(100%-1.5rem)] max-w-5xl items-center justify-between gap-3 rounded-[18px] border-[3px] border-garis bg-malam/85 px-3 py-2 backdrop-blur-sm sm:px-4">
-      {/* Horizontal lockup built from the crest and wordmark crops of the logo. */}
-      <Link href="/" aria-label="jitu.fi home" className="flex shrink-0 items-center gap-1.5 rounded-[10px]">
-        <Image src="/brand/jitu-crest.webp" alt="" width={36} height={40} loading="eager" className="h-10 w-9 object-contain" />
-        <Image src="/brand/jitu-wordmark.webp" alt="" width={77} height={34} loading="eager" className="h-[34px] w-[77px]" />
-      </Link>
-      <div className="hidden items-center gap-6 font-extrabold text-white/85 md:flex">
-        <HowToPlayTrigger look="link" className="font-extrabold hover:text-emas">
-          How to play
-        </HowToPlayTrigger>
-        <a href="#yield" className="hover:text-emas">Yield</a>
-        <a href="#season" className="hover:text-emas">Season</a>
-      </div>
-      <GameButton href="/deposit" className="!px-4 !py-1.5 !text-base">
-        Deposit mUSD
-      </GameButton>
-    </nav>
-  );
-}
-
 function SectionTitle({ children }: { children: string }) {
   return <h2 className="font-display title-outline text-4xl text-gading sm:text-5xl">{children}</h2>;
 }
@@ -111,11 +88,8 @@ function SectionTitle({ children }: { children: string }) {
 export default function Home() {
   return (
     <>
-      <div className="relative z-30 border-b-[3px] border-garis bg-emas px-4 py-1.5 text-center text-sm font-extrabold text-garis">
-        Testnet · simulation <span className="font-semibold opacity-75">Yield is simulated. No real funds.</span>
-      </div>
-
-      <TitleScreen nav={<Nav />} />
+      {/* The shell's banner and footer come from the layout; the landing opts into the floating nav. */}
+      <TitleScreen nav={<Nav floating />} />
 
       <main className="flex-1">
         {/* Quests */}
@@ -284,12 +258,6 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="border-t-[3px] border-garis bg-dasar">
-        <div className="mx-auto flex max-w-6xl flex-wrap justify-between gap-2 px-4 py-6 text-sm font-semibold text-white/60 sm:px-6">
-          <p>jitu.fi runs on Monad testnet.</p>
-          <p>Built for a hackathon.</p>
-        </div>
-      </footer>
     </>
   );
 }

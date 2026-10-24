@@ -2,6 +2,18 @@
 
 Ambiguous design calls and known limitations, newest first. Each entry picks the simplest safe option. The full design rationale lives in `openspec/changes/build-crypto-draft-mvp/design.md`.
 
+## 2026-10-23 — Shared shell and UI kit
+
+- **One nav for every page.** Links: How to play (opens the tutorial popup), Play, Leaderboard; then a dummy Connect button and the gold "Deposit mUSD" CTA, which is the Deposit entry. The landing's old in-page links (Yield, Season) are gone, so the landing nav differs in its links and the added Connect button; banner, footer and all section geometry are unchanged (measured before and after at 1280 px).
+- **The landing opts into the floating nav** by passing `<Nav floating />` into `TitleScreen`; the layout's `SiteNav` skips `/` (`FLOATING_NAV_ROUTES`). Only the floating variant keeps the translucent fill and `backdrop-blur`. Every other page gets the solid navy nav board with the 6 px hard shadow. `SiteNav` reads the pathname under `<Suspense>` with the same nav as fallback, because `usePathname` suspends on unknown dynamic params with `cacheComponents`.
+- **Phones get a menu board** (portalled, same board recipe) with the links and the Deposit CTA; Connect stays in the bar. How to play opened from the menu stacks above it, and Escape closes the top dialog first.
+- **The dummy wallet lives in a layout context** (`useDummyWallet`), so "connected" survives client navigation and pages can read it.
+- **Error color:** inline errors and the error toast use `turun` (coral). It was otherwise reserved for Sell and negative returns; a failure is the one other "negative" state, and coral passes AA on navy. Success uses `zamrud`, info uses `langit`, both only on the toast's edge bar.
+- **Urgent timers flip to a gold pill** (ink on gold) instead of turning red, so red stays tied to Sell and errors.
+- **Skeletons are static** (no pulse), since idle loops are banned.
+- **Money formatting truncates** fractions (never rounds up), default 2 decimals, trailing zeros dropped: a player is never shown more than they have.
+- **Dev states:** `?state=` is honored in every build, so a production preview can still show states; the `DevStateBar` and `/ui` exist only in development. `?state=wrong-network` is a shell-level state that works on any page.
+
 ## 2026-10-23 — No champions section; skills not tied to characters
 
 - **The "Meet the champions" landing section was removed.** The 3 bots are neutral "house bots" (`frontend/src/lib/bots.ts`). They have no signature skills or Buy/Sell bias. Their portraits appear only in the tutorial seat row: per user feedback, no characters stand on the 3D podiums, which show only their glowing tops and rings.
@@ -12,7 +24,7 @@ Ambiguous design calls and known limitations, newest first. Each entry picks the
 - **Podium seats:** gold front-right is the challenger (player), green is Bruno, coral is Dex, and blue is Bera.
 - **Champion sprites** are cylindrical (Y-axis) billboards, so their feet stay planted. Their idle is a squash-and-stretch breath anchored at the feet. They use alpha test 0.5 with premultiplied blending, so they write depth and get the toon outline with no halo.
 - **Calls are named Buy/Sell** everywhere. The old copy said Up/Down.
-- **Demo season stats follow the season-vault spec:** 15 or 30 minute seasons, a 2 minute enrollment, the first 2 games count, and max weight 1,000 mUSD. "Min. deposit 10 mUSD" was removed because the spec does not define it.
+- **Demo season stats follow the season-vault spec:** 15 or 30 minute seasons, a 2 minute enrollment, the first 2 games count, and max weight 1,000 mUSD. "Min. deposit 10 mUSD" was removed from the landing stats. *Correction: the specs do define a 10 mUSD minimum (`contracts-season-vault`, `frontend-vault-ui`), so the deposit screen enforces it; the landing simply doesn't list it.*
 - **Reduced-motion hydration fix:** `initial` is always the hidden state, and reduced motion uses a zero-duration transition.
 
 ## 2026-10-23 — Logo and palette from the crest

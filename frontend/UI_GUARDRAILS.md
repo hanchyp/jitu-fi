@@ -21,7 +21,7 @@ Use only the Tailwind tokens from `globals.css`:
 | `gading` | Section and page headings |
 | `emas` / `emas-tua` | Primary CTA, key numbers, rewards; gold bevel |
 | `zamrud` | Brand accent: skills, highlights. Never means "Buy" |
-| `naik` / `turun` | Buy/Sell and positive/negative returns only |
+| `naik` / `turun` | Buy/Sell and positive/negative returns; `turun` also marks errors (the only negative color) |
 | `kristal` / `kristal-terang` | The Monad crystal only. Never in UI chrome |
 
 Body text is `text-white` at `/85`, `/75`, `/70`, `/60` or `/55` (all pass AA on navy). Never use the Tailwind default palette (`slate`, `gray`, `zinc`, `blue-500`, `purple-*`, and so on), and never write a raw hex outside `globals.css` except the ink shadow `#040B10` and gold bevel `#A17728`, which the landing already uses inside shadow classes.
@@ -36,7 +36,7 @@ Body text is `text-white` at `/85`, `/75`, `/70`, `/60` or `/55` (all pass AA on
 | Stat badge | `rounded-[16px] border-[3px] border-garis bg-malam/90 px-4 py-3`; label `text-sm font-extrabold text-white/70`; value `font-display text-2xl text-emas` |
 | Chip / small count | `font-display rounded-[7px] border-2 border-garis bg-emas px-1 text-sm text-garis` |
 | Numbered marker (real sequences only) | gold circle `h-11 w-11 rounded-full border-[3px] border-garis bg-emas font-display` |
-| Buttons | `GameButton` (links) and `GameActionButton` (actions) only. Variants `gold` (primary, one per view) and `night`. Never hand-roll a button |
+| Buttons | `GameButton` (links) and `GameActionButton` (actions) only. Variants `gold` (primary, one per view) and `night`; `size="icon"` for close/menu buttons. Never hand-roll an action button (segmented tabs and selectable coin cards are toggles, not buttons) |
 
 - Shadows are **hard and solid**: `shadow-[0_Npx_0_0_#040B10]`. No blurred shadows, no `shadow-lg`.
 - An inner top highlight is allowed on bars: `shadow-[inset_0_5px_0_0_rgb(255_255_255/0.25)]`.
