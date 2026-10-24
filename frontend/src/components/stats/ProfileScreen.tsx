@@ -13,18 +13,18 @@ import { COIN, coinDataUrl } from "@/lib/coins";
 import { formatBps, shortAddress } from "@/lib/format";
 import {
   PRESET_ROUNDS,
-  type HistoryGame,
   type HistoryPick,
   type HistoryRound,
   type PointsCredit,
-  type ProfileResponse,
   type SkillName,
 } from "@/mocks/profile";
+import type { StatsProfile, RecordedGame } from "@/lib/stats/api";
 import type { SeasonTenor } from "@/mocks/season";
 import { ChevronIcon } from "./icons";
 
 type ProfileScreenProps = {
-  profile: ProfileResponse;
+  profile: StatsProfile;
+  sample?: boolean;
   emptyArt?: string;
 };
 
@@ -48,10 +48,10 @@ const formatScore = (n: number) => `${n > 0 ? "+" : ""}${n.toLocaleString("en-US
 const skillArt = (skill: SkillName) => `/assets/skills/${skill.toLowerCase()}.webp`;
 
 /** Your season summary, then every finished game with rounds, picks and skills on demand. */
-export function ProfileScreen({ profile, emptyArt }: ProfileScreenProps) {
+export function ProfileScreen({ profile, emptyArt, sample = true }: ProfileScreenProps) {
   const { season, games } = profile;
   const selectedGame = useSearchParams().get("game");
-  const seasonGames = games.filter((g) => g.seasonId === season.seasonId);
+  const seasonGames = games.filter((g) => g.seasonId === season?.seasonId);
   const best = seasonGames.length ? Math.max(...seasonGames.map((g) => g.gameScore)) : null;
 
   return (
@@ -61,10 +61,10 @@ export function ProfileScreen({ profile, emptyArt }: ProfileScreenProps) {
       </p>
       <h1 className="font-display title-outline mt-1 text-4xl text-gading sm:text-5xl">Your games</h1>
       <p className="mt-3 max-w-xl text-lg font-semibold leading-relaxed text-white/75">
-        Every finished game with its rounds, picks and skills. Your first {season.countedGames} games in a season add
-        season points.
+        Every finished game with its rounds, picks and skills. Counted games add season points.
       </p>
 
+      {season && <>
       <h2 className="font-display mt-8 text-2xl text-gading">
         {TENOR_LABEL[season.tenor]} season #{season.seasonId}
       </h2>
@@ -82,14 +82,16 @@ export function ProfileScreen({ profile, emptyArt }: ProfileScreenProps) {
         <StatBadge label="Best game score" value={best === null ? "None yet" : formatScore(best)} />
       </div>
 
-      {selectedGame === "latest" && <p role="status" className="mt-5 font-semibold text-white/75">Latest sample game expanded. Table demos are not saved to this history.</p>}
+      </>}
+
+      {selectedGame === "latest" && <p role="status" className="mt-5 font-semibold text-white/75">{sample ? "Latest sample game expanded. Table demos are not saved to this history." : "Latest game expanded."}</p>}
       <Board className="mt-6">
         <h2 className="font-display text-2xl text-gading">Game history</h2>
         {games.length === 0 ? (
           <EmptyState
             art={emptyArt ?? "/assets/landing/play-cards.webp"}
             title="No games yet"
-            body={`Finish a game and it lands here with every round, pick and skill. Your first ${season.countedGames} games this season earn season points.`}
+            body="Finish a game and it lands here with every round, pick and skill. Counted games earn season points."
             action={
               <GameButton href="/play" size="lg">
                 Play a game
@@ -104,7 +106,7 @@ export function ProfileScreen({ profile, emptyArt }: ProfileScreenProps) {
               </h3>
               <ul className="mt-2 space-y-3">
                 {group.map((game) => (
-                  <GameItem key={`${game.tableId}-${selectedGame}`} game={game} k={season.countedGames} initiallyOpen={selectedGame === String(game.tableId) || (selectedGame === "latest" && game === games[0])} />
+                  <GameItem key={`${game.tableId}-${selectedGame}`} game={game} k={season?.countedGames} initiallyOpen={selectedGame === String(game.tableId) || (selectedGame === "latest" && game === games[0])} />
                 ))}
               </ul>
             </section>
@@ -116,8 +118,8 @@ export function ProfileScreen({ profile, emptyArt }: ProfileScreenProps) {
 }
 
 /** Games are newest first; consecutive games of one season form a group. */
-function bySeason(games: HistoryGame[]): HistoryGame[][] {
-  const groups: HistoryGame[][] = [];
+function bySeason(games: RecordedGame[]): RecordedGame[][] {
+  const groups: RecordedGame[][] = [];
   for (const g of games) {
     const last = groups.at(-1);
     if (last && last[0].seasonId === g.seasonId) last.push(g);
@@ -126,21 +128,21 @@ function bySeason(games: HistoryGame[]): HistoryGame[][] {
   return groups;
 }
 
-function creditLine(credit: PointsCredit, k: number): { points: string | null; note: string } {
+function creditLine(credit: PointsCredit, k?: number): { points: string | null; note: string } {
   switch (credit.kind) {
     case "counted":
       return {
         points: `+${credit.points.toLocaleString("en-US")} points`,
-        note: credit.points === 0 ? `Game ${credit.gameNumber} of ${k}, score below zero adds 0` : `Game ${credit.gameNumber} of ${k}`,
+        note: credit.points === 0 ? `Game ${credit.gameNumber}${k ? ` of ${k}` : ""}, score below zero adds 0` : `Game ${credit.gameNumber}${k ? ` of ${k}` : ""}`,
       };
     case "outside-k":
-      return { points: null, note: `Outside first ${k} games` };
+      return { points: null, note: k ? `Outside first ${k} games` : "Outside counted games" };
     case "after-end":
       return { points: null, note: "After season end" };
   }
 }
 
-function GameItem({ game, k, initiallyOpen = false }: { game: HistoryGame; k: number; initiallyOpen?: boolean }) {
+function GameItem({ game, k, initiallyOpen = false }: { game: RecordedGame; k?: number; initiallyOpen?: boolean }) {
   const [open, setOpen] = useState(initiallyOpen);
   const reduce = useReducedMotion() ?? false;
   const credit = creditLine(game.credit, k);
@@ -176,6 +178,9 @@ function GameItem({ game, k, initiallyOpen = false }: { game: HistoryGame; k: nu
       <p className="flex flex-wrap items-baseline gap-x-2 border-t-[3px] border-garis/50 px-4 py-2 text-sm font-bold text-white/60">
         {credit.points && <span className="font-display text-base text-emas">{credit.points}</span>}
         <span>{credit.note}</span>
+        {game.recordStatus === "recorded" && game.recordTxHash && /^0x[0-9a-fA-F]{64}$/.test(game.recordTxHash) ? (
+          <a className="text-emas underline" href={`https://testnet.monadexplorer.com/tx/${game.recordTxHash}`} target="_blank" rel="noopener noreferrer">Recorded on-chain</a>
+        ) : game.recordStatus && <span>{game.recordStatus === "recorded" ? "Recorded on-chain" : game.recordStatus === "failed" ? "On-chain recording failed" : game.recordStatus === "skipped" ? "On-chain recording skipped" : "On-chain recording pending"}</span>}
       </p>
 
       <AnimatePresence initial={false}>
