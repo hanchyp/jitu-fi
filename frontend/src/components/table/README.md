@@ -38,7 +38,9 @@ draft board. Tabs switch the focused pick; its 3D coin, direction, current quote
 return and price path remain visible. Quotes and returns use the same simulation
 as scoring. Unsealed picks show a forfeit state instead of an active position.
 
-Every screen size uses the interactive 2D table. Tap a seat for the full
+The HUD's 2D/3D toggle (per tab, default 2D) swaps the board for the read-only
+`TableView3D` scene during Reveal, Live and results. Commit always uses the 2D
+board, because coin picking lives on its market. Every screen size uses the interactive 2D table. Tap a seat for the full
 pick/return breakdown. The lobby
 keeps its cut-stone preset cards and landing-style arena preview.
 

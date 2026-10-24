@@ -16,6 +16,8 @@
   --color-kristal-terang: #c4b8ff;
   --color-naik: #7be35a;
   --color-turun: #ff6b5e;
+  --color-arena-stone: #7c86a8;
+  --color-arena-stone-dark: #4a5373;
 
   --font-sans: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-bree), Georgia, serif;
