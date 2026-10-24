@@ -1,5 +1,5 @@
 import { API_URL } from "./config";
-import { getAuthToken } from "./session";
+import { clearAuthToken, getAuthToken } from "./session";
 
 type Preset = "quick" | "standard" | "long" | "marathon";
 const messages = {
@@ -47,7 +47,10 @@ export async function startPlay(preset: Preset, ensureToken: () => Promise<strin
     const code = error instanceof TypeError ? "NETWORK" : "AUTH";
     return { ok: false, code, message: messages[code] };
   }
-  return postPlay(preset, token);
+  const result = await postPlay(preset, token);
+  // Backend rejected a client-valid session: forget it so the next Play click signs again.
+  if (!result.ok && result.code === "UNAUTHORIZED") clearAuthToken(token);
+  return result;
 }
 export const getRunningTable = (address: string) => request<{ tableId: number | null }>(`/users/${encodeURIComponent(address)}/table`, (data) => data.tableId === null || validId(data.tableId));
 

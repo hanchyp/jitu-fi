@@ -29,7 +29,7 @@ test("play requests, running table, and friendly errors", async () => {
       }
     }
     globalThis.fetch = async () => Response.json({}, { status: 401 });
-    assert.deepEqual(await postPlay("quick"), { ok: false, code: "UNAUTHORIZED", message: "Sign in to play" });
+    assert.deepEqual(await postPlay("quick"), { ok: false, code: "UNAUTHORIZED", message: "Your session expired. Press Play to sign in again." });
     globalThis.fetch = async () => { throw new TypeError("offline"); };
     const offline = await postPlay("quick");
     assert.ok(!offline.ok && offline.code === "NETWORK");
