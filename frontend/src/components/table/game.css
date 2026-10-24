@@ -463,6 +463,28 @@ body:has(.jitu-game-shell[data-game="true"]:not([style*="display: none"])) [data
 .jitu-live-quote p { font-size: 10px; font-weight: 700; color: #bdcdd8; }
 .jitu-live-empty { text-align: center; }
 .jitu-live-empty p { color: #bdcdd8; font-size: 12px; margin-top: 7px; }
+/* Keep the positioning transform on the outer panel; only the readout slides. */
+.jitu-live-focus > header { margin-inline: 35px; min-height: 28px; }
+.jitu-live-focus h2 small { margin-left: 4px; color: var(--color-emas); font-family: var(--font-nunito), sans-serif; font-size: 10px; white-space: nowrap; }
+.jitu-live-focus .jitu-live-arrow { position: absolute; top: 9px; width: 32px; height: 32px; border-radius: 10px; z-index: 1; }
+.jitu-live-previous { left: 7px; }
+.jitu-live-next { right: 7px; }
+.jitu-live-previous svg { transform: rotate(90deg); }
+.jitu-live-next svg { transform: rotate(-90deg); }
+.jitu-live-viewport { overflow: hidden; padding: 4px; margin: -4px; }
+.jitu-live-content { min-width: 0; }
+.jitu-live-empty { min-height: 110px; display: flex; flex-direction: column; justify-content: center; }
+.jitu-live-empty h3 { font-family: var(--font-bree), Georgia, serif; color: var(--color-gading); }
+.jitu-live-focus:focus-visible, .jitu-live-focus button:focus-visible { outline: 2px solid var(--color-emas); outline-offset: 2px; }
+@media (max-width: 540px), (max-height: 720px) {
+  .jitu-live-focus .jitu-live-arrow { top: 4px; }
+  .jitu-live-focus > header { min-height: 32px; }
+  .jitu-live-focus > header > span { display: none; }
+  .jitu-live-empty { min-height: 88px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jitu-live-focus .jitu-live-content { opacity: 1 !important; transform: none !important; }
+}
 @media (max-width: 540px) {
   .jitu-live-focus { top: 60%; width: calc(100% - 24px); padding: 7px 10px; border-radius: 12px; }
   .jitu-live-focus h2 { font-size: 15px; }
@@ -650,7 +672,7 @@ body:has(.jitu-game-shell[data-game="true"]:not([style*="display: none"])) [data
 /* Portrait wrapper must keep the original two-row avatar grid slot. */
 .jitu-table-staticSeat summary > .jitu-table-seatPortrait { grid-column: 1; grid-row: 1 / span 2; }
 @media (min-width: 541px) and (max-height: 720px) {
-  .jitu-table-stage[data-phase="live"] .jitu-live-focus { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 4px 12px; }
+  .jitu-table-stage[data-phase="live"] .jitu-live-content { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 4px 12px; }
   .jitu-table-stage[data-phase="live"] .jitu-live-focus > header { grid-column: 1 / -1; }
   .jitu-table-stage[data-phase="live"] .jitu-live-tabs { flex-direction: column; margin: 0; align-self: center; }
   .jitu-table-stage[data-phase="live"] .jitu-table-static { top: 30px; bottom: 24px; row-gap: 8px; }
@@ -679,7 +701,7 @@ body:has(.jitu-game-shell[data-game="true"]:not([style*="display: none"])) [data
   .jitu-table-stage[data-phase="live"] .jitu-live-focus > header { margin-bottom: 3px; }
   .jitu-table-stage[data-phase="live"] .jitu-live-focus > header > span { display: none; }
   .jitu-table-stage[data-phase="live"] .jitu-live-select { display: block; max-width: 50%; min-height: 28px; border: 2px solid var(--color-garis); border-radius: 7px; background: var(--color-dasar); color: var(--color-gading); padding: 2px 6px; font-size: 12px; font-weight: 800; }
-  .jitu-table-stage[data-phase="live"] .jitu-live-tabs { display: none; }
+  .jitu-table-stage[data-phase="live"] .jitu-live-tabs { display: flex; }
 }
 
 /* End-of-game result: centered modal on desktop, bottom sheet on phones. */
@@ -736,4 +758,34 @@ body:has(.jitu-game-shell[data-game="true"]:not([style*="display: none"])) [data
   .jitu-result-standings li { padding: 4px 2px; }
   .jitu-result-standings img { width: 26px; height: 26px; }
   .jitu-result-standings strong { font-size: 16px; }
+}
+
+/* Short Live landscapes reserve side rails for identity and score. */
+@media (min-width: 541px) and (max-height: 450px) {
+  .jitu-table-stage[data-phase="live"] .jitu-table-static { inset: 0 4px; grid-template-columns: 110px minmax(0, 1fr) 110px; grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 4px 8px; }
+  .jitu-table-stage[data-phase="live"] .jitu-table-stone { grid-area: 1 / 2 / 3 / 3; }
+  .jitu-table-stage[data-phase="live"] .jitu-table-staticSeat[data-seat="you"] { grid-area: 1 / 1; }
+  .jitu-table-stage[data-phase="live"] .jitu-table-staticSeat[data-seat="bruno"] { grid-area: 2 / 1; }
+  .jitu-table-stage[data-phase="live"] .jitu-table-staticSeat[data-seat="bera"] { grid-area: 1 / 3; }
+  .jitu-table-stage[data-phase="live"] .jitu-table-staticSeat[data-seat="dex"] { grid-area: 2 / 3; }
+  .jitu-table-stage[data-phase="live"] .jitu-table-staticSeat,
+  .jitu-table-stage[data-phase="live"] .jitu-table-staticSeat:not([data-seat="you"]) details { width: 110px; }
+  .jitu-table-stage[data-phase="live"] .jitu-table-staticSeat .jitu-seat-hand,
+  .jitu-table-stage[data-phase="live"] .jitu-table-staticSeat summary > span:not(.jitu-table-seatPortrait),
+  .jitu-table-stage[data-phase="live"] .jitu-table-crystalLabel,
+  .jitu-table-stage[data-phase="live"] .jitu-table-instruction { display: none; }
+  .jitu-table-stage[data-phase="live"] .jitu-table-staticSeat summary { grid-template-columns: 24px 1fr; padding: 3px 5px; }
+  .jitu-table-stage[data-phase="live"] .jitu-table-staticSeat summary > .jitu-table-seatPortrait { width: 24px; height: 24px; }
+  .jitu-table-stage[data-phase="live"] .jitu-table-staticSeat summary > b { font-size: 16px; }
+  .jitu-table-stage[data-phase="live"] .jitu-table-staticSeat summary > strong { grid-area: 1 / 2; }
+  .jitu-table-stage[data-phase="live"] .jitu-table-staticSeat summary > b { grid-area: 2 / 2; }
+  .jitu-table-stage[data-phase="live"] .jitu-live-focus { padding: 3px 8px; }
+  .jitu-table-stage[data-phase="live"] .jitu-live-content { display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 8px; }
+  .jitu-table-stage[data-phase="live"] .jitu-live-empty { grid-column: 1 / -1; }
+  .jitu-table-stage[data-phase="live"] .jitu-live-tabs { flex-direction: column; margin: 0; justify-content: center; }
+  .jitu-table-stage[data-phase="live"] .jitu-live-tabs button { flex: 0 0 auto; }
+  .jitu-table-stage[data-phase="live"] .jitu-live-tabs [data-direction] { display: none; }
+  .jitu-table-stage[data-phase="live"] .jitu-live-detail { grid-template-columns: 62px minmax(0, 1fr); gap: 8px; }
+  .jitu-table-stage[data-phase="live"] .jitu-live-quote svg { height: 16px; }
+  .jitu-table-stage[data-phase="live"] .jitu-live-empty { grid-column: 1 / -1; min-height: 66px; }
 }
