@@ -8,7 +8,8 @@ const messages = {
   NOT_ELIGIBLE: "Your position is not eligible to play this season.",
   SEASON_CLOSING: "Season closing. A full game won’t fit. Play next season.",
   ALREADY_AT_TABLE: "Resuming your table",
-  UNAUTHORIZED: "Sign in to play",
+  UNAUTHORIZED: "Your session expired. Press Play to sign in again.",
+  AUTH: "Sign-in didn’t finish. Approve the signature request, then press Play again.",
   NETWORK: "Unable to reach the game server. Please try again.",
   UNKNOWN: "Unable to load your table. Please try again.",
 } as const;
@@ -16,10 +17,10 @@ export type PlayError = { ok: false; code: keyof typeof messages; message: strin
 type Result<T> = { ok: true; data: T } | PlayError;
 const validId = (value: unknown): value is number => typeof value === "number" && Number.isSafeInteger(value) && value > 0;
 
-async function request<T>(path: string, valid: (data: Record<string, unknown>) => boolean, body?: unknown): Promise<Result<T>> {
+async function request<T>(path: string, valid: (data: Record<string, unknown>) => boolean, body?: unknown, explicitToken?: string): Promise<Result<T>> {
   let response: Response;
   try {
-    const token = getAuthToken();
+    const token = explicitToken ?? getAuthToken();
     response = await fetch(`${API_URL}${path}`, {
       method: body === undefined ? "GET" : "POST", cache: "no-store",
       headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
@@ -36,7 +37,18 @@ async function request<T>(path: string, valid: (data: Record<string, unknown>) =
     : { ok: false, code: "UNKNOWN", message: messages.UNKNOWN };
 }
 
-export const postPlay = (preset: Preset) => request<{ tableId: number }>("/play", (data) => validId(data.tableId), { preset });
+export const postPlay = (preset: Preset, token?: string) => request<{ tableId: number }>("/play", (data) => validId(data.tableId), { preset }, token);
+
+/** Get a session for the connected wallet (reused or signed), then start the game with that exact token. */
+export async function startPlay(preset: Preset, ensureToken: () => Promise<string>): Promise<Result<{ tableId: number }>> {
+  let token: string;
+  try { token = await ensureToken(); }
+  catch (error) {
+    const code = error instanceof TypeError ? "NETWORK" : "AUTH";
+    return { ok: false, code, message: messages[code] };
+  }
+  return postPlay(preset, token);
+}
 export const getRunningTable = (address: string) => request<{ tableId: number | null }>(`/users/${encodeURIComponent(address)}/table`, (data) => data.tableId === null || validId(data.tableId));
 
 export function getSessionAddress(): string | null {
