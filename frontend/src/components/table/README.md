@@ -40,7 +40,10 @@ as scoring. Unsealed picks show a forfeit state instead of an active position.
 
 The HUD's 2D/3D toggle (per tab, default 2D) swaps the board for the read-only
 `TableView3D` scene during Reveal, Live and results. Commit always uses the 2D
-board, because coin picking lives on its market. Every screen size uses the interactive 2D table. Tap a seat for the full
+board, because coin picking lives on its market. Once loaded, the 3D canvas stays
+mounted but hidden through Commit and 2D selections. Live reserves separate rows
+for opponent seats/hands, the live readout, and your seat; the crystal caption
+stays above the dock. Every screen size uses the interactive 2D table. Tap a seat for the full
 pick/return breakdown. The lobby
 keeps its cut-stone preset cards and landing-style arena preview.
 
