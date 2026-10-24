@@ -1,10 +1,17 @@
 "use client";
 
 // Arena Jitu: low-poly toon 3D title scene. Everything is modelled from primitives in code,
-// no external model files. See frontend/DESIGN.md for the art direction.
+// no external model files. Coin logos come from @web3icons/core (MIT).
+// See frontend/DESIGN.md for the art direction.
 
 import { Outlines, Sparkles, Stars } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
+import BNB from "@web3icons/core/svgs/tokens/background/BNB.svg.js";
+import BTC from "@web3icons/core/svgs/tokens/background/BTC.svg.js";
+import DOGE from "@web3icons/core/svgs/tokens/background/DOGE.svg.js";
+import ETH from "@web3icons/core/svgs/tokens/background/ETH.svg.js";
+import SOL from "@web3icons/core/svgs/tokens/background/SOL.svg.js";
+import MON from "@web3icons/core/svgs/networks/background/monad.svg.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
@@ -21,7 +28,15 @@ const C = {
 } as const;
 
 const PLAYER_COLORS = ["#FFC93C", "#3DD68C", "#FF6B5E", "#5AA9FF"] as const;
-const COINS = ["₿", "Ξ", "S", "M"] as const;
+// Official token logos (web3icons "background" variant) with each coin's brand color for the rim.
+const COINS = [
+  { symbol: "BTC", svg: BTC, rim: "#F7931A" },
+  { symbol: "ETH", svg: ETH, rim: "#627EEA" },
+  { symbol: "SOL", svg: SOL, rim: "#9945FF" },
+  { symbol: "DOGE", svg: DOGE, rim: "#C2A633" },
+  { symbol: "BNB", svg: BNB, rim: "#F3BA2F" },
+  { symbol: "MON", svg: MON, rim: "#836EF9" },
+] as const;
 
 const INTRO_SECONDS = 2.4;
 const LOOK_AT = new THREE.Vector3(0, 2.3, 0);
@@ -252,47 +267,58 @@ function MonadCrystal({ gradient, still }: { gradient: THREE.Texture; still: boo
   );
 }
 
-function useCoinTexture(glyph: string) {
+type CoinDef = (typeof COINS)[number];
+
+// Paints the token logo onto a round coin face. The SVG loads asynchronously, then the texture refreshes.
+function useCoinTexture(coin: CoinDef) {
   return useMemo(() => {
     const size = 256;
     const canvas = document.createElement("canvas");
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext("2d")!;
-    ctx.fillStyle = C.emas;
-    ctx.beginPath();
-    ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.lineWidth = 14;
-    ctx.strokeStyle = "#E0A21E";
-    ctx.beginPath();
-    ctx.arc(size / 2, size / 2, size / 2 - 26, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.fillStyle = C.outline;
-    // next/font renames the family, so read the real name from the CSS variable it sets.
-    const titan = getComputedStyle(document.documentElement).getPropertyValue("--font-titan").trim();
-    ctx.font = `${size * 0.52}px ${titan || "system-ui"}, sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(glyph, size / 2, size / 2 + 8);
     const tex = new THREE.CanvasTexture(canvas);
     tex.colorSpace = THREE.SRGBColorSpace;
+
+    const paint = (img?: HTMLImageElement) => {
+      ctx.clearRect(0, 0, size, size);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.fillStyle = coin.rim;
+      ctx.fillRect(0, 0, size, size);
+      if (img) ctx.drawImage(img, 0, 0, size, size);
+      ctx.restore();
+      // Thin dark ring so the face reads as a separate disc on the rim.
+      ctx.lineWidth = 10;
+      ctx.strokeStyle = "rgba(11, 22, 38, 0.55)";
+      ctx.beginPath();
+      ctx.arc(size / 2, size / 2, size / 2 - 5, 0, Math.PI * 2);
+      ctx.stroke();
+      tex.needsUpdate = true;
+    };
+
+    paint();
+    const img = new Image();
+    img.onload = () => paint(img);
+    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(coin.svg)}`;
     return tex;
-  }, [glyph]);
+  }, [coin]);
 }
 
-function Coin({ glyph, gradient }: { glyph: string; gradient: THREE.Texture }) {
-  const face = useCoinTexture(glyph);
+function Coin({ coin, gradient }: { coin: CoinDef; gradient: THREE.Texture }) {
+  const face = useCoinTexture(coin);
   return (
     <group>
       <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.42, 0.42, 0.12, 24]} />
-        <Toon color={C.emas} gradient={gradient} emissive={C.emas} emissiveIntensity={0.15} />
+        <cylinderGeometry args={[0.5, 0.5, 0.13, 32]} />
+        <Toon color={coin.rim} gradient={gradient} emissive={coin.rim} emissiveIntensity={0.2} />
         <Outlines thickness={0.03} color={C.outline} />
       </mesh>
-      {[0.061, -0.061].map((z) => (
+      {[0.066, -0.066].map((z) => (
         <mesh key={z} position={[0, 0, z]} rotation={[0, z < 0 ? Math.PI : 0, 0]}>
-          <circleGeometry args={[0.4, 32]} />
+          <circleGeometry args={[0.47, 40]} />
           <meshBasicMaterial map={face} toneMapped={false} />
         </mesh>
       ))}
@@ -317,12 +343,12 @@ function CoinOrbit({ gradient, still }: { gradient: THREE.Texture; still: boolea
 
   return (
     <group ref={ring} position={[0, 3.3, 0]}>
-      {COINS.map((glyph, i) => {
+      {COINS.map((coin, i) => {
         const a = (i / COINS.length) * Math.PI * 2;
         return (
-          <group key={glyph} position={[Math.cos(a) * 3.3, 0, Math.sin(a) * 3.3]}>
+          <group key={coin.symbol} position={[Math.cos(a) * 3.5, 0, Math.sin(a) * 3.5]}>
             <group ref={(el) => { coins.current[i] = el; }}>
-              <Coin glyph={glyph} gradient={gradient} />
+              <Coin coin={coin} gradient={gradient} />
             </group>
           </group>
         );
