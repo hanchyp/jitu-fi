@@ -2,13 +2,13 @@
 
 Ambiguous design calls and known limitations, newest first. Each entry picks the simplest safe option. The full design rationale lives in `openspec/changes/build-crypto-draft-mvp/design.md`.
 
-## 2026-10-23 — Visual direction: arena world + card-draft table
+## 2026-10-23 — Visual direction: arena world + coin spirits
 
-Agreed with the project owner after a brainstorm (options: arena vs house champions, Balatro-style card draft, cozy garden).
-- **Landing:** the 3D "Arena Jitu" world from `frontend/DESIGN.md` stays. The 3 house bots become named rival characters (house champions) standing on the podiums; the player challenges them.
-- **Game table:** a fantasy card draft in the spirit of Balatro/Hearthstone. Coins are cards, skills are spell cards, with juicy number and card animations.
-- **No casino cues:** no green felt, chips, dice, roulette or slot imagery, so the game never reads as gambling.
-- Rejected: the cozy garden direction (weak fit with competitive play and live skills, and it would discard the 3D arena).
+Agreed with the project owner after a brainstorm.
+- **Landing:** the 3D "Arena Jitu" world from `frontend/DESIGN.md` stays. The 3 house bots become named rival characters (house champions) on the podiums; the player challenges them.
+- **Game table: coin spirits.** Each drafted coin is summoned as a spirit onto the player's podium. During Live, a spirit floats up or sinks with the real price (height = return), and a small "ridge" chart behind it renders the price line as a mountain ridge the spirit walks on. Skills are visible spells: FREEZE ices the spirit, FLIP spins it upside down, SWAP trades podiums, INSURANCE is a light shield under it, BOOST enlarges it. Landing and game share one world.
+- **No casino cues:** no green felt, chips, dice, roulette or slot imagery.
+- Rejected: a Balatro-style card draft (too common a theme), a tactics grid (positions don't matter in this game), and a cozy garden (weak fit with competitive play; would discard the 3D arena).
 
 ## 2026-10-23 — Game and tokenomics redesign
 
