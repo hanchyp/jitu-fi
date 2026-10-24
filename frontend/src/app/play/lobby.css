@@ -19,8 +19,10 @@ body:has(.play-lobby) [data-site-chrome="nav"] a[href="/deposit"] { background: 
 .lobby-crystal-space { flex: 1; min-height: 90px; }
 .lobby-controls { width: min(100%, 860px); text-align: center; flex-shrink: 0; }
 .lobby-modes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-.lobby-mode { text-align: left; min-width: 0; border: 3px solid var(--color-garis); border-radius: 14px; padding: 11px 14px; background: var(--color-malam); box-shadow: 0 5px 0 var(--color-garis); cursor: pointer; font-size: 13px; font-weight: 800; }
-.lobby-mode:hover { background: var(--color-papan); }
+.lobby-mode { text-align: left; min-width: 0; border: 3px solid var(--color-garis); border-radius: 14px; padding: 11px 14px; background: var(--color-malam); box-shadow: 0 5px 0 var(--color-garis); cursor: pointer; font-size: 13px; font-weight: 800; transition: translate 100ms, box-shadow 100ms, background-color 100ms; }
+.lobby-mode:is(:hover, :focus-visible):not(:disabled) { background: var(--color-papan); translate: 0 -2px; }
+.lobby-mode:active:not(:disabled) { translate: 0 4px; box-shadow: 0 1px 0 var(--color-garis); }
+.lobby-mode:disabled { cursor: default; }
 .lobby-mode[aria-pressed="true"] { border-color: var(--color-emas); background: var(--color-papan-terang); }
 .lobby-mode-heading { display: flex; justify-content: space-between; align-items: center; gap: 4px; font-size: 23px; line-height: 1.2; margin-bottom: 4px; }
 .lobby-check { color: var(--color-emas); width: 20px; font-family: var(--font-nunito), sans-serif; }
@@ -28,6 +30,7 @@ body:has(.play-lobby) [data-site-chrome="nav"] a[href="/deposit"] { background: 
 .lobby-recommended { font-size: 11px; }
 .lobby-mode:first-child .lobby-recommended { color: var(--color-emas); }
 .lobby-detail { font-size: 13px; font-weight: 800; margin: 14px 0 12px; color: rgb(255 255 255 / .85); }
+.lobby-changing-text { display: inline-block; max-width: 100%; }
 .lobby-notice { max-width: 620px; margin: 0 auto 10px; border: 2px solid var(--color-emas); border-radius: 14px; background: var(--color-malam); padding: 7px 12px; font-size: 13px; line-height: 1.35; font-weight: 800; }
 .lobby-action { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .lobby-action button { min-width: 230px; }
@@ -81,4 +84,10 @@ body:has(.play-lobby) [data-site-chrome="nav"] a[href="/deposit"] { background: 
 }
 /* Reserve a separate bottom line for the development trigger. */
 .play-lobby:has(.lobby-demo) .lobby-controls { margin-bottom: 24px; }
+
+/* CSS also covers the first frame, before the browser preference reaches React. */
+@media (prefers-reduced-motion: reduce) {
+  .lobby-controls, .lobby-mode, .lobby-check, .lobby-changing-text, .lobby-notice { transform: none !important; }
+  .lobby-mode, .lobby-action button { translate: none !important; transition-duration: 0s !important; }
+}
 
