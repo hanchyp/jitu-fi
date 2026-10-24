@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { Board } from "@/components/ui/Board";
@@ -49,6 +50,7 @@ const skillArt = (skill: SkillName) => `/assets/skills/${skill.toLowerCase()}.we
 /** Your season summary, then every finished game with rounds, picks and skills on demand. */
 export function ProfileScreen({ profile, emptyArt }: ProfileScreenProps) {
   const { season, games } = profile;
+  const selectedGame = useSearchParams().get("game");
   const seasonGames = games.filter((g) => g.seasonId === season.seasonId);
   const best = seasonGames.length ? Math.max(...seasonGames.map((g) => g.gameScore)) : null;
 
@@ -80,6 +82,7 @@ export function ProfileScreen({ profile, emptyArt }: ProfileScreenProps) {
         <StatBadge label="Best game score" value={best === null ? "None yet" : formatScore(best)} />
       </div>
 
+      {selectedGame === "latest" && <p role="status" className="mt-5 font-semibold text-white/75">Latest sample game expanded. Table demos are not saved to this history.</p>}
       <Board className="mt-6">
         <h2 className="font-display text-2xl text-gading">Game history</h2>
         {games.length === 0 ? (
@@ -101,7 +104,7 @@ export function ProfileScreen({ profile, emptyArt }: ProfileScreenProps) {
               </h3>
               <ul className="mt-2 space-y-3">
                 {group.map((game) => (
-                  <GameItem key={game.tableId} game={game} k={season.countedGames} />
+                  <GameItem key={`${game.tableId}-${selectedGame}`} game={game} k={season.countedGames} initiallyOpen={selectedGame === String(game.tableId) || (selectedGame === "latest" && game === games[0])} />
                 ))}
               </ul>
             </section>
@@ -137,8 +140,8 @@ function creditLine(credit: PointsCredit, k: number): { points: string | null; n
   }
 }
 
-function GameItem({ game, k }: { game: HistoryGame; k: number }) {
-  const [open, setOpen] = useState(false);
+function GameItem({ game, k, initiallyOpen = false }: { game: HistoryGame; k: number; initiallyOpen?: boolean }) {
+  const [open, setOpen] = useState(initiallyOpen);
   const reduce = useReducedMotion() ?? false;
   const credit = creditLine(game.credit, k);
   const panelId = `game-${game.tableId}`;

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Board } from "@/components/ui/Board";
 import { GameButton } from "@/components/ui/GameButton";
@@ -25,6 +26,7 @@ const TENOR_LABEL: Record<SeasonTenor, string> = { week: "1 week", month: "1 mon
 const sameAddress = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 
 export function LeaderboardScreen({ boards, you, yourTenor, medals = [], emptyArt }: LeaderboardScreenProps) {
+  const highlight = useSearchParams().get("highlight") === "you";
   const [tenor, setTenor] = useState<SeasonTenor>(yourTenor ?? boards[0].tenor);
   const board = boards.find((b) => b.tenor === tenor) ?? boards[0];
   const yours = board.entries.find((entry) => sameAddress(entry.address, you));
@@ -41,6 +43,7 @@ export function LeaderboardScreen({ boards, you, yourTenor, medals = [], emptyAr
         </div>
       </header>
 
+      {highlight && <p role="status" className="mt-4 font-semibold text-emas">{yours ? `Your row is highlighted below: rank #${yours.rank}.` : "No ranked row in this season yet."} Standings are simulated.</p>}
       <Tabs
         label="Season tenor"
         tabs={boards.map((b) => ({ id: b.tenor, label: TENOR_LABEL[b.tenor] }))}

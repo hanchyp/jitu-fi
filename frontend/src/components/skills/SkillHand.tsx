@@ -3,8 +3,10 @@
 // Your skill hand at the table: up to 3 cards, each playable or disabled with its reason, and the
 // target picker for the selected card. Max 1 skill per round. Props only; `onUse` does the work.
 
+import Image from "next/image";
+import { Modal } from "@/components/ui/Modal";
 import { useState } from "react";
-import { SKILLS } from "./info";
+import { SKILLS, skillArt } from "./info";
 import { cardBlock } from "./rules";
 import { SkillCardFace } from "./SkillCard";
 import { SkillPicker } from "./SkillPicker";
@@ -52,6 +54,24 @@ export function SkillHand(props: SkillHandProps) {
       setCast({ state: "error", text: `${card.skill} didn't land. ${reason}` });
     }
   };
+
+  const picker = selected && !selectedBlock ? <SkillPicker
+    key={selected.id} card={selected} table={props} pending={pending}
+    onCancel={() => setSelectedId(undefined)} onConfirm={(target) => use(selected, target)}
+  /> : null;
+
+  if (props.compact) return <section className="jitu-table-skillHand" aria-label="Your skills">
+    <div className="jitu-table-skillHeading"><h3>Your skills <span>{cards.length}/{HAND_MAX}</span></h3><p>{cards.length ? "One per round" : "Win a round to earn one"}</p></div>
+    <ul>{cards.slice(0, HAND_MAX).map((card) => {
+      const block = cardBlock(card, props);
+      return <li key={card.id}><button type="button" disabled={Boolean(block) || pending} title={block ?? SKILLS[card.skill].effect}
+        aria-label={`${card.skill}${block ? `, ${block}` : ""}`} onClick={() => { setSelectedId(card.id); setCast(undefined); }}>
+        <Image src={skillArt(card.skill)} alt="" width={44} height={44} /><span><strong>{card.skill}</strong><small>{block ?? (SKILLS[card.skill].timing === "commit" ? "Add to pick" : "Cast in Live")}</small></span>
+      </button></li>;
+    })}</ul>
+    {cast?.state === "error" && <p role="alert">{cast.text}</p>}
+    <Modal open={Boolean(picker)} title={selected ? `Use ${selected.skill}` : "Use skill"} onClose={() => { if (!pending) setSelectedId(undefined); }}>{picker}</Modal>
+  </section>;
 
   return (
     <section aria-label="Your skills" className={`rounded-[22px] border-[3px] border-garis bg-dasar p-4 shadow-[0_6px_0_0_#040B10] sm:p-5 ${className}`}>

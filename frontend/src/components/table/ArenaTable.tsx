@@ -52,9 +52,9 @@ function CompactSeat({ state, player, onInspect }: { state: DemoState; player: P
     {state.phase !== "finished" && <SeatHand state={state} player={player} onInspect={onInspect} />}
     <details ref={details}>
     <summary aria-label={`Inspect ${player.name}'s seat`}>
-      <Image src={player.portrait} alt="" width={36} height={36} /><strong>{player.name}</strong>
+      <span className="jitu-table-seatPortrait">{state.phase === "results" && winner && <Image className="jitu-table-winBurst" src="/assets/table-fx/win-burst.webp" alt="" width={96} height={96} />}<Image src={player.portrait} alt="" width={36} height={36} /></span><strong>{player.name}</strong>
       <b>{finalScores ? finalScores[player.id] : hidden || state.phase === "reveal" ? "—" : result.scores[player.id]}</b>
-      <span>{finalScores ? `Rank #${rank}` : hidden ? `${hand.count} pick${hand.count === 1 ? "" : "s"} · ${player.human ? state.locked ? "Locked" : "Your seat" : "Hidden"}` : result.forfeited.includes(player.id) ? "Forfeit" : winner ? "Round winner" : `${hand.count} revealed picks`}</span>
+      <span>{finalScores ? `Rank #${rank}` : hidden ? `${hand.count} pick${hand.count === 1 ? "" : "s"} · ${player.human ? state.locked ? "Locked" : "Your seat" : "Hidden"}` : result.forfeited.includes(player.id) ? "Forfeit" : winner ? "Round winner" : `${hand.count} ${state.phase === "live" ? "live" : "revealed"} pick${hand.count === 1 ? "" : "s"}`}</span>
     </summary>
     <div className="jitu-table-seatDetail"><PlayerSeat player={player} state={state} /><button type="button" onClick={() => { if (details.current) details.current.open = false; }}>Close seat details</button></div>
     </details>
@@ -71,6 +71,7 @@ export function ArenaTable(props: ArenaTableProps) {
   useHandMotion(stage, props.state);
   return <section ref={bindStage} className="jitu-table-stage" aria-label="Arena game table" data-renderer="2d" data-phase={props.state.phase}>
     <p className="jitu-table-instruction">{props.state.phase === "commit" ? props.state.locked ? "Picks sealed on your podium. Waiting for reveal." : `Tap a coin, read the chart, then choose Buy or Sell. Pick up to ${props.state.preset.caps[props.state.round]}.` : props.state.phase === "reveal" ? "The four seats reveal their calls." : props.state.phase === "live" ? "Your calls are live. Tap a coin to follow its chart." : props.state.phase === "results" ? "The winning seats take the light." : "Final scores at every seat."}</p>
+    {props.state.phase === "finished" && <Image className="jitu-table-confetti" src="/assets/table-fx/podium-confetti.webp" alt="" fill sizes="100vw" />}
     <StaticTable {...props} onInspect={setInspected} />
     <p className="jitu-table-crystalLabel"><NetworkIcon className="" />Principal Crystal · Always protected</p>
     {modelHost && webgl && <CoinModels host={modelHost} still={Boolean(reduced)} />}

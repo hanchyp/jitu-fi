@@ -1,16 +1,28 @@
 import { botPicks, COINS, LIVE_SECONDS, PLAYERS, type CommitSkill, type GamePreset, type Phase, type Pick, type Scenario } from "@/mocks/table";
 
+import type { CoinSymbol } from "@/components/table-scene/types";
+import type { SkillName, SkillPick, SkillTarget } from "@/components/skills/types";
+import type { IncomingSkill } from "@/components/skills/IncomingSkillToast";
+
+export type LiveSkill = Exclude<SkillName, CommitSkill>;
+type LiveCast = { skill: LiveSkill; by: string; progress: number; originalSymbol: string; originalDirection: Pick["direction"]; swapSymbol?: string };
+export type DemoPick = Pick & { live?: LiveCast };
+const ATTACKS: readonly SkillName[] = ["FREEZE", "FLIP", "SWAP"];
+const REWARDS: readonly SkillName[] = ["INSURANCE", "LOCK", "FLIP", "SWAP", "FREEZE", "BOOST"];
+
 export type RoundResult = { scores: Record<string, number>; winners: string[]; forfeited: string[] };
 export type DemoState = {
   preset: GamePreset; phase: Phase; round: number; scenario: Scenario;
   remaining: number; deadline: number; marketTick: number; picks: Pick[]; locked: boolean; lockingUntil: number;
-  hand: CommitSkill[]; history: RoundResult[]; toast: string; error: string; paused: boolean;
+  hand: SkillName[]; effects: Record<string, LiveCast>; usedSkills: string[]; incoming: IncomingSkill | null; history: RoundResult[]; toast: string; error: string; paused: boolean;
 };
 export type DemoAction =
   | { type: "tick"; now: number }
   | { type: "select"; symbol: string }
   | { type: "direction"; symbol: string; direction: Pick["direction"] }
   | { type: "skill"; symbol: string; skill?: CommitSkill }
+  | { type: "cast"; skill: LiveSkill; target: SkillTarget; now: number }
+  | { type: "dismiss-incoming" }
   | { type: "lock"; now: number }
   | { type: "advance"; now: number; preview?: boolean }
   | { type: "pause"; now: number }
@@ -26,7 +38,7 @@ export function createDemo(preset: GamePreset, phase: Phase = "commit", scenario
     preset, phase, scenario, round: 0, remaining: phaseSeconds(phase, 0), deadline: 0, marketTick: 0,
     picks: preview && scenario !== "forfeit" ? [{ symbol: "BTC", direction: "Buy", ...(scenario === "insured-pick" ? { skill: "INSURANCE" as const } : {}) }] : [],
     locked: preview && scenario !== "forfeit", lockingUntil: 0,
-    hand: [scenario === "insured-pick" ? "INSURANCE" : "BOOST"], history: [], toast: "", error: "", paused: preview,
+    hand: phase === "live" ? ["LOCK", "FLIP", "SWAP"] : [scenario === "insured-pick" ? "INSURANCE" : "BOOST"], effects: {}, usedSkills: [], incoming: null, history: [], toast: "", error: "", paused: preview,
   };
   if (phase === "results") return settle(state);
   if (phase === "finished") {
@@ -45,21 +57,89 @@ export function coinMove(symbol: string, round: number, progress: number, scenar
   return Math.round(target * progress + wave);
 }
 
-export function pickReturn(pick: Pick, round: number, progress: number, scenario: Scenario) {
-  const move = coinMove(pick.symbol, round, progress, scenario);
-  const signed = pick.direction === "Buy" ? move : -move;
+/** Signed return before insurance. Each post-cast price-relative segment truncates separately. */
+export function rawPickReturn(pick: DemoPick, round: number, progress: number, scenario: Scenario) {
+  const cast = pick.live;
+  if (!cast) return coinMove(pick.symbol, round, progress, scenario) * (pick.direction === "Buy" ? 1 : -1);
+  const sign = cast.originalDirection === "Buy" ? 1 : -1;
+  const first = coinMove(cast.originalSymbol, round, Math.min(progress, cast.progress), scenario) * sign;
+  if (progress <= cast.progress || cast.skill === "LOCK" || cast.skill === "FREEZE") return first;
+  const symbol = cast.swapSymbol ?? cast.originalSymbol;
+  const start = coinMove(symbol, round, cast.progress, scenario);
+  const end = coinMove(symbol, round, progress, scenario);
+  const second = Math.trunc((end - start) * 10_000 / (10_000 + start)) * sign;
+  return first + second * (cast.skill === "FLIP" ? -1 : 1);
+}
+
+export function pickReturn(pick: DemoPick, round: number, progress: number, scenario: Scenario) {
+  const signed = rawPickReturn(pick, round, progress, scenario);
   return pick.skill === "INSURANCE" ? Math.max(0, signed) : signed;
 }
 
-export function scorePicks(picks: Pick[], cap: number, round: number, progress: number, scenario: Scenario) {
-  const valid = picks.filter((pick) => Math.abs(coinMove(pick.symbol, round, progress, scenario)) >= 1);
+export function pickIsVoid(pick: DemoPick, round: number, progress: number, scenario: Scenario) {
+  // A cast holds its first segment even when the underlying market later returns to zero.
+  return Math.abs(pick.live ? rawPickReturn(pick, round, progress, scenario) : coinMove(pick.symbol, round, progress, scenario)) < 1;
+}
+
+export function scorePicks(picks: DemoPick[], cap: number, round: number, progress: number, scenario: Scenario) {
+  const valid = picks.filter((pick) => !pickIsVoid(pick, round, progress, scenario));
   const weight = valid.reduce((total, pick) => total + (pick.skill === "BOOST" ? 2 : 1), 0);
   if (!weight) return 0;
   return Math.trunc(cap * valid.reduce((total, pick) => total + pickReturn(pick, round, progress, scenario) * (pick.skill === "BOOST" ? 2 : 1), 0) / weight);
 }
 
-export function playerPicks(state: DemoState): Record<string, Pick[]> {
-  return { you: state.locked ? state.picks : [], ...botPicks(state.round, state.preset.caps[state.round], state.scenario) };
+export function playerPicks(state: DemoState): Record<string, DemoPick[]> {
+  const base = { you: state.locked ? state.picks : [], ...botPicks(state.round, state.preset.caps[state.round], state.scenario) };
+  return Object.fromEntries(Object.entries(base).map(([owner, picks]) => [owner, picks.map((pick, index) => {
+    const live = state.effects[`${owner}:${index}`];
+    return live ? { ...pick, live, symbol: live.swapSymbol ?? pick.symbol, direction: live.skill === "FLIP" ? pick.direction === "Buy" ? "Sell" as const : "Buy" as const : pick.direction } : pick;
+  })]));
+}
+
+/** Stable slot ids survive a SWAP; Commit never exposes opponents to the picker. */
+export function skillPicks(state: DemoState): SkillPick[] {
+  const all = playerPicks(state);
+  if (state.phase === "commit") all.you = state.picks;
+  return PLAYERS.flatMap((owner) => state.phase === "commit" && !owner.human ? [] : all[owner.id].map((pick, index) => ({
+    id: `${owner.id}:${index}`, ownerId: owner.id, ownerName: owner.name, symbol: pick.symbol as CoinSymbol,
+    side: pick.direction, effect: pick.live?.skill ?? pick.skill,
+    returnBps: state.phase === "commit" ? undefined : pickReturn(pick, state.round, liveProgress(state), state.scenario),
+    pickedSymbols: all[owner.id].map((p) => (p.live?.originalSymbol ?? p.symbol) as CoinSymbol),
+  })));
+}
+
+/** Same validation for humans and bots; invalid casts leave state untouched. */
+export function castLiveSkill(state: DemoState, caster: string, skill: LiveSkill, target: SkillTarget, now: number): DemoState {
+  if (state.phase !== "live" || state.remaining <= 0 || (!state.paused && state.deadline > 0 && now >= state.deadline)) return state;
+  const all = playerPicks(state);
+  if (!all[caster]?.length || state.usedSkills.includes(caster) || all[caster].some((pick) => pick.skill)) return state;
+  if (caster === "you" && !state.hand.includes(skill)) return state;
+  const chosen = skillPicks(state).find((pick) => pick.id === target.pickId);
+  if (!chosen || state.effects[target.pickId]) return state;
+  const attack = ATTACKS.includes(skill);
+  if (attack ? chosen.ownerId === caster : chosen.ownerId !== caster) return state;
+  if (attack && Object.entries(state.effects).some(([id, effect]) => id.startsWith(`${chosen.ownerId}:`) && ATTACKS.includes(effect.skill))) return state;
+  if (skill === "SWAP" && (!target.swapTo || !COINS.some((coin) => coin.symbol === target.swapTo!.symbol) || chosen.pickedSymbols?.includes(target.swapTo.symbol) || all[chosen.ownerId].some((pick) => pick.symbol === target.swapTo!.symbol))) return state;
+  const pick = all[chosen.ownerId][Number(target.pickId.split(":")[1])];
+  const effect: LiveCast = { skill, by: caster, progress: liveProgress(state), originalSymbol: pick.symbol, originalDirection: pick.direction, ...(skill === "SWAP" ? { swapSymbol: target.swapTo!.symbol } : {}) };
+  return { ...state, effects: { ...state.effects, [target.pickId]: effect }, usedSkills: [...state.usedSkills, caster],
+    hand: caster === "you" ? state.hand.filter((_, index) => index !== state.hand.indexOf(skill)) : state.hand,
+    incoming: attack && chosen.ownerId === "you" ? { skill: skill as "FREEZE" | "FLIP" | "SWAP", casterName: PLAYERS.find((p) => p.id === caster)!.name, symbol: pick.symbol as CoinSymbol, heldBps: pickReturn(pick, state.round, liveProgress(state), state.scenario), swapSymbol: target.swapTo?.symbol } : state.incoming,
+  };
+}
+
+function botAttack(state: DemoState): DemoState {
+  if (state.phase !== "live" || liveProgress(state) < .4 || state.scenario === "tie" || state.scenario === "void") return state;
+  const skill = (["FREEZE", "FLIP", "SWAP"] as const)[state.round % 3];
+  const target = skillPicks(state).find((pick) => pick.ownerId === "you" && !state.effects[pick.id]);
+  if (!target) return state;
+  const symbol = COINS.find((coin) => !target.pickedSymbols?.includes(coin.symbol as CoinSymbol))?.symbol as CoinSymbol | undefined;
+  const caster = PLAYERS.find((player) => !player.human && !state.usedSkills.includes(player.id) && !playerPicks(state)[player.id].some((pick) => pick.skill));
+  if (!caster) return state;
+  // Deterministic demo cast at 40% of Live, including catch-up after a background tab.
+  const atCast = { ...state, remaining: LIVE_SECONDS[state.round] * .6 };
+  const next = castLiveSkill(atCast, caster.id, skill, { pickId: target.id, swapTo: symbol ? { symbol, side: target.side } : undefined }, state.deadline - atCast.remaining * 1000);
+  return next === atCast ? state : { ...next, remaining: state.remaining };
 }
 
 export function liveProgress(state: DemoState) {
@@ -93,7 +173,7 @@ export function gameScores(state: DemoState): Record<string, number> {
 function settle(state: DemoState): DemoState {
   const result = roundResult(state);
   const won = result.winners.includes("you");
-  const skill: CommitSkill = state.round % 2 ? "BOOST" : "INSURANCE";
+  const skill = REWARDS[state.round % REWARDS.length];
   const hasRoom = state.hand.length < 3;
   return {
     ...state, history: [...state.history, result],
@@ -108,14 +188,16 @@ function nextPhase(state: DemoState, now: number): DemoState {
   if (state.phase === "commit") {
     next = { ...state, phase: "reveal", lockingUntil: 0, error: "" };
   } else if (state.phase === "reveal") next = { ...state, phase: "live" };
-  else if (state.phase === "live") next = settle({ ...state, phase: "results" });
+  else if (state.phase === "live") next = settle({ ...botAttack({ ...state, remaining: 0 }), phase: "results" });
   else if (state.round === state.preset.caps.length - 1) next = { ...state, phase: "finished", toast: "" };
-  else next = { ...state, phase: "commit", round: state.round + 1, locked: false, lockingUntil: 0, picks: [], toast: "", error: "" };
+  else next = { ...state, phase: "commit", round: state.round + 1, locked: false, lockingUntil: 0, picks: [], effects: {}, usedSkills: [], incoming: null, toast: "", error: "" };
   const remaining = phaseSeconds(next.phase, next.round);
   return { ...next, remaining, deadline: now + remaining * 1000 };
 }
 
 export function demoReducer(state: DemoState, action: DemoAction): DemoState {
+  if (action.type === "dismiss-incoming") return { ...state, incoming: null };
+  if (action.type === "cast") return castLiveSkill(state, "you", action.skill, action.target, action.now);
   if (action.type === "preview") {
     const next = createDemo(state.preset, action.phase, action.scenario);
     return { ...next, deadline: action.now + next.remaining * 1000, paused: true };
@@ -136,7 +218,8 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
     // Catch up after a hidden tab; each phase keeps its real deadline.
     while (action.now >= next.deadline && next.phase !== "finished") next = nextPhase(next, next.deadline);
     const remaining = next.phase === "finished" ? 0 : Math.max(0, Math.ceil((next.deadline - action.now) / 1000));
-    return remaining === next.remaining && marketTick === next.marketTick ? next : { ...next, remaining, marketTick };
+    next = remaining === next.remaining && marketTick === next.marketTick ? next : { ...next, remaining, marketTick };
+    return botAttack(next);
   }
   if (state.phase !== "commit" || state.locked || state.lockingUntil) return state;
   if (action.type === "lock") {

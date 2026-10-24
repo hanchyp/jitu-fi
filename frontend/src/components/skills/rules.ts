@@ -8,23 +8,24 @@ type Table = Pick<SkillHandProps, "phase" | "liveDeadlinePassed" | "usedThisRoun
 
 /** Why a target can't take this skill, or null when it can. */
 export function targetBlock(card: SkillCard, pick: SkillPick, table: Table): string | null {
-  if (pick.effect) return `Has ${pick.effect}`;
-  if (SKILLS[card.skill].target === "opponent") {
-    // A player can be frozen at most once per round.
-    const frozen = table.opponentPicks?.some((p) => p.ownerId === pick.ownerId && p.effect === "FREEZE");
-    if (frozen) return `${pick.ownerName} is already frozen`;
+  const liveEffect = pick.effect && !["BOOST", "INSURANCE"].includes(pick.effect);
+  if (pick.effect && (SKILLS[card.skill].timing === "commit" || liveEffect)) return `Has ${pick.effect}`;
+  if (SKILLS[card.skill].target !== "own") {
+    const attacked = table.opponentPicks?.some((p) => p.ownerId === pick.ownerId && ["FREEZE", "FLIP", "SWAP"].includes(p.effect ?? ""));
+    if (attacked) return `${pick.ownerName} was already attacked this round`;
   }
+  if (card.skill === "SWAP" && swapCoins(table, pick).length === 0) return "No free coin to swap to";
   return null;
 }
 
 /** The picks this card may target, playable or not. */
 export function targetsFor(card: SkillCard, table: Table): readonly SkillPick[] {
-  return SKILLS[card.skill].target === "opponent" ? (table.opponentPicks ?? []) : table.ownPicks;
+  return SKILLS[card.skill].target !== "own" ? (table.opponentPicks ?? []) : table.ownPicks;
 }
 
-/** Coins SWAP can move to: on the board and not picked by you this round. */
-export function swapCoins(table: Table) {
-  const mine = new Set(table.ownPicks.map((p) => p.symbol));
+/** Coins SWAP can move to: on the board, absent from the victim’s original and current picks. */
+export function swapCoins(table: Table, pick?: SkillPick) {
+  const mine = new Set(pick ? [...(pick.pickedSymbols ?? []), ...(table.opponentPicks ?? []).filter((p) => p.ownerId === pick.ownerId).map((p) => p.symbol)] : table.ownPicks.map((p) => p.symbol));
   return (table.boardCoins ?? []).filter((c) => !mine.has(c));
 }
 
@@ -41,8 +42,7 @@ export function cardBlock(card: SkillCard, table: Table): string | null {
     if (table.liveDeadlinePassed) return "Live deadline passed";
   }
   if (!targetsFor(card, table).some((p) => !targetBlock(card, p, table))) {
-    return target === "opponent" ? "No rival pick to freeze" : "Every pick already has an effect";
+    return target !== "own" ? "No rival pick can take this attack" : "Every pick already has an effect";
   }
-  if (target === "swap" && swapCoins(table).length === 0) return "No free coin to swap to";
   return null;
 }
