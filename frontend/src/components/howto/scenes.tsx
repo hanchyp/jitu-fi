@@ -40,7 +40,7 @@ function CoinToken({ coin, size = 44, className = "" }: { coin: Coin; size?: num
 function MusdChip({ size = 40 }: { size?: number }) {
   return (
     <div
-      className="font-display flex items-center justify-center rounded-full border-[3px] border-garis bg-emas text-garis shadow-[inset_0_-4px_0_0_#E0A21E]"
+      className="font-display flex items-center justify-center rounded-full border-[3px] border-garis bg-emas text-garis shadow-[inset_0_-4px_0_0_#A17728]"
       style={{ width: size, height: size, fontSize: size * 0.45 }}
     >
       $
@@ -69,7 +69,7 @@ export function DepositScene({ reduce }: { reduce: boolean }) {
     <div className="relative flex h-full items-center justify-between px-4 sm:px-10">
       <div className="flex flex-col items-center gap-2">
         <div className="rounded-[16px] border-[3px] border-garis bg-langit px-3 py-2 text-center">
-          <p className="text-xs font-extrabold text-white/70">Your wallet</p>
+          <p className="text-xs font-extrabold text-white/90">Your wallet</p>
           <p className="font-display text-xl text-white">100 mUSD</p>
         </div>
       </div>
@@ -113,7 +113,7 @@ export function DepositScene({ reduce }: { reduce: boolean }) {
                 initial={reduce ? false : { scale: 0, rotate: -20 }}
                 animate={{ scale: 1, rotate: -8 }}
                 transition={POP}
-                className="absolute -right-6 -top-3 rounded-[10px] border-[3px] border-garis bg-naik px-2 py-0.5 text-sm font-black text-garis"
+                className="absolute -right-6 -top-3 rounded-[10px] border-[3px] border-garis bg-zamrud px-2 py-0.5 text-sm font-black text-garis"
               >
                 Locked
               </motion.div>
@@ -163,7 +163,7 @@ function Seat({ name, src, ring, you = false, className = "" }: { name: string; 
 export function TableScene({ reduce }: { reduce: boolean }) {
   const step = useTimeline([300, 550, 800, 1050, 1700], reduce);
   const seats = [
-    { name: "You", src: "/assets/landing/portrait-hero.webp", ring: "#FFC93C", you: true },
+    { name: "You", src: "/assets/landing/portrait-hero.webp", ring: "#DAAE4B", you: true },
     ...CHAMPIONS.map((c) => ({ name: c.short, src: c.portrait, ring: c.color, you: false })),
   ];
   const chosen = step >= 5;
@@ -190,7 +190,7 @@ export function TableScene({ reduce }: { reduce: boolean }) {
               key={preset.name}
               animate={active && !reduce ? { scale: [1, 1.08, 1] } : { scale: 1 }}
               transition={{ duration: 0.35 }}
-              className={`rounded-[12px] border-[3px] px-2 py-1 text-center ${active ? "border-emas bg-[#24406E]" : "border-garis bg-[#183056]"}`}
+              className={`rounded-[12px] border-[3px] px-2 py-1 text-center ${active ? "border-emas bg-papan-terang" : "border-garis bg-papan"}`}
             >
               <p className="text-xs font-black text-white">
                 {preset.name} <span className="font-display text-base text-emas">{preset.caps.length}</span>
@@ -216,7 +216,7 @@ export function PickScene({ reduce }: { reduce: boolean }) {
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2 rounded-full border-[3px] border-garis bg-malam px-4 py-1 font-extrabold text-white">
           Picked
-          <motion.span key={picked} initial={reduce ? false : { scale: 1.8, color: "#FFC93C" }} animate={{ scale: 1, color: "#FFFFFF" }} className="font-display text-xl">
+          <motion.span key={picked} initial={reduce ? false : { scale: 1.8, color: "#DAAE4B" }} animate={{ scale: 1, color: "#FFFFFF" }} className="font-display text-xl">
             {picked}/{CAP}
           </motion.span>
         </div>
@@ -233,7 +233,7 @@ export function PickScene({ reduce }: { reduce: boolean }) {
               animate={{ opacity: 1, y: isPicked ? -6 : 0, rotate: 0, scale: isPicked ? 1.06 : 1 }}
               transition={{ delay: reduce ? 0 : i * 0.07, ...POP }}
               className={`relative flex w-[68px] flex-col items-center gap-1 rounded-[14px] border-[3px] px-1 py-2 sm:w-[84px] ${
-                isPicked ? "border-emas bg-[#24406E]" : "border-garis bg-[#183056]"
+                isPicked ? "border-emas bg-papan-terang" : "border-garis bg-papan"
               }`}
             >
               <CoinToken coin={coin} size={36} />
@@ -301,7 +301,7 @@ export function CallScene({ reduce }: { reduce: boolean }) {
               initial={reduce ? false : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: reduce ? 0 : i * 0.1 }}
-              className={`relative flex w-[150px] flex-col items-center gap-2 rounded-[16px] border-[3px] bg-[#183056] px-2 py-3 ${
+              className={`relative flex w-[150px] flex-col items-center gap-2 rounded-[16px] border-[3px] bg-papan px-2 py-3 ${
                 done ? (dir === "buy" ? "border-naik" : "border-turun") : "border-garis"
               }`}
             >
@@ -317,7 +317,7 @@ export function CallScene({ reduce }: { reduce: boolean }) {
                     initial={reduce ? false : { scale: 0, rotate: -20, y: 60 }}
                     animate={{ scale: 1, rotate: 8, y: 0 }}
                     transition={POP}
-                    className="absolute -right-3 -top-3 rounded-full border-[3px] border-garis bg-kristal px-1.5 text-xs font-black text-white"
+                    className="absolute -right-3 -top-3 rounded-full border-[3px] border-garis bg-zamrud px-1.5 text-xs font-black text-garis"
                   >
                     BOOST ×2
                   </motion.span>
@@ -332,7 +332,7 @@ export function CallScene({ reduce }: { reduce: boolean }) {
           <span
             key={name}
             className={`rounded-[8px] border-2 px-1.5 text-[11px] font-black ${
-              name === "BOOST" && boosted ? "border-garis bg-kristal text-white" : "border-white/15 text-kristal-terang/70"
+              name === "BOOST" && boosted ? "border-garis bg-zamrud text-garis" : "border-white/15 text-zamrud/70"
             }`}
           >
             {name}
@@ -372,13 +372,13 @@ export function WinScene({ reduce }: { reduce: boolean }) {
               key={r.coin.symbol}
               initial={reduce ? false : { opacity: 0.4 }}
               animate={{ opacity: step > i ? 1 : 0.4 }}
-              className="flex items-center gap-1.5 rounded-[14px] border-[3px] border-garis bg-[#183056] px-1.5 py-1 sm:gap-2 sm:px-2 sm:py-1.5"
+              className="flex items-center gap-1.5 rounded-[14px] border-[3px] border-garis bg-papan px-1.5 py-1 sm:gap-2 sm:px-2 sm:py-1.5"
             >
               <CoinToken coin={r.coin} size={26} className="hidden sm:block" />
               <div className="leading-tight">
                 <p className={`text-xs font-black ${r.call.includes("Buy") ? "text-naik" : "text-turun"}`}>
                   <span className="text-white sm:hidden">{r.coin.symbol} </span>
-                  {r.call} <span className="text-kristal-terang">{r.weight}</span>
+                  {r.call} <span className="text-zamrud">{r.weight}</span>
                 </p>
                 <p className="text-[11px] font-bold text-white/60">{r.move}</p>
               </div>
@@ -413,7 +413,7 @@ export function WinScene({ reduce }: { reduce: boolean }) {
             layout={!reduce}
             transition={POP}
             className={`flex items-center justify-between rounded-[12px] border-[3px] px-3 py-0.5 text-sm font-extrabold sm:py-1 sm:text-base ${
-              row.name === "You" ? "border-emas bg-[#24406E] text-white" : "border-garis bg-malam text-white/80"
+              row.name === "You" ? "border-emas bg-papan-terang text-white" : "border-garis bg-malam text-white/80"
             }`}
           >
             <span>
@@ -462,7 +462,7 @@ export function BonusScene({ reduce }: { reduce: boolean }) {
         </div>
       )}
 
-      <div className="relative w-full max-w-[340px] rounded-[18px] border-[3px] border-garis bg-malam px-4 py-3 shadow-[0_6px_0_0_#050B14]">
+      <div className="relative w-full max-w-[340px] rounded-[18px] border-[3px] border-garis bg-malam px-4 py-3 shadow-[0_6px_0_0_#040B10]">
         <p className="font-display text-lg text-white">Claim at maturity</p>
         <dl className="mt-1.5 space-y-1.5">
           {rows.map((row, i) => (

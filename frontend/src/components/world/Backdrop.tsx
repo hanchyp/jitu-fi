@@ -12,8 +12,8 @@ import { C, Toon, craggy, hdr, rng } from "./toon";
 type Ring = { seed: number; count: number; radius: [number, number]; height: [number, number]; base: number; rock: string; snow: string };
 
 const RINGS: Ring[] = [
-  { seed: 11, count: 14, radius: [30, 36], height: [9, 15], base: -10, rock: "#2E3F7C", snow: "#A9B6E6" },
-  { seed: 23, count: 18, radius: [52, 62], height: [16, 27], base: -12, rock: "#26346A", snow: "#8C9BD2" },
+  { seed: 11, count: 14, radius: [30, 36], height: [9, 15], base: -10, rock: "#2A5272", snow: "#B4CAD8" },
+  { seed: 23, count: 18, radius: [52, 62], height: [16, 27], base: -12, rock: "#1F4560", snow: "#8FADC0" },
 ];
 
 // One merged, vertex-colored geometry per ring: a dark base, a lit rock band and snow caps.
@@ -132,7 +132,7 @@ function FloatingIslands({ gradient, still }: { gradient: THREE.Texture; still: 
             <Toon color={C.stoneDark} gradient={gradient} />
           </mesh>
           <mesh geometry={geo.top}>
-            <Toon color="#6F7DA6" gradient={gradient} />
+            <Toon color="#6F86A0" gradient={gradient} />
           </mesh>
           {isl.trees.map((tr, k) => (
             <mesh key={k} geometry={geo.tree} position={[tr.x, 0.1, tr.z]} scale={tr.s}>
@@ -204,7 +204,7 @@ function Clouds({ gradient, still }: { gradient: THREE.Texture; still: boolean }
   return (
     <group ref={group}>
       <instancedMesh ref={mesh} args={[geometry, undefined, puffs.length]}>
-        <Toon color="#7D8BC4" gradient={gradient} emissive="#2B3A7A" emissiveIntensity={0.35} />
+        <Toon color="#7D9BB8" gradient={gradient} emissive="#2B4E6E" emissiveIntensity={0.35} />
       </instancedMesh>
     </group>
   );

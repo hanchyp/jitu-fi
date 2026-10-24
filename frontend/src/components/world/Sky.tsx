@@ -62,7 +62,7 @@ void main() {
   vec3 bandAxis = normalize(vec3(0.35, 0.55, 0.75));
   float band = exp(-pow(dot(dir, bandAxis), 2.0) * 14.0);
   float clouds = noise(dir * 4.0) * 0.6 + noise(dir * 9.0) * 0.4;
-  col += vec3(0.07, 0.08, 0.2) * band * clouds * smoothstep(-0.05, 0.25, h);
+  col += vec3(0.05, 0.1, 0.16) * band * clouds * smoothstep(-0.05, 0.25, h);
 
   float above = smoothstep(-0.02, 0.12, h);
   float s = stars(dir, 140.0, 0.09, 0.16) * 0.9 + stars(dir, 60.0, 0.05, 0.12) * 1.6;
@@ -76,7 +76,7 @@ void main() {
   float disc = smoothstep(0.052, 0.049, md);
   vec3 moon = mix(vec3(1.25, 1.2, 1.05), vec3(0.62, 0.66, 0.9), smoothstep(0.05, 0.047, sd) * 0.8);
   col = mix(col, moon, disc);
-  col += vec3(0.25, 0.3, 0.55) * exp(-md * 9.0) * (1.0 - disc);
+  col += vec3(0.25, 0.34, 0.5) * exp(-md * 9.0) * (1.0 - disc);
 
   gl_FragColor = vec4(col, 1.0);
 }
@@ -89,7 +89,7 @@ export function Sky({ still }: { still: boolean }) {
       uTime: { value: 0 },
       uTop: { value: new THREE.Color(C.skyTop) },
       uHorizon: { value: new THREE.Color(C.skyHorizon) },
-      uDeep: { value: new THREE.Color("#0C1638") },
+      uDeep: { value: new THREE.Color("#0A1E2E") },
       uMoonDir: { value: new THREE.Vector3(-0.45, 0.2, -0.87).normalize() },
     }),
     [],

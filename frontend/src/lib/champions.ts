@@ -20,7 +20,7 @@ export const CHAMPIONS: Champion[] = [
     line: "Piles on Buys and never met a BOOST he didn't like.",
     skills: ["Buy", "BOOST"],
     portrait: "/assets/landing/portrait-bruno-bull.webp",
-    color: "#3DD68C",
+    color: "#7BE35A",
   },
   {
     name: "Bera the Bear",

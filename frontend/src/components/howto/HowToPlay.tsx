@@ -114,7 +114,7 @@ function HowToPlayModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center p-3 sm:items-center sm:p-6">
       <motion.div
-        className="absolute inset-0 bg-[#050B14]/75"
+        className="absolute inset-0 bg-[#040B10]/75"
         initial={reduce ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
         onClick={onClose}
@@ -126,7 +126,7 @@ function HowToPlayModal({ onClose }: { onClose: () => void }) {
         initial={reduce ? false : { opacity: 0, y: 40, scale: 0.92 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ type: "spring", stiffness: 320, damping: 26 }}
-        className="relative flex max-h-[calc(100svh-1.5rem)] w-full max-w-2xl flex-col overflow-y-auto rounded-[26px] border-[3px] border-garis bg-[#13284A] shadow-[0_8px_0_0_#050B14]"
+        className="relative flex max-h-[calc(100svh-1.5rem)] w-full max-w-2xl flex-col overflow-y-auto rounded-[26px] border-[3px] border-garis bg-malam shadow-[0_8px_0_0_#040B10]"
       >
         {/* Header */}
         <div className="flex items-center justify-between gap-3 px-5 pt-4 sm:px-6 sm:pt-5">
@@ -145,7 +145,7 @@ function HowToPlayModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Stage */}
-        <div className="relative mx-4 mt-3 h-[clamp(240px,46svh,300px)] shrink-0 overflow-hidden rounded-[20px] border-[3px] border-garis bg-[radial-gradient(ellipse_at_50%_80%,#3A2F86_0%,#1B2552_55%,#0F1D3D_100%)] sm:mx-6 sm:h-[280px]">
+        <div className="relative mx-4 mt-3 h-[clamp(240px,46svh,300px)] shrink-0 overflow-hidden rounded-[20px] border-[3px] border-garis bg-[radial-gradient(ellipse_at_50%_80%,#1D4A6B_0%,#113048_55%,#0A2235_100%)] sm:mx-6 sm:h-[280px]">
           <AnimatePresence mode="wait" initial={false} custom={dir}>
             <motion.div
               key={step}

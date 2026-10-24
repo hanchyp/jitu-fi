@@ -12,6 +12,7 @@ import { ARENA_COINS } from "@/lib/coins";
 import { Arena } from "./Arena";
 import { Backdrop } from "./Backdrop";
 import { Coin } from "./Coin";
+import { CrestIntro, type CrestIntroProps } from "./Crest";
 import { Effects } from "./Effects";
 import { MonadCrystal } from "./MonadCrystal";
 import { Sky } from "./Sky";
@@ -29,7 +30,7 @@ const ARENA_Y = -0.6;
 const COIN_SWAY = 0.14;
 const COIN_SLOTS = {
   wide: { radius: 5.0, coin: 0.26, slots: [[-20, 2.5], [22, 3.6], [52, 3.1], [128, 3.1], [158, 3.6], [200, 2.5]] },
-  tall: { radius: 2.9, coin: 0.3, slots: [[-40, 2.0], [15, 4.4], [60, 5.0], [120, 5.0], [165, 4.4], [220, 2.0]] },
+  tall: { radius: 2.9, coin: 0.3, slots: [[-40, 3.1], [15, 4.4], [60, 5.0], [120, 5.0], [165, 4.4], [220, 3.1]] },
 } as const;
 
 function placeCoin(i: number, aspect: number, sway: number, coin: THREE.Object3D) {
@@ -127,17 +128,17 @@ function CameraRig({ still }: { still: boolean }) {
   return null;
 }
 
-function Scene({ still }: { still: boolean }) {
+function Scene({ still, intro }: { still: boolean; intro: CrestIntroProps | null }) {
   const gradient = useToonGradient();
   return (
     <>
       <color attach="background" args={[C.skyTop]} />
       <fog attach="fog" args={[C.fog, 18, 80]} />
       <ambientLight intensity={0.4} />
-      <hemisphereLight args={["#9AAEFF", "#1B2A57", 0.55]} />
+      <hemisphereLight args={["#A6C4E6", "#12324A", 0.55]} />
       {/* Moonlight key from the upper left, cool rim from behind. */}
       <directionalLight position={[-7, 11, 7]} intensity={2.1} color="#EAF0FF" />
-      <directionalLight position={[6, 4, -10]} intensity={1.1} color="#7F8CFF" />
+      <directionalLight position={[6, 4, -10]} intensity={1.1} color="#7FB0FF" />
 
       <Sky still={still} />
       <Backdrop gradient={gradient} still={still} />
@@ -155,12 +156,13 @@ function Scene({ still }: { still: boolean }) {
         />
       </group>
       <CameraRig still={still} />
+      {intro && !still && <CrestIntro {...intro} />}
       <Effects />
     </>
   );
 }
 
-export default function ArenaScene({ still }: { still: boolean }) {
+export default function ArenaScene({ still, intro = null }: { still: boolean; intro?: CrestIntroProps | null }) {
   const host = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(true);
 
@@ -182,7 +184,7 @@ export default function ArenaScene({ still }: { still: boolean }) {
         camera={{ fov: 40, position: [0, 16, 32], near: 0.1, far: 140 }}
         gl={{ antialias: false, alpha: false, stencil: false, powerPreference: "high-performance" }}
       >
-        <Scene still={still} />
+        <Scene still={still} intro={intro} />
       </Canvas>
     </div>
   );

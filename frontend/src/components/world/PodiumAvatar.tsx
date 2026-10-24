@@ -59,7 +59,9 @@ function Sprite({ seat, still }: { seat: number; still: boolean }) {
   return (
     <group ref={turn}>
       <group ref={body}>
-        <mesh position={[0, PLANE_H / 2 - SOLE_MARGIN, 0]}>
+        {/* Drawn after the additive glows (renderOrder) and without fog, so the back seats
+            behind the crystal read as clearly as the front ones. */}
+        <mesh position={[0, PLANE_H / 2 - SOLE_MARGIN, 0]} renderOrder={3}>
           <planeGeometry args={[PLANE_W, PLANE_H]} />
           {/* Alpha-tested so the cut-out writes depth (and gets the toon outline); the texture is
               premultiplied, so blend with ONE / ONE_MINUS_SRC_ALPHA for clean soft edges. */}
@@ -72,6 +74,7 @@ function Sprite({ seat, still }: { seat: number; still: boolean }) {
             blendSrc={THREE.OneFactor}
             blendDst={THREE.OneMinusSrcAlphaFactor}
             toneMapped={false}
+            fog={false}
           />
         </mesh>
       </group>

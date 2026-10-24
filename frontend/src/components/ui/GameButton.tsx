@@ -4,8 +4,8 @@ import type { ComponentProps } from "react";
 type Variant = "gold" | "night";
 
 const VARIANTS: Record<Variant, string> = {
-  gold: "bg-emas text-garis shadow-[0_5px_0_0_#6B3F00] hover:bg-[#FFD666] active:shadow-[0_1px_0_0_#6B3F00]",
-  night: "bg-malam text-white shadow-[0_5px_0_0_#050B14] hover:bg-[#162C50] active:shadow-[0_1px_0_0_#050B14]",
+  gold: "bg-emas text-garis shadow-[0_5px_0_0_#A17728] hover:bg-[#E6C26A] active:shadow-[0_1px_0_0_#A17728]",
+  night: "bg-malam text-white shadow-[0_5px_0_0_#040B10] hover:bg-papan active:shadow-[0_1px_0_0_#040B10]",
 };
 
 const SIZES = {

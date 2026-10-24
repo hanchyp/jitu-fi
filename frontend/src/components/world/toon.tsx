@@ -6,19 +6,23 @@ import { useMemo } from "react";
 import * as THREE from "three";
 
 export const C = {
-  outline: "#0B1626",
+  outline: "#040B10",
   stone: "#7C86A8",
   stoneDark: "#4A5373",
   stoneTop: "#9AA3C2",
   kristal: "#836EF9",
   kristalGlow: "#C4B8FF",
-  emas: "#FFC93C",
-  skyTop: "#0A1430",
-  skyHorizon: "#1E2F63",
-  fog: "#1A2858",
+  emas: "#DAAE4B",
+  emasTua: "#A17728",
+  gading: "#F2EDE1",
+  malam: "#113048",
+  zamrud: "#40D0A3",
+  skyTop: "#071624",
+  skyHorizon: "#1A4664",
+  fog: "#173E5A",
 } as const;
 
-export const PLAYER_COLORS = ["#FFC93C", "#3DD68C", "#FF6B5E", "#5AA9FF"] as const;
+export const PLAYER_COLORS = ["#DAAE4B", "#7BE35A", "#FF6B5E", "#5AA9FF"] as const;
 
 // Three-step gradient map gives the flat cel-shaded look.
 export function useToonGradient() {
