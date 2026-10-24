@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { LiveSeasons } from "@/components/landing/LiveSeasons";
+import { YieldSplit } from "@/components/landing/YieldSplit";
 import { Nav } from "@/components/shell/Nav";
 import { DevStateBar } from "@/components/ui/DevStateBar";
 import { DevStateSwitch } from "@/components/ui/DevStateSwitch";
@@ -50,13 +51,6 @@ const SKILLS = [
   { name: "FLIP", body: "Turn a Buy into a Sell mid-round." },
   { name: "SWAP", body: "Trade a pick for another coin." },
   { name: "FREEZE", body: "Stop a rival's pick in its tracks." },
-] as const;
-
-// Split of every 100 mUSD of yield, from the vault rules (fee 15%, then 50/50).
-const LOOT = [
-  { label: "Platform fee", value: "15", share: 15, bar: "bg-white/30", note: "Keeps the arena running." },
-  { label: "Base yield", value: "42.5", share: 42.5, bar: "bg-langit", note: "Shared by deposit size. You get it even if you lose every game." },
-  { label: "Bonus pot", value: "42.5", share: 42.5, bar: "bg-emas", note: "Shared by season points times deposit weight (max 1,000 mUSD). Sponsors can top it up." },
 ] as const;
 
 // Dev states for the landing: a visitor, or a player who already holds a position (dummy data).
@@ -171,32 +165,9 @@ export default function Home() {
           <div className="mx-auto max-w-6xl scroll-mt-6 px-4 py-20 sm:px-6 sm:py-24">
             <SectionTitle>Where the yield goes</SectionTitle>
             <p className="mt-3 max-w-xl text-lg font-semibold text-white/75">
-              For every 100 mUSD of yield earned this season, all paid out at maturity:
+              One chest of yield. Three destinations.
             </p>
-
-            <div
-              className="mt-10 flex h-12 w-full overflow-hidden rounded-[14px] border-[3px] border-garis shadow-[0_6px_0_0_#040B10]"
-              role="img"
-              aria-label="15 platform fee, 42.5 base yield, 42.5 bonus pot"
-            >
-              {LOOT.map((part, i) => (
-                <div
-                  key={part.label}
-                  className={`${part.bar} ${i > 0 ? "border-l-[3px] border-garis" : ""} shadow-[inset_0_5px_0_0_rgb(255_255_255/0.25)]`}
-                  style={{ width: `${part.share}%` }}
-                />
-              ))}
-            </div>
-
-            <dl className="mt-8 grid gap-8 md:grid-cols-[15fr_42.5fr_42.5fr] md:gap-0 md:[&>div]:pr-6">
-              {LOOT.map((part) => (
-                <div key={part.label}>
-                  <dt className="font-extrabold text-white/80">{part.label}</dt>
-                  <dd className="font-display mt-1 text-5xl text-white">{part.value}</dd>
-                  <dd className="mt-2 max-w-xs font-semibold leading-relaxed text-white/70">{part.note}</dd>
-                </div>
-              ))}
-            </dl>
+            <YieldSplit />
           </div>
         </section>
 
