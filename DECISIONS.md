@@ -2,6 +2,12 @@
 
 Ambiguous design calls and known limitations, newest first. Each entry picks the simplest safe option. The full design rationale lives in `openspec/changes/build-crypto-draft-mvp/design.md`.
 
+## 2026-10-24 — /play follows landing and tutorial motion
+
+- Preset selection and its checkmark reuse the tutorial's spring (stiffness 420, damping 20). Mode details and the primary-action label use its 0.25-second ease-out slide/fade; the controls enter with the landing CTA spring (380/16) and no interaction delay. Preset hover/focus and press follow the shared button's 100 ms lift and collapsing bevel.
+- Incoming text replaces immediately rather than waiting for an exit animation, preserving the latest selection during rapid changes without accumulating extra nodes or height. SSR and client initial attributes agree; reduced motion uses instant transitions and removes movement from the first frame. Layout, copy, routing and gameplay remain as before.
+- Chromium verification passed 32 production and four development cases, with 9,473 sampled frames showing no page overflow or browser errors. Checks covered rapid mode/state changes, keyboard focus, routing, pending/disabled controls and reduced-motion hydration. Physical devices and other browser engines were not tested.
+
 ## 2026-10-24 — Centered /play lobby in one viewport
 
 - The approved lobby is one centered composition over the full arena background. Four compact mode cards sit above one central Play action; phones use a 2-by-2 grid. Quick starts selected and recommended, with selected-mode rounds, pick caps and duration shown below the cards.
