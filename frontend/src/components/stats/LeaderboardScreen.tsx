@@ -64,6 +64,7 @@ export function LeaderboardScreen({ boards, you, yourTenor, medals = [], emptyAr
             <Image
               src={emptyArt ?? "/assets/stats/empty-leaderboard.webp"}
               alt=""
+              loading="eager"
               width={640}
               height={480}
               sizes="(min-width: 640px) 400px, 280px"
@@ -173,7 +174,7 @@ export function LeaderboardScreen({ boards, you, yourTenor, medals = [], emptyAr
 function Podium({ entries, medals, you }: { entries: LeaderboardEntry[]; medals: readonly (string | undefined)[]; you: string }) {
   return (
     <section className="relative isolate flex flex-col overflow-hidden rounded-[22px] border-[3px] border-garis bg-dasar shadow-[0_6px_0_0_#040B10]" aria-label="Season leaders">
-      <Image src="/assets/landing/season-banner.webp" alt="" fill sizes="(min-width: 1024px) 720px, 100vw" className="-z-20 object-cover object-right" />
+      <Image src="/assets/landing/season-banner.webp" alt="" loading="eager" fill sizes="(min-width: 1024px) 720px, 100vw" className="-z-20 object-cover object-right" />
       <div aria-hidden="true" className="absolute inset-0 -z-10 bg-dasar/80" />
       <div className="px-4 pt-5 sm:px-6">
         <h3 className="font-display text-2xl text-gading">Season leaders</h3>
