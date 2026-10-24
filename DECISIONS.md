@@ -2,6 +2,11 @@
 
 Ambiguous design calls and known limitations, newest first. Each entry picks the simplest safe option. The full design rationale lives in `openspec/changes/build-crypto-draft-mvp/design.md`.
 
+## 2026-10-24 — Play continuously with server practice
+
+- Authenticated players can start a real server game without waiting for a deposit or season. No position, enrollment, an ended/finalized or ineligible season, and insufficient time for the selected preset fall back to practice. One running table per wallet and the existing resume flow still apply.
+- Practice is persisted with `seasonId: 0` and `practice: true`. It awards no season points, never enters the keeper's on-chain result queue, and does not count toward K or season rankings, including if the player deposits later. History reports practice without reading season 0; the season profile leaves those games out. Eligible season games keep their existing recording rules.
+
 ## 2026-10-24 — Production testnet shortcuts for season managers
 
 - The production routes support presentation controls on Monad testnet (10143): `N` on `/table/[id]` ends the manager's own current phase through the normal server transition; `Shift+R` on `/play` opens a confirmation to create a new season. Both backend writes require a SIWE session whose wallet holds the vault's `SEASON_MANAGER_ROLE`. Ordinary players cannot invoke them.
