@@ -1,12 +1,11 @@
 "use client";
 
 // The floating stone duel platform: craggy underside, rim stones, glowing runes, pillars with
-// crystal flames and four podiums. Each podium carries a player avatar (see PodiumAvatar).
+// crystal flames and four podiums.
 
 import { useFrame } from "@react-three/fiber";
 import { useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { PodiumAvatar } from "./PodiumAvatar";
 import { C, PLAYER_COLORS, Toon, craggy, hdr } from "./toon";
 
 const RUNE_Y = 0.27;
@@ -142,7 +141,7 @@ function Pillars({ gradient, still }: { gradient: THREE.Texture; still: boolean 
   );
 }
 
-function Podiums({ gradient, still }: { gradient: THREE.Texture; still: boolean }) {
+function Podiums({ gradient }: { gradient: THREE.Texture }) {
   const rings = useMemo(() => PLAYER_COLORS.map((c) => hdr(c, 1.8)), []);
   return (
     <>
@@ -164,9 +163,6 @@ function Podiums({ gradient, still }: { gradient: THREE.Texture; still: boolean 
             <ringGeometry args={[0.62, 0.68, 32]} />
             <meshBasicMaterial color={rings[i]} toneMapped={false} />
           </mesh>
-          <group name={`podium-slot-${i}`} position={[0, 0.73, 0]}>
-            <PodiumAvatar seat={i} still={still} />
-          </group>
         </group>
       ))}
     </>
@@ -219,7 +215,7 @@ export function Arena({ gradient, still }: { gradient: THREE.Texture; still: boo
       </mesh>
       <Runes still={still} />
       <Pillars gradient={gradient} still={still} />
-      <Podiums gradient={gradient} still={still} />
+      <Podiums gradient={gradient} />
     </group>
   );
 }
