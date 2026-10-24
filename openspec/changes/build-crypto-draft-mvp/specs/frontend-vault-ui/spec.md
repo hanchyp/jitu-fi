@@ -15,12 +15,12 @@ The deposit screen SHALL offer a faucet button that mints 1,000 mUSD. While the 
 
 ### Requirement: Deposit flow
 The deposit screen SHALL show:
+- a tenor choice ("1 week", "1 month"; demo lengths shown alongside), each with its enrollment countdown and current bonus pot including sponsor funds
 - an amount input, enforcing a 10 mUSD minimum and the wallet balance
-- the tenor and an enrollment countdown
-- a note that principal is safe and base yield is guaranteed
+- a note that principal, base yield and bonus are all paid at maturity, and that a losing streak still returns principal plus base yield
 - the weight cap
 
-Deposit uses a permit signature when possible, and approve + deposit as a fallback.
+The user sends the deposit from their own wallet (they hold testnet MON). Deposit uses a permit signature when possible, and approve + deposit as a fallback. A user with an active position in another tenor sees why they cannot deposit.
 
 #### Scenario: Permit deposit
 - **WHEN** the user enters 100 mUSD and confirms
@@ -29,6 +29,13 @@ Deposit uses a permit signature when possible, and approve + deposit as a fallba
 #### Scenario: Enrollment closed
 - **WHEN** the season has started
 - **THEN** the deposit button is disabled with a message that enrollment is closed
+
+### Requirement: Estimated earnings
+While a season is Active, the position view SHALL show live estimated earnings from previewClaim (principal, base yield and bonus estimate), updated after each finished game, and the time to maturity.
+
+#### Scenario: Estimate after a game
+- **WHEN** the player's game finishes and its points are credited
+- **THEN** the estimated bonus refreshes within a few seconds
 
 ### Requirement: Claim screen
 After finalization, the claim screen SHALL show principal, base yield and bonus (from previewClaim), and the total. A single claim action transfers the funds.

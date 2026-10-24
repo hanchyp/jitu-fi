@@ -7,7 +7,11 @@ Holds players' principal for a fixed-tenor season, routes it to the yield strate
 ## ADDED Requirements
 
 ### Requirement: Season creation
-The vault admin SHALL be able to create a season with enrollStart < start < end. The season starts in Enrollment status. Each season has its own id.
+The vault admin SHALL be able to create a season with enrollStart < start < end. The season starts in Enrollment status. Each season has its own id. A lock tenor is a season: several seasons with different lengths (for example "1 week" and "1 month") may run at the same time. In DEMO_MODE, "1 week" lasts 15 minutes, "1 month" lasts 30 minutes, and enrollment lasts 2 minutes.
+
+#### Scenario: Two tenors at once
+- **WHEN** the admin creates a 1-week season and a 1-month season with overlapping enrollment
+- **THEN** both are in Enrollment with their own ids
 
 #### Scenario: Valid season
 - **WHEN** the admin creates a season with ordered timestamps
@@ -31,6 +35,17 @@ A user SHALL be able to deposit mUSD into a season only while block.timestamp < 
 #### Scenario: Below minimum
 - **WHEN** a user deposits 5 mUSD
 - **THEN** the call reverts
+
+### Requirement: One active position per address
+An address SHALL hold a position in at most one season that is in Enrollment or Active, so the game knows which season a player's points belong to. Adding to the same season's position is allowed. The vault SHALL expose activeSeasonOf(user).
+
+#### Scenario: Second tenor
+- **WHEN** a user with a position in the 1-week season deposits into the 1-month season while the 1-week season is not Finalized
+- **THEN** the call reverts
+
+#### Scenario: After maturity
+- **WHEN** the user's previous season is Finalized
+- **THEN** they may deposit into a new season
 
 ### Requirement: Deposit with permit
 The vault SHALL accept a deposit authorized by an EIP-2612 permit in the same call. Anyone may submit it, but funds always come from and are credited to the permit owner.
@@ -64,8 +79,19 @@ The vault SHALL expose isEligible(seasonId, user). It is true only when the user
 - **WHEN** isEligible is queried for an address with no position
 - **THEN** it returns false
 
+### Requirement: Sponsor bonus funding
+Anyone SHALL be able to add mUSD to a season's bonus pot with fundBonus(seasonId, amount) before the season is Finalized. Sponsor funds are kept apart from principal and strategy yield, are never charged the fee, and are added to bonusPot at finalize, including in a shortfall. BonusFunded is emitted.
+
+#### Scenario: Demo pot seeded
+- **WHEN** the deploy script funds a demo season with 1,000 mUSD and the strategy yields 100 mUSD on 1,000 mUSD principal
+- **THEN** at finalize the fee is 15 mUSD, baseYield is 42.5 mUSD, and bonusPot is 1,042.5 mUSD
+
+#### Scenario: Funding a finalized season
+- **WHEN** anyone calls fundBonus on a Finalized season
+- **THEN** the call reverts
+
 ### Requirement: Season finalization and yield split
-After end, anyone SHALL be able to finalize once. Finalizing withdraws everything from the strategy. If the total exceeds totalPrincipal, the vault takes fee = 15% of yield and sends it to feeRecipient. baseYield is 50% of the remainder and bonusPot gets the rest. The vault snapshots totalWeightedPoints from the game contract.
+After end, anyone SHALL be able to finalize once. Finalizing withdraws everything from the strategy. If the total exceeds totalPrincipal, the vault takes fee = 15% of yield and sends it to feeRecipient. baseYield is 50% of the remainder and bonusPot gets the rest plus sponsor funds. The vault snapshots totalWeightedPoints from the game contract. Points are cut off with the same boundary finalize uses (block.timestamp ≥ end).
 
 #### Scenario: Normal yield
 - **WHEN** totalPrincipal is 1,000 mUSD and the strategy returns 1,100 mUSD
@@ -80,14 +106,14 @@ After end, anyone SHALL be able to finalize once. Finalizing withdraws everythin
 - **THEN** the call reverts
 
 ### Requirement: Shortfall handling
-If the strategy returns less than totalPrincipal, finalize SHALL set fee, baseYield and bonusPot to 0 and emit a Shortfall event. Each claim then repays principal × returned / totalPrincipal.
+If the strategy returns less than totalPrincipal, finalize SHALL set fee and baseYield to 0, set bonusPot to the sponsor funds only, and emit a Shortfall event. Each claim then repays principal × returned / totalPrincipal, plus any bonus share.
 
 #### Scenario: Strategy loss
 - **WHEN** totalPrincipal is 1,000 mUSD and the strategy returns 900 mUSD
 - **THEN** Shortfall is emitted, no fee is paid, and a user with 100 mUSD principal can claim 90 mUSD
 
 ### Requirement: Claim
-After a season is Finalized, each depositor SHALL be able to claim once. A claim pays principal + baseYield × principal / totalPrincipal + bonusPot × (points × weight) / totalWeightedPoints. Points are read from the game contract.
+Principal, base yield and bonus SHALL all be paid at maturity; nothing is claimable before finalization. After a season is Finalized, each depositor SHALL be able to claim once. A claim pays principal + baseYield × principal / totalPrincipal + bonusPot × (points × weight) / totalWeightedPoints. Points are read from the game contract.
 
 #### Scenario: Successful claim
 - **WHEN** a depositor claims after finalization

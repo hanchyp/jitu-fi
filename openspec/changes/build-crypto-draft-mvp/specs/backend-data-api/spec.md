@@ -15,29 +15,29 @@ The indexer SHALL subscribe to contract logs over WebSocket and persist every va
 
 ### Requirement: REST read endpoints
 The API SHALL serve these endpoints, with inputs validated:
-- GET /seasons/current
-- GET /seasons/:id/leaderboard (points, weight, estimated bonus)
+- GET /seasons/current (every open season, one per tenor)
+- GET /seasons/:id/leaderboard (points, counted games n/K, weight, estimated bonus; humans only)
 - GET /users/:addr/position (including previewClaim)
 - GET /tables/:id
 - GET /users/:addr/history
 
 #### Scenario: Current season
 - **WHEN** a client calls GET /seasons/current
-- **THEN** it receives the season id, status, timestamps, total principal and demo-mode flag
+- **THEN** it receives, for each open season, the season id, tenor, status, timestamps, total principal, bonus pot including sponsor funds, and the demo-mode flag
 
 #### Scenario: Invalid address
 - **WHEN** a client calls GET /users/not-an-address/position
 - **THEN** it receives a 400 error
 
 ### Requirement: Real-time rooms
-The backend SHALL provide WebSocket rooms lobby:<season>, table:<id> and prices. The table room gets phase changes, reveals, skill events and round results within seconds of the event being indexed.
+The backend SHALL provide WebSocket rooms table:<id> and prices, plus lobby:<preset> for the disabled multi-human queue. The table room gets round starts (coins, cap, live duration), phase changes, reveals, skill events and round results within seconds of the event being indexed.
 
 #### Scenario: Reveal broadcast
 - **WHEN** a Revealed event is indexed for table 7
 - **THEN** every client in table:7 receives the revealed picks
 
 ### Requirement: Live price stream
-The backend SHALL proxy Pyth Hermes prices. It pushes a tick about once per second for the coins at active tables, and serves update data on demand to the keeper and the LOCK skill.
+The backend SHALL proxy Pyth Hermes prices. It pushes a tick about once per second for the coins at active tables, and serves update data on demand to the keeper and to the relayer for live skills.
 
 #### Scenario: Price ticks
 - **WHEN** a client subscribes to the prices room during a Live phase

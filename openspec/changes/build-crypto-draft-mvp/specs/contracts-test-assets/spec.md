@@ -54,7 +54,7 @@ The mock strategy SHALL report totalAssets as principal plus accrued, where accr
 - **THEN** the strategy mints the accrued amount, transfers its entire balance to the vault, and returns that amount
 
 ### Requirement: Configurable APR
-The strategy admin SHALL be able to set aprBps, including very high demo values (e.g. 500000) so yield becomes visible within a 30-minute demo season.
+The strategy admin SHALL be able to set aprBps, including very high demo values so yield becomes visible within a short demo season. The DEMO_MODE default is 17,520,000, which is about 10% per 30 minutes; the UI labels it simulated.
 
 #### Scenario: Non-admin sets APR
 - **WHEN** a non-admin calls the APR setter

@@ -11,7 +11,7 @@ The home route SHALL show:
 - the pitch line
 - a three-step explainer (Deposit → Play → Claim)
 - the current season status with a countdown
-- a call to action that goes to deposit or lobby, depending on whether the user has a position
+- a call to action that goes to deposit or play, depending on whether the user has a position
 
 #### Scenario: Visitor without position
 - **WHEN** a connected wallet with no position opens /

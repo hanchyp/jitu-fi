@@ -32,7 +32,7 @@ The oracle SHALL expose updateFee(data), a payable update(data), and getPrice(fe
 - **THEN** the oracle is updated and prices are read in the same transaction
 
 ### Requirement: Stale and invalid prices rejected
-The oracle SHALL reject a price older than 15 seconds and any price ≤ 0.
+The oracle SHALL reject a price older than 15 seconds and any price ≤ 0. Live skills use a stricter maximum age of 5 seconds (see game-skills).
 
 #### Scenario: Stale price
 - **WHEN** a price's publishTime is more than 15 seconds old
@@ -50,8 +50,12 @@ A mock oracle SHALL let its admin set prices directly. It is used by unit tests,
 - **THEN** getPrice for ETH returns 3000, −8 and the current timestamp
 
 ### Requirement: Randomness source
-Randomness SHALL come through an interface. The MVP implementation derives values from keccak256 of the previous blockhash, tableId, round and a nonce. Its code MUST be labelled NOT SECURE, DEMO ONLY.
+Randomness SHALL come through an interface. It supplies coin draws, live durations and skill deals. The MVP implementation derives values from keccak256 of the previous blockhash, tableId, round and a nonce. Its code MUST be labelled NOT SECURE, DEMO ONLY.
 
 #### Scenario: Distinct coin draws
 - **WHEN** two rounds are started on the same table
 - **THEN** each draw yields 8 distinct registry coins
+
+#### Scenario: Live duration range
+- **WHEN** 1,000 rounds are started in a fuzz test
+- **THEN** every live duration is a whole number of seconds in [60, 120]

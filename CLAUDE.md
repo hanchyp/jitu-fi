@@ -11,9 +11,15 @@ When the spec and this file conflict, **this file wins**.
 - Users deposit mUSD into a season vault. Principal is always returned in full.
 - Yield minus a 15% fee is split 50/50:
   - **Base yield:** pro-rata by deposit.
-  - **Bonus pot:** by season points × weight, where weight = min(principal, 1,000 mUSD).
-- Game: 4 players, 3 rounds. Each player picks 3 of 8 coins, Buy or Sell each.
-- Rounds go commit → reveal → live → settle. The contrarian multiplier and skills (GIFT_COIN, LOCK, SHIELD) affect scoring.
+  - **Bonus pot:** by season points × weight, where weight = min(principal, 1,000 mUSD). Sponsors can top it up with `fundBonus`.
+- A lock tenor is a season (1 week, 1 month). One active position per address. Everything is paid at maturity.
+- **The game was redesigned on 2026-10-23. `DECISIONS.md` is authoritative and overrides the spec's game rules.** In short:
+  - Tables seat 4: for now 1 human + 3 house bots. Bots never earn points.
+  - Presets: 3, 5, 7 or 10 rounds, with growing per-round pick caps (e.g. 1·2·3).
+  - Rounds go commit 20 s → reveal 10 s → live (random 60–120 s) → settle.
+  - Round score = cap × weighted average return in bps. Moves under 1 bps are void.
+  - Season points = max(0, game score) over each player's first K games.
+  - Skills: BOOST, INSURANCE, LOCK, FLIP, SWAP, FREEZE.
 
 ## Conventions
 - Monorepo with pnpm workspaces: `contracts/` (Foundry ≥1.8.0), `backend/`, `frontend/`, `packages/shared/`, `bots/`.
@@ -36,9 +42,10 @@ No buy-in or entry fee. No spectator betting. Principal is never at risk. GameMa
    - Add an invariant test covering this.
 2. **`skillHand` must be scoped per table:** `mapping(uint256 tableId => mapping(address => uint8[]))`.
 3. **Shortfall case:** if the strategy returns less than `totalPrincipal`, set `baseYield = bonusPot = fee = 0` and repay principal pro-rata. Emit a `Shortfall` event.
-4. **GIFT_COIN outcomes are predictable with `PseudoRandomness`.** Accept this for the demo, and list it in `DECISIONS.md` as a known limitation (fixed later by Pyth Entropy).
+4. **Random outcomes are predictable with `PseudoRandomness`** (originally noted for GIFT_COIN, which was later removed). Accept this for the demo, and list it in `DECISIONS.md` as a known limitation (fixed later by Pyth Entropy).
 
 ## Status
 - Phase 0 (setup) is partly done. The pnpm workspace, `frontend/` (Next.js 16 + Tailwind, initialized only) and `backend/` (TypeScript skeleton, no code yet) build with `pnpm build`.
 - `contracts/` has only a README. The Foundry scaffold waits until Foundry is installed.
 - `packages/shared/` and `bots/` have not been created yet.
+- `DECISIONS.md` exists. The landing page and How to play tutorial still describe the old rules ("Pick 3 coins", ×1.5 contrarian); task 5.9 updates them.
