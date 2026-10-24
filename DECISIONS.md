@@ -9,6 +9,7 @@ Ambiguous design calls and known limitations, newest first. Each entry picks the
 
 ## 2026-10-24 — Production testnet shortcuts for season managers
 
+- `Shift+N` (or the Live 5s button) during Live shortens the server deadline to at most five seconds from now, never extending a shorter deadline. The deadline is persisted, its timer rearmed and its update broadcast to clients; settlement still follows the normal price/scoring path. It uses the same testnet, season-manager and own-table checks as immediate skip.
 - The production routes support presentation controls on Monad testnet (10143): `N` on `/table/[id]` ends the manager's own current phase through the normal server transition; `Shift+R` on `/play` opens a confirmation to create a new season. Both backend writes require a SIWE session whose wallet holds the vault's `SEASON_MANAGER_ROLE`. Ordinary players cannot invoke them.
 - Phase requests carry the expected phase and round, so repeated or stale requests do not advance twice. Skipping Live closes it at the actual server time and uses normal price settlement and result recording. Skipping Commit before a seat submits can cause that seat to forfeit.
 - New seasons use the keeper's existing serialized sender, with 120-second enrollment and the existing 15/30-minute demo lengths. Creation requires the keeper and `DEMO_MODE`; it does not reset old seasons, deposits or maturity. The controls work in production builds without a localhost restriction; keyboard events in editable fields or open dialogs are ignored.
