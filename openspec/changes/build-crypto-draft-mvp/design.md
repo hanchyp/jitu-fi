@@ -69,10 +69,10 @@ Next.js App Router with Tailwind, wagmi + viem, RainbowKit, TanStack Query, Zust
 - A typed WS client subscribes to `table:<id>` and `prices`.
 - Live scores reuse `packages/shared` scoring, so UI and chain agree.
 - Commit salts are persisted in `localStorage` before signing, so a reload during Reveal still auto-reveals.
-- i18n is a flat `id.ts` dictionary.
+- UI text is English, kept in plain constants next to each page (no i18n layer for the MVP).
 
 ### D12. Demo and test configuration
-DEMO_MODE sets a 30-minute season, a 5-minute enrollment and a large mock APR, labelled "simulasi". The e2e run uses a dedicated short config, with phase durations passed at deploy time, and uses anvil time warps where possible, so `pnpm e2e:local` stays within a few minutes.
+DEMO_MODE sets a 30-minute season, a 5-minute enrollment and a large mock APR, labelled "simulated". The e2e run uses a dedicated short config, with phase durations passed at deploy time, and uses anvil time warps where possible, so `pnpm e2e:local` stays within a few minutes.
 
 ## Risks / Trade-offs
 

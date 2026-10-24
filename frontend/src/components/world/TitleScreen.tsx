@@ -80,8 +80,8 @@ export function TitleScreen({ nav }: { nav: ReactNode }) {
             transition={{ delay: 1.35, duration: 0.5, ease: EASE_OUT }}
             className="mt-2 max-w-sm text-lg font-extrabold text-white [text-shadow:0_2px_0_#0B1626] sm:max-w-xl sm:text-2xl"
           >
-            Deposito yang bisa kamu mainkan.
-            <span className="block text-base sm:hidden">Pokok aman, bonusnya diperebutkan.</span>
+            The deposit you can play.
+            <span className="block text-base sm:hidden">Principal stays safe. The bonus is up for grabs.</span>
           </motion.p>
         </div>
         <motion.div
@@ -91,14 +91,14 @@ export function TitleScreen({ nav }: { nav: ReactNode }) {
           className="pointer-events-auto flex flex-col items-center gap-4"
         >
           <p className="hidden rounded-full border-[3px] border-garis bg-malam/80 px-4 py-1 font-extrabold text-white sm:block">
-            Pokok aman di dalam kristal. Bonusnya diperebutkan di arena.
+            Your principal stays safe in the crystal. The bonus is won in the arena.
           </p>
           <div className="flex justify-center gap-2.5 sm:gap-3">
             <GameButton href="/deposit" size="lg">
-              Main sekarang
+              Play now
             </GameButton>
-            <GameButton href="#cara-main" size="lg" variant="night">
-              Cara main
+            <GameButton href="#how-to-play" size="lg" variant="night">
+              How to play
             </GameButton>
           </div>
         </motion.div>

@@ -56,7 +56,7 @@
 
 ## 5. Frontend (Phase 5)
 
-- [ ] 5.1 App shell: providers (wagmi/RainbowKit limited to 10143/31337), i18n `id` dictionary, id-ID number formatting, testnet banner, mobile layout; verify wrong-network prompt and banner render in a component test
+- [ ] 5.1 App shell: providers (wagmi/RainbowKit limited to 10143/31337), English UI text, en-US number formatting, testnet banner, mobile layout; verify wrong-network prompt and banner render in a component test
 - [ ] 5.2 Landing page `/` with pitch, 3 steps, season status + countdown, CTA routing; verify CTA test
   - Started early, ahead of phase order. Done so far: game-style static landing per `frontend/DESIGN.md` (3D "Arena Jitu" title screen with the Monad-mark crystal, camera fly-in and pointer parallax, static fallback without WebGL; quest cards, yield loot bar, demo season banner, rules). Still open: live season status and countdown from the backend, CTA routing by position, and the CTA test.
 - [ ] 5.3 `/deposit`: faucet with cooldown, amount validation, permit deposit with approve fallback, enrollment-closed state; verify locally against anvil
@@ -64,7 +64,7 @@
 - [ ] 5.5 `/table/[id]` Commit: coin board, 3-pick + Buy/Sell, salt in localStorage, EIP-712 sign + relay; verify commit lands on-chain locally
 - [ ] 5.6 `/table/[id]` Reveal: auto-reveal, missing-salt forfeit notice, reveal animation + contrarian badges; verify auto-reveal after page reload
 - [ ] 5.7 `/table/[id]` Live: player panels with shared-scoring live scores, price chart, skill hand + target picker, gift/shield animations; verify live score equals settled score at round end
-- [ ] 5.8 Round results, extra-skill toast, podium + "Main lagi"
+- [ ] 5.8 Round results, extra-skill toast, podium + "Play again"
 - [ ] 5.9 `/leaderboard`, `/claim` (breakdown + shortfall message), `/profile`; verify manually: deposit → play 1 game → leaderboard → claim on local stack; commit `feat(frontend): ...`
 
 ## 6. Bots & E2E (Phase 6)
@@ -74,7 +74,7 @@
 
 ## 7. Demo polish (Phase 7)
 
-- [ ] 7.1 DEMO_MODE config (30-min season, 5-min enrollment, high APR labelled "simulasi"); verify a demo season runs end to end with 1 human + 3 bots
+- [ ] 7.1 DEMO_MODE config (30-min season, 5-min enrollment, high APR labelled "simulated"); verify a demo season runs end to end with 1 human + 3 bots
 - [ ] 7.2 Animation polish and on-chain tx counter/explorer links on table screen
 - [ ] 7.3 Write README demo section + 3-minute demo script; verify demo can be rerun from README on a fresh machine
 - [ ] 7.4 Run the security checklist (vault invariants ≥ 10k runs, claim unpausable, no token access in GameManager, EIP-712 replay protection, commit binds table/round/player, oracle staleness, explicit gas limits, no keys committed, banner on all screens) and tick each item

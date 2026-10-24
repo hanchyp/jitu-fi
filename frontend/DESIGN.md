@@ -17,7 +17,7 @@ jitu.fi should feel like the title screen of a stylized strategy game, while sti
 The hero is a real-time 3D scene (three.js via React Three Fiber), low-poly with toon shading and heavy dark outlines, so it matches the 2D game UI around it.
 
 - **The arena:** a round stone duel platform floating at night, with a ring of pillars and a glowing rune circle. It is where the duels happen.
-- **Kristal Pokok:** a large Monad-purple crystal hovering at the center of the arena. It holds everyone's principal. It slowly turns and pulses, and nothing in the arena touches it. This is the visual promise that principal is safe while players compete around it.
+- **Principal Crystal:** a large crystal in the shape of the Monad mark hovering at the center of the arena. It holds everyone's principal. It slowly turns and pulses, and nothing in the arena touches it. This is the visual promise that principal is safe while players compete around it.
 - **Four podiums** around the crystal, one per player (a table seats 4).
 - **Coin spirits** (BTC, ETH, SOL, MON) orbit above the arena as gold coins. They are what you draft.
 - **Setting:** a night sky with stars, distant low-poly peaks, and floating sparkles.
@@ -55,17 +55,17 @@ There are also two scene-only colors:
 
 ```
 ┌ testnet strip ───────────────────────────────────────────┐
-│ [logo]   Cara main  Bunga  Musim          [Setor mUSD]   │  ← dark pill nav over the scene
+│ [logo]   How to play  Yield  Season     [Deposit mUSD]   │  ← dark pill nav over the scene
 │                 (chunky "jitu.fi" wordmark)              │
-│              Deposito yang bisa kamu mainkan.            │
+│                 The deposit you can play.                │
 │       coins orbit     ◆ crystal over arena ◆             │
 │               4 podiums around the platform              │
-│            [ Main sekarang ]  [ Cara main ]              │
+│              [ Play now ]  [ How to play ]               │
 ├──────────── torn edge into night ────────────────────────┤
-│ Cara main: 3 quest cards (Setor / Main / Klaim)          │
-│ Pembagian bunga: loot bar (15 | 42,5 | 42,5)             │
-│ Musim demo: season banner with 4 stat badges             │
-│ Aturan arena: 3 rules (no buy-in, principal safe, no luck)│
+│ How to play: 3 quest cards (Deposit / Play / Claim)      │
+│ Where the yield goes: loot bar (15 | 42.5 | 42.5)        │
+│ Demo season: season banner with 4 stat badges            │
+│ Arena rules: 3 rules (no buy-in, principal safe, no luck)│
 │ Final CTA                                                │
 └──────────────────────────────────────────────────────────┘
 ```
@@ -84,6 +84,7 @@ There are also two scene-only colors:
 
 ## Copy
 
-- Indonesian, playful but plain.
-- The primary CTA is "Main sekarang" and leads to the deposit flow. The nav CTA is "Setor mUSD".
-- The required "Testnet · simulasi" banner stays.
+- English, playful but plain. Numbers use en-US formatting ("1,000 mUSD", "42.5").
+- The primary CTA is "Play now" and leads to the deposit flow. The nav CTA is "Deposit mUSD".
+- The required "Testnet · simulation" banner stays.
+- In-world names: the crystal is the "Principal Crystal".

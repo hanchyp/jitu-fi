@@ -15,12 +15,12 @@ const nunito = Nunito({
 
 export const metadata: Metadata = {
   title: "jitu.fi",
-  description: "Deposito on-chain di Monad. Pokok aman, bunga bisa berlipat.",
+  description: "The on-chain deposit you can play, on Monad. Your principal stays safe; sharp calls win the bonus.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="id" className={`${titan.variable} ${nunito.variable} h-full antialiased`}>
+    <html lang="en"className={`${titan.variable} ${nunito.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

@@ -6,20 +6,20 @@ import { TitleScreen } from "@/components/world/TitleScreen";
 
 const QUESTS: { title: string; body: string; Icon: ComponentType<{ className?: string }>; tilt: string }[] = [
   {
-    title: "Setor",
-    body: "Titipkan mUSD ke Kristal Pokok selama satu musim. Pokokmu terkunci aman dan mulai berbunga.",
+    title: "Deposit",
+    body: "Lock mUSD into the Principal Crystal for one season. Your principal stays safe and starts earning yield.",
     Icon: ChestIcon,
     tilt: "md:-rotate-2",
   },
   {
-    title: "Main",
-    body: "Duel 4 pemain, 3 ronde. Pilih 3 koin, tebak naik atau turun, pakai skill, kumpulkan poin.",
+    title: "Play",
+    body: "4-player duels, 3 rounds. Pick 3 coins, call up or down, use skills, and collect points.",
     Icon: CardsIcon,
     tilt: "md:rotate-1",
   },
   {
-    title: "Klaim",
-    body: "Musim selesai, ambil pokok utuh plus bunga dasar dan bonus sesuai poinmu.",
+    title: "Claim",
+    body: "When the season ends, take back your full principal plus base yield and a bonus based on your points.",
     Icon: CoinsIcon,
     tilt: "md:-rotate-1",
   },
@@ -27,22 +27,22 @@ const QUESTS: { title: string; body: string; Icon: ComponentType<{ className?: s
 
 // Split of every 100 mUSD of yield, from the vault rules (fee 15%, then 50/50).
 const LOOT = [
-  { label: "Biaya platform", value: "15", share: 15, bar: "bg-white/30", note: "Untuk menjaga arena tetap jalan." },
-  { label: "Bunga dasar", value: "42,5", share: 42.5, bar: "bg-langit", note: "Dibagi rata sesuai setoran. Tetap kamu dapat walau kalah." },
-  { label: "Pot bonus", value: "42,5", share: 42.5, bar: "bg-emas", note: "Rebutan pemain: poin musim dikali bobot setoran (maks. 1.000 mUSD)." },
+  { label: "Platform fee", value: "15", share: 15, bar: "bg-white/30", note: "Keeps the arena running." },
+  { label: "Base yield", value: "42.5", share: 42.5, bar: "bg-langit", note: "Shared by deposit size. You get it even if you lose." },
+  { label: "Bonus pot", value: "42.5", share: 42.5, bar: "bg-emas", note: "Up for grabs: season points times deposit weight (max 1,000 mUSD)." },
 ] as const;
 
 const SEASON_STATS = [
-  { label: "Tenor", value: "30 menit" },
-  { label: "Pendaftaran", value: "5 menit" },
-  { label: "Setoran min.", value: "10 mUSD" },
-  { label: "Bobot maks.", value: "1.000 mUSD" },
+  { label: "Lock period", value: "30 min" },
+  { label: "Enrollment", value: "5 min" },
+  { label: "Min. deposit", value: "10 mUSD" },
+  { label: "Max. weight", value: "1,000 mUSD" },
 ] as const;
 
 const RULES: { title: string; body: string; Icon: ComponentType<{ className?: string }> }[] = [
-  { title: "Tanpa tiket masuk", body: "Main sesering apa pun tanpa bayar per game.", Icon: NoTicketIcon },
-  { title: "Pokok tak pernah dipertaruhkan", body: "Kontrak game tidak bisa menyentuh dana. Yang diperebutkan hanya pot bonus dari bunga.", Icon: ShieldIcon },
-  { title: "Menang karena jitu", body: "Pemenang ditentukan peringkat skor, bukan undian.", Icon: TrophyIcon },
+  { title: "No entry fee", body: "Play as often as you like without paying per game.", Icon: NoTicketIcon },
+  { title: "Principal is never at stake", body: "The game contract can't touch funds. Only the bonus pot from yield is contested.", Icon: ShieldIcon },
+  { title: "Win with sharp calls", body: "Winners are decided by score ranking, never by lottery.", Icon: TrophyIcon },
 ];
 
 function Nav() {
@@ -52,12 +52,12 @@ function Nav() {
         jitu.fi
       </Link>
       <div className="hidden items-center gap-6 font-extrabold text-white/85 md:flex">
-        <a href="#cara-main" className="hover:text-emas">Cara main</a>
-        <a href="#bunga" className="hover:text-emas">Bunga</a>
-        <a href="#musim" className="hover:text-emas">Musim</a>
+        <a href="#how-to-play" className="hover:text-emas">How to play</a>
+        <a href="#yield" className="hover:text-emas">Yield</a>
+        <a href="#season" className="hover:text-emas">Season</a>
       </div>
       <GameButton href="/deposit" className="!px-4 !py-1.5 !text-base">
-        Setor mUSD
+        Deposit mUSD
       </GameButton>
     </nav>
   );
@@ -71,16 +71,16 @@ export default function Home() {
   return (
     <>
       <div className="relative z-30 border-b-[3px] border-garis bg-emas px-4 py-1.5 text-center text-sm font-extrabold text-garis">
-        Testnet · simulasi <span className="font-semibold opacity-75">Bunga disimulasikan, tidak ada dana sungguhan.</span>
+        Testnet · simulation <span className="font-semibold opacity-75">Yield is simulated. No real funds.</span>
       </div>
 
       <TitleScreen nav={<Nav />} />
 
       <main className="flex-1">
         {/* Quests */}
-        <section id="cara-main" className="mx-auto max-w-6xl scroll-mt-6 px-4 py-20 sm:px-6 sm:py-24">
-          <SectionTitle>Cara main</SectionTitle>
-          <p className="mt-3 max-w-xl text-lg font-semibold text-white/75">Tiga misi, satu musim.</p>
+        <section id="how-to-play" className="mx-auto max-w-6xl scroll-mt-6 px-4 py-20 sm:px-6 sm:py-24">
+          <SectionTitle>How to play</SectionTitle>
+          <p className="mt-3 max-w-xl text-lg font-semibold text-white/75">Three quests, one season.</p>
           <ol className="mt-12 grid gap-8 md:grid-cols-3">
             {QUESTS.map(({ title, body, Icon, tilt }, i) => (
               <li
@@ -99,17 +99,17 @@ export default function Home() {
         </section>
 
         {/* Loot split */}
-        <section id="bunga" className="border-y-[3px] border-garis bg-[#0C1A31]">
+        <section id="yield" className="border-y-[3px] border-garis bg-[#0C1A31]">
           <div className="mx-auto max-w-6xl scroll-mt-6 px-4 py-20 sm:px-6 sm:py-24">
-            <SectionTitle>Pembagian bunga</SectionTitle>
+            <SectionTitle>Where the yield goes</SectionTitle>
             <p className="mt-3 max-w-xl text-lg font-semibold text-white/75">
-              Dari setiap 100 mUSD bunga yang dihasilkan musim ini:
+              For every 100 mUSD of yield earned this season:
             </p>
 
             <div
               className="mt-10 flex h-12 w-full overflow-hidden rounded-[14px] border-[3px] border-garis shadow-[0_6px_0_0_#050B14]"
               role="img"
-              aria-label="15 biaya platform, 42,5 bunga dasar, 42,5 pot bonus"
+              aria-label="15 platform fee, 42.5 base yield, 42.5 bonus pot"
             >
               {LOOT.map((part, i) => (
                 <div
@@ -133,14 +133,14 @@ export default function Home() {
         </section>
 
         {/* Season banner. Live status and countdown come from the backend in a later phase. */}
-        <section id="musim" className="mx-auto max-w-6xl scroll-mt-6 px-4 py-20 sm:px-6 sm:py-24">
+        <section id="season" className="mx-auto max-w-6xl scroll-mt-6 px-4 py-20 sm:px-6 sm:py-24">
           <div className="relative overflow-hidden rounded-[26px] border-[3px] border-garis bg-langit p-6 shadow-[0_8px_0_0_#0B1626] sm:p-10">
             <div className="relative grid gap-8 lg:grid-cols-[1fr_1.3fr] lg:items-center">
               <div>
-                <p className="font-extrabold text-emas">Musim demo #1</p>
-                <h2 className="font-display title-outline mt-1 text-4xl text-white sm:text-5xl">Satu musim, 30 menit</h2>
+                <p className="font-extrabold text-emas">Demo season #1</p>
+                <h2 className="font-display title-outline mt-1 text-4xl text-white sm:text-5xl">One season, 30 minutes</h2>
                 <p className="mt-3 max-w-md text-lg font-semibold text-white/85">
-                  Untuk hackathon, musim dipersingkat supaya kamu bisa merasakan satu putaran penuh: setor, main, klaim.
+                  For the hackathon, a season is shortened so you can play a full cycle: deposit, play, claim.
                 </p>
               </div>
               <dl className="grid grid-cols-2 gap-3 sm:gap-4">
@@ -155,9 +155,9 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Rules of the valley */}
+        {/* Arena rules */}
         <section className="mx-auto max-w-6xl px-4 pb-24 sm:px-6">
-          <SectionTitle>Aturan arena</SectionTitle>
+          <SectionTitle>Arena rules</SectionTitle>
           <ul className="mt-10 grid gap-8 md:grid-cols-3">
             {RULES.map(({ title, body, Icon }) => (
               <li key={title} className="flex gap-4">
@@ -171,9 +171,9 @@ export default function Home() {
           </ul>
 
           <div className="mt-20 flex flex-col items-center text-center">
-            <h2 className="font-display title-outline text-4xl text-emas sm:text-6xl">Siap masuk arena?</h2>
+            <h2 className="font-display title-outline text-4xl text-emas sm:text-6xl">Ready to enter the arena?</h2>
             <GameButton href="/deposit" size="lg" className="mt-8">
-              Main sekarang
+              Play now
             </GameButton>
           </div>
         </section>
@@ -181,8 +181,8 @@ export default function Home() {
 
       <footer className="border-t-[3px] border-garis bg-[#0C1A31]">
         <div className="mx-auto flex max-w-6xl flex-wrap justify-between gap-2 px-4 py-6 text-sm font-semibold text-white/60 sm:px-6">
-          <p>jitu.fi berjalan di Monad testnet.</p>
-          <p>Dibuat untuk hackathon.</p>
+          <p>jitu.fi runs on Monad testnet.</p>
+          <p>Built for a hackathon.</p>
         </div>
       </footer>
     </>

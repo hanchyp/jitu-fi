@@ -18,13 +18,13 @@ The table screen SHALL show the round (n/3), phase, a countdown to the phase dea
 
 #### Scenario: Phase countdown
 - **WHEN** the table enters Commit
-- **THEN** the header shows "Ronde 1/3", the Commit phase, and a 30-second countdown
+- **THEN** the header shows "Round 1/3", the Commit phase, and a 30-second countdown
 
 ### Requirement: Commit without wallet popup
 In Commit, the player SHALL choose 3 distinct coins and toggle Buy or Sell for each, then lock the choice. Locking creates a random salt and saves picks and salt in local storage under table:round:address. The player signs a Commit message and the app sends it to the relayer, with no wallet transaction.
 
 #### Scenario: Lock picks
-- **WHEN** the player selects 3 coins with directions and presses "Kunci pilihan"
+- **WHEN** the player selects 3 coins with directions and presses "Lock picks"
 - **THEN** a typed-data signature is requested, the payload is relayed, and the UI shows the commit as pending until indexed
 
 #### Scenario: Fewer than 3 coins
@@ -32,7 +32,7 @@ In Commit, the player SHALL choose 3 distinct coins and toggle Buy or Sell for e
 - **THEN** the lock button is disabled
 
 ### Requirement: Automatic reveal
-When Reveal starts, the app SHALL reveal from stored picks and salt without user interaction. Once picks are indexed, it shows every player's picks with contrarian badges ×1,5, ×1,25 or ×1.
+When Reveal starts, the app SHALL reveal from stored picks and salt without user interaction. Once picks are indexed, it shows every player's picks with contrarian badges ×1.5, ×1.25 or ×1.
 
 #### Scenario: Auto-reveal
 - **WHEN** the phase changes to Reveal and stored picks exist
@@ -58,7 +58,7 @@ After each round, the screen SHALL show the ranking and points. The last-ranked 
 
 #### Scenario: Game over
 - **WHEN** GameFinished is received
-- **THEN** a podium with final points and a "Main lagi" button is shown
+- **THEN** a podium with final points and a "Play again" button is shown
 
 ### Requirement: Leaderboard and profile
 The leaderboard screen SHALL rank season players by points, with weight and estimated bonus. The profile screen SHALL list the user's past games with per-round scores.

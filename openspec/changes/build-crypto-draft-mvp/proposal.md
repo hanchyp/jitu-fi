@@ -32,7 +32,7 @@ Source of truth is `CRYPTO_DRAFT_BUILD_SPEC.md`. Where it conflicts with the pro
 **Frontend (`frontend/`, Next.js App Router):**
 - Pages: home, deposit (with faucet), lobby, game table, leaderboard, claim, profile.
 - No wallet popups during play. All game actions are signed with EIP-712 and relayed.
-- Indonesian UI via i18n, mobile-first, and a permanent "Testnet · simulasi" banner.
+- English UI, mobile-first, and a permanent "Testnet · simulation" banner.
 
 **Bots (`bots/`):** a 4-player bot runner for local and testnet, and `pnpm e2e:local` from zero to claim.
 
@@ -51,7 +51,7 @@ Source of truth is `CRYPTO_DRAFT_BUILD_SPEC.md`. Where it conflicts with the pro
 - `backend/data-api`: the indexer, REST endpoints, WebSocket rooms, and live price stream.
 - `frontend/vault-ui`: faucet, deposit, position view, and claim screens.
 - `frontend/game-ui`: the lobby, game table screen, leaderboard, and profile.
-- `frontend/app-shell`: the landing page, wallet connection, i18n, the testnet banner, and mobile layout.
+- `frontend/app-shell`: the landing page, wallet connection, English UI text, the testnet banner, and mobile layout.
 - `bots/demo-bots`: scripted players for demo and end-to-end runs.
 
 ### Modified Capabilities
