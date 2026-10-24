@@ -146,7 +146,7 @@ function HowToPlayModal({ onClose }: { onClose: () => void }) {
 
         {/* Stage */}
         <div className="relative mx-4 mt-3 h-[clamp(240px,46svh,300px)] shrink-0 overflow-hidden rounded-[20px] border-[3px] border-garis bg-[radial-gradient(ellipse_at_50%_80%,#1D4A6B_0%,#113048_55%,#0A2235_100%)] sm:mx-6 sm:h-[280px]">
-          <AnimatePresence mode="wait" initial={false} custom={dir}>
+          <AnimatePresence mode="wait" custom={dir}>
             <motion.div
               key={step}
               custom={dir}

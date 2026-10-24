@@ -38,7 +38,7 @@ function hasWebGL() {
   }
 }
 
-export function TableScene({ view = "auto", className, ...data }: TableSceneProps) {
+export function TableScene({ view = "auto", fallback, className, ...data }: TableSceneProps) {
   const reduce = useReducedMotion() ?? false;
   const [webgl, setWebgl] = useState<boolean | null>(null);
 
@@ -48,8 +48,9 @@ export function TableScene({ view = "auto", className, ...data }: TableSceneProp
     setWebgl(hasWebGL());
   }, []);
 
-  const flat = <TableScene2D {...data} className={className} />;
-  if (view === "2d" || webgl === false || (view === "auto" && reduce)) return flat;
+  const flat = fallback !== undefined ? fallback : <TableScene2D {...data} className={className} />;
+  // Reduced motion is only read after mount, so the first client render matches the server.
+  if (view === "2d" || webgl === false || (webgl && view === "auto" && reduce)) return flat;
 
   return (
     <div className={`relative isolate min-h-[420px] overflow-hidden ${className ?? ""}`}>
