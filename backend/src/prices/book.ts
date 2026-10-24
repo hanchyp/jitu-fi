@@ -1,7 +1,7 @@
 import type { CoinSymbol } from "./feeds.js";
 
 /** One price observation: `price × 10^expo` USD, published at `publishTime` (unix seconds). */
-export type PriceTick = { coin: CoinSymbol; price: bigint; expo: number; publishTime: number };
+export type PriceTick = { coin: CoinSymbol; price: bigint; expo: number; publishTime: number; source?: "pyth" | "coingecko" | "mock" };
 
 export type TickListener = (tick: PriceTick) => void;
 

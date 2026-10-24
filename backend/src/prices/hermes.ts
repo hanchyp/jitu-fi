@@ -16,6 +16,7 @@ export type HermesOptions = {
   fetch?: typeof fetch;
   /** Delay before reconnecting; doubles per failure up to 30 s. */
   reconnectMs?: number;
+  onUnentitled?: (coin: CoinSymbol) => void;
 };
 
 export function parseHermesUpdate(json: string): PriceTick[] {
@@ -33,6 +34,7 @@ export function parseHermesUpdate(json: string): PriceTick[] {
 
 /** Streams Pyth prices from Hermes (SSE) into the book, reconnecting with backoff. */
 export class HermesSource implements PriceSource {
+  readonly unentitled = new Set<CoinSymbol>();
   private controller?: AbortController;
   private readonly fetch: typeof fetch;
 
@@ -41,7 +43,7 @@ export class HermesSource implements PriceSource {
   }
 
   private url(path: string) {
-    const ids = this.options.coins.map((c) => `ids[]=${FEED_IDS[c]}`).join("&");
+    const ids = this.options.coins.filter((c) => !this.unentitled.has(c)).map((c) => `ids[]=${FEED_IDS[c]}`).join("&");
     return `${this.options.baseUrl.replace(/\/$/, "")}${path}?${ids}&parsed=true`;
   }
 
@@ -51,9 +53,27 @@ export class HermesSource implements PriceSource {
 
   /** One-shot snapshot, used at boot so the book is never empty while the stream connects. */
   async fetchLatest(): Promise<void> {
-    const res = await this.fetch(this.url("/v2/updates/price/latest"), { headers: this.headers });
-    if (!res.ok) throw new Error(`Hermes latest failed: ${res.status} ${await res.text()}`);
-    for (const tick of parseHermesUpdate(await res.text())) this.options.book.push(tick);
+    while (this.unentitled.size < this.options.coins.length) {
+      const res = await this.fetch(this.url("/v2/updates/price/latest"), { headers: this.headers });
+      if (!res.ok) {
+        const body = await res.text();
+        if (this.dropUnentitled(res.status, body)) continue;
+        throw new Error(`Hermes latest failed: ${res.status} ${body}`);
+      }
+      for (const tick of parseHermesUpdate(await res.text())) this.options.book.push({ ...tick, source: "pyth" });
+      return;
+    }
+  }
+
+  private dropUnentitled(status: number, body: string): boolean {
+    if (status !== 403) return false;
+    const id = /Not entitled: feed (?:0x)?([a-f0-9]{64})\b/i.exec(body)?.[1];
+    const coin = id && coinForFeedId(id);
+    if (!coin || !this.options.coins.includes(coin) || this.unentitled.has(coin)) return false;
+    this.unentitled.add(coin);
+    this.options.log.warn({ coin }, "Pyth feed not entitled; dropping from stream");
+    this.options.onUnentitled?.(coin);
+    return true;
   }
 
   start() {
@@ -70,7 +90,7 @@ export class HermesSource implements PriceSource {
   private async loop(signal: AbortSignal) {
     const base = this.options.reconnectMs ?? 1_000;
     let delay = base;
-    while (!signal.aborted) {
+    while (!signal.aborted && this.unentitled.size < this.options.coins.length) {
       try {
         await this.stream(signal);
         // A clean end (Hermes closes streams after 24 h) reconnects after the base delay.
@@ -87,10 +107,15 @@ export class HermesSource implements PriceSource {
 
   private async stream(signal: AbortSignal) {
     const res = await this.fetch(this.url("/v2/updates/price/stream"), { headers: this.headers, signal });
-    if (!res.ok || !res.body) throw new Error(`Hermes stream failed: ${res.status}`);
+    if (!res.ok) {
+      const body = await res.text();
+      if (this.dropUnentitled(res.status, body)) return;
+      throw new Error(`Hermes stream failed: ${res.status}`);
+    }
+    if (!res.body) throw new Error("Hermes stream has no body");
     const parser = new SseParser((data) => {
       try {
-        for (const tick of parseHermesUpdate(data)) this.options.book.push(tick);
+        for (const tick of parseHermesUpdate(data)) this.options.book.push({ ...tick, source: "pyth" });
       } catch (err) {
         this.options.log.warn({ err: (err as Error).message }, "bad hermes event");
       }
@@ -104,7 +129,13 @@ export class HermesSource implements PriceSource {
 
 function sleep(ms: number, signal: AbortSignal) {
   return new Promise<void>((resolve) => {
-    const timer = setTimeout(resolve, ms);
-    signal.addEventListener("abort", () => (clearTimeout(timer), resolve()), { once: true });
+    const done = () => {
+      clearTimeout(timer);
+      signal.removeEventListener("abort", done);
+      resolve();
+    };
+    const timer = setTimeout(done, ms);
+    signal.addEventListener("abort", done, { once: true });
+    if (signal.aborted) done();
   });
 }

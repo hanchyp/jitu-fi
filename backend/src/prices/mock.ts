@@ -52,7 +52,7 @@ export class MockSource implements PriceSource {
       const next = prev + (prev * step) / 10_000n;
       const price = next > 0n ? next : prev;
       this.prices.set(coin, price);
-      this.options.book.push({ coin, price, expo: EXPO, publishTime });
+      this.options.book.push({ coin, price, expo: EXPO, source: "mock", publishTime });
     }
   }
 
