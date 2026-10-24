@@ -1,19 +1,14 @@
 "use client";
 
 // Arena Jitu: low-poly toon 3D title scene. Everything is modelled from primitives in code,
-// no external model files. Coin logos come from @web3icons/core (MIT).
+// no external model files. Coin logos come from @web3icons/core (MIT) via lib/coins.
 // See frontend/DESIGN.md for the art direction.
 
 import { Outlines, Sparkles, Stars } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
-import BNB from "@web3icons/core/svgs/tokens/background/BNB.svg.js";
-import BTC from "@web3icons/core/svgs/tokens/background/BTC.svg.js";
-import DOGE from "@web3icons/core/svgs/tokens/background/DOGE.svg.js";
-import ETH from "@web3icons/core/svgs/tokens/background/ETH.svg.js";
-import SOL from "@web3icons/core/svgs/tokens/background/SOL.svg.js";
-import MON from "@web3icons/core/svgs/networks/background/monad.svg.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
+import { ARENA_COINS, coinDataUrl, type Coin as CoinDef } from "@/lib/coins";
 
 const C = {
   outline: "#0B1626",
@@ -28,15 +23,7 @@ const C = {
 } as const;
 
 const PLAYER_COLORS = ["#FFC93C", "#3DD68C", "#FF6B5E", "#5AA9FF"] as const;
-// Official token logos (web3icons "background" variant) with each coin's brand color for the rim.
-const COINS = [
-  { symbol: "BTC", svg: BTC, rim: "#F7931A" },
-  { symbol: "ETH", svg: ETH, rim: "#627EEA" },
-  { symbol: "SOL", svg: SOL, rim: "#9945FF" },
-  { symbol: "DOGE", svg: DOGE, rim: "#C2A633" },
-  { symbol: "BNB", svg: BNB, rim: "#F3BA2F" },
-  { symbol: "MON", svg: MON, rim: "#836EF9" },
-] as const;
+const COINS = ARENA_COINS;
 
 const INTRO_SECONDS = 2.4;
 const LOOK_AT = new THREE.Vector3(0, 2.3, 0);
@@ -267,8 +254,6 @@ function MonadCrystal({ gradient, still }: { gradient: THREE.Texture; still: boo
   );
 }
 
-type CoinDef = (typeof COINS)[number];
-
 // Paints the token logo onto a round coin face. The SVG loads asynchronously, then the texture refreshes.
 function useCoinTexture(coin: CoinDef) {
   return useMemo(() => {
@@ -302,7 +287,7 @@ function useCoinTexture(coin: CoinDef) {
     paint();
     const img = new Image();
     img.onload = () => paint(img);
-    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(coin.svg)}`;
+    img.src = coinDataUrl(coin);
     return tex;
   }, [coin]);
 }

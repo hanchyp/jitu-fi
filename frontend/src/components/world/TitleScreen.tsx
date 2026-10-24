@@ -3,6 +3,7 @@
 import { motion, useReducedMotion } from "motion/react";
 import dynamic from "next/dynamic";
 import { Component, useEffect, useState, type ReactNode } from "react";
+import { HowToPlayTrigger } from "@/components/howto/HowToPlay";
 import { GameButton } from "@/components/ui/GameButton";
 
 // The 3D bundle loads after the page is interactive; the static backdrop shows until then.
@@ -97,9 +98,7 @@ export function TitleScreen({ nav }: { nav: ReactNode }) {
             <GameButton href="/deposit" size="lg">
               Play now
             </GameButton>
-            <GameButton href="#how-to-play" size="lg" variant="night">
-              How to play
-            </GameButton>
+            <HowToPlayTrigger>How to play</HowToPlayTrigger>
           </div>
         </motion.div>
       </div>

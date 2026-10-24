@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ComponentType } from "react";
+import { HowToPlayTrigger } from "@/components/howto/HowToPlay";
 import { GameButton } from "@/components/ui/GameButton";
 import { CardsIcon, ChestIcon, CoinsIcon, NoTicketIcon, ShieldIcon, TrophyIcon } from "@/components/world/icons";
 import { TitleScreen } from "@/components/world/TitleScreen";
@@ -52,7 +53,9 @@ function Nav() {
         jitu.fi
       </Link>
       <div className="hidden items-center gap-6 font-extrabold text-white/85 md:flex">
-        <a href="#how-to-play" className="hover:text-emas">How to play</a>
+        <HowToPlayTrigger look="link" className="font-extrabold hover:text-emas">
+          How to play
+        </HowToPlayTrigger>
         <a href="#yield" className="hover:text-emas">Yield</a>
         <a href="#season" className="hover:text-emas">Season</a>
       </div>
