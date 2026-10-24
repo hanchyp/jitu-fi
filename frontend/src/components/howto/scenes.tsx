@@ -195,7 +195,7 @@ export function TableScene({ reduce }: { reduce: boolean }) {
               <p className="text-xs font-black text-white">
                 {preset.name} <span className="font-display text-base text-emas">{preset.caps.length}</span>
               </p>
-              <p className="text-[10px] font-bold tracking-wide text-white/60">{preset.caps.join("·")}</p>
+              <p className="break-words text-[11px] font-bold text-white/60">{preset.caps.join("·")}</p>
             </motion.div>
           );
         })}

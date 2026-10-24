@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { GameActionButton, GameButton } from "@/components/ui/GameButton";
+import { useDialog } from "@/components/ui/useDialog";
 import { BonusScene, CallScene, DepositScene, PickScene, TableScene, WinScene } from "./scenes";
 
 const STEPS: { title: string; body: string; Scene: ComponentType<{ reduce: boolean }> }[] = [
@@ -52,19 +53,23 @@ export function HowToPlayTrigger({ children, look = "button", variant = "night",
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
 
+  const show = () => {
+    trigger.current?.focus();
+    setOpen(true);
+  };
+
   const close = useCallback(() => {
     setOpen(false);
-    trigger.current?.focus();
   }, []);
 
   return (
     <>
       {look === "button" ? (
-        <GameActionButton ref={trigger} variant={variant} size={size} className={className} onClick={() => setOpen(true)} aria-haspopup="dialog">
+        <GameActionButton ref={trigger} variant={variant} size={size} className={className} onClick={show} aria-haspopup="dialog">
           {children}
         </GameActionButton>
       ) : (
-        <button ref={trigger} type="button" className={className} onClick={() => setOpen(true)} aria-haspopup="dialog">
+        <button ref={trigger} type="button" className={className} onClick={show} aria-haspopup="dialog">
           {children}
         </button>
       )}
@@ -77,7 +82,8 @@ function HowToPlayModal({ onClose }: { onClose: () => void }) {
   const reduce = useReducedMotion() ?? false;
   const [step, setStep] = useState(0);
   const [dir, setDir] = useState(1);
-  const nextButton = useRef<HTMLButtonElement>(null);
+  const overlay = useRef<HTMLDivElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
   const last = step === STEPS.length - 1;
 
   const go = useCallback(
@@ -91,28 +97,32 @@ function HowToPlayModal({ onClose }: { onClose: () => void }) {
   );
 
   useEffect(() => {
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    nextButton.current?.focus();
+    // Only this portal stays interactive, including when opened above the phone menu.
+    const background = [...document.body.children].filter(
+      (node): node is HTMLElement => node instanceof HTMLElement && node !== overlay.current,
+    );
+    const previous = background.map((node) => node.inert);
+    background.forEach((node) => { node.inert = true; });
     return () => {
-      document.body.style.overflow = previous;
+      background.forEach((node, i) => { node.inert = previous[i]; });
     };
   }, []);
+  // Restore background interactivity before the shared hook restores opener focus.
+  useDialog(true, onClose, panel);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
       if (e.key === "ArrowRight") go(step + 1);
       if (e.key === "ArrowLeft") go(step - 1);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [go, onClose, step]);
+  }, [go, step]);
 
   const { title, body, Scene } = STEPS[step];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-3 sm:items-center sm:p-6">
+    <div ref={overlay} className="fixed inset-0 z-50 flex items-end justify-center p-3 sm:items-center sm:p-6">
       <motion.div
         className="absolute inset-0 bg-[#040B10]/75"
         initial={reduce ? false : { opacity: 0 }}
@@ -120,6 +130,7 @@ function HowToPlayModal({ onClose }: { onClose: () => void }) {
         onClick={onClose}
       />
       <motion.div
+        ref={panel}
         role="dialog"
         aria-modal="true"
         aria-labelledby="how-to-play-title"
@@ -132,7 +143,7 @@ function HowToPlayModal({ onClose }: { onClose: () => void }) {
         <div className="flex items-center justify-between gap-3 px-5 pt-4 sm:px-6 sm:pt-5">
           <p className="font-extrabold text-white/70">
             Step {step + 1} of {STEPS.length}
-            <span className="ml-2 text-xs font-bold text-white/45">Example numbers</span>
+            <span className="ml-2 text-xs font-bold text-white/60">Example numbers</span>
           </p>
           <button
             type="button"
@@ -195,7 +206,7 @@ function HowToPlayModal({ onClose }: { onClose: () => void }) {
                 Play now
               </GameButton>
             ) : (
-              <GameActionButton ref={nextButton} size="sm" onClick={() => go(step + 1)}>
+              <GameActionButton data-autofocus size="sm" onClick={() => go(step + 1)}>
                 Next
               </GameActionButton>
             )}

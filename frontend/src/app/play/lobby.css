@@ -50,8 +50,6 @@ body:has(.play-lobby:not([style*="display: none"])) [data-site-chrome="nav"] a[h
   .lobby-mode > span:last-child { font-size: 12px; }
   .lobby-detail { font-size: 11px; margin: 11px 0; }
   .lobby-notice { font-size: 12px; padding: 6px 8px; }
-  .lobby-recommended { font-size: 10px; }
-  .lobby-mode:first-child .lobby-recommended { font-size: 9px; }
   .play-lobby .jitu-game-arenaCaption { top: 48%; }
 }
 @media (max-height: 700px) and (orientation: portrait) {
