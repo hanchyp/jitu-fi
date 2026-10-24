@@ -2,7 +2,8 @@
 // a cracked slate playing surface. No canvas or WebGL is needed in-game.
 export function StoneTableArt() {
   function point(angle: number, rx: number, ry: number) {
-    return `${500 + Math.cos(angle) * rx},${285 + Math.sin(angle) * ry}`;
+    // Round so server and client float output match during hydration.
+    return `${(500 + Math.cos(angle) * rx).toFixed(2)},${(285 + Math.sin(angle) * ry).toFixed(2)}`;
   }
   return <svg className="jitu-table-stoneArt" viewBox="0 0 1000 600" preserveAspectRatio="none" aria-hidden="true" focusable="false">
     <ellipse cx="500" cy="320" rx="485" ry="268" fill="#040b10" />

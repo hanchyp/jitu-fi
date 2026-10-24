@@ -108,7 +108,8 @@ export default function CoinModelLayer({ host, still }: { host: HTMLElement; sti
   useEffect(() => () => { host.removeAttribute("data-coin-renderer"); }, [host]);
   if (lost) return null;
   return <ModelBoundary host={host}><div className="jitu-coin-modelLayer" aria-hidden="true">
-    <Canvas orthographic camera={{ position: [0, 0, 1000], zoom: 1, near: .1, far: 2000 }} flat dpr={[1, 1.5]} frameloop={still ? "demand" : "always"} gl={{ alpha: true, antialias: true, powerPreference: "low-power" }} onCreated={({ gl }) => { gl.domElement.addEventListener("webglcontextlost", () => { host.removeAttribute("data-coin-renderer"); setLost(true); }, { once: true }); }}>
+    {/* R3F gives its wrapper div inline pointer-events: auto, which would cover the coins. */}
+    <Canvas style={{ pointerEvents: "none" }} orthographic camera={{ position: [0, 0, 1000], zoom: 1, near: .1, far: 2000 }} flat dpr={[1, 1.5]} frameloop={still ? "demand" : "always"} gl={{ alpha: true, antialias: true, powerPreference: "low-power" }} onCreated={({ gl }) => { gl.domElement.addEventListener("webglcontextlost", () => { host.removeAttribute("data-coin-renderer"); setLost(true); }, { once: true }); }}>
       <Models host={host} still={still} />
     </Canvas>
   </div></ModelBoundary>;
