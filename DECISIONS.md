@@ -2,6 +2,12 @@
 
 Ambiguous design calls and known limitations, newest first. Each entry picks the simplest safe option. The full design rationale lives in `openspec/changes/build-crypto-draft-mvp/design.md`.
 
+## 2026-10-23 — Landing hero 3D details
+
+- **Toon outline** is a custom screen-space depth-Laplacian post effect, not drei `Outlines`. It roughly halves draw calls and keeps a constant line width. Glow meshes write no depth, so they get no outline.
+- **Coins don't orbit a full 360°.** Any closed loop has to pass in front of the crystal, so coins sway ±8° on a back/side arc that adapts to the aspect ratio.
+- **The crystal sways about ±23°** instead of spinning, so the Monad mark never turns edge-on. The small orbiting mark shards were removed because edge-on they read as white slivers.
+
 ## 2026-10-23 — Visual direction: arena world + coin spirits
 
 Agreed with the project owner after a brainstorm.
