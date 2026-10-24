@@ -1,8 +1,9 @@
 // Maps Jeki's demo table state (components/table/demo-engine) to <TableScene> props, so the
 // 3D scene and the 2D table draw the same game. Pure: no timers, no React.
 
+import { priceNumber } from "@/lib/game/livePrices";
 import { COINS, PLAYERS, type Phase } from "@/mocks/table";
-import { coinMove, gameScores, liveProgress, playerPicks, pickReturn, pickIsVoid, roundResult, type DemoState } from "@/components/table/demo-engine";
+import { coinMove, marketMove, usingLivePrices, gameScores, liveProgress, playerPicks, pickReturn, pickIsVoid, roundResult, type DemoState } from "@/components/table/demo-engine";
 import type { CoinSymbol, PriceSeries, ScenePlayer, TablePhase, TableSceneProps } from "./types";
 
 const PHASE: Record<Phase, TablePhase> = { commit: "commit", reveal: "reveal", live: "live", results: "result", finished: "result" };
@@ -17,7 +18,7 @@ export function fromDemoState(state: DemoState, opts: { samples?: number } = {})
   const progress = liveProgress(state);
   const settled = state.phase === "results" || state.phase === "finished";
   // Same move the engine scores with; flat until Live starts.
-  const move = (symbol: string) => coinMove(symbol, state.round, progress, state.scenario);
+  const move = (symbol: string) => usingLivePrices(state) ? marketMove(state, symbol) : coinMove(symbol, state.round, progress, state.scenario);
 
   const picks = playerPicks(state);
   // Commit: opponents' picks stay secret. Your own selection shows even before it is sealed.
@@ -35,7 +36,7 @@ export function fromDemoState(state: DemoState, opts: { samples?: number } = {})
     isYou: p.human,
     picks: picks[p.id].map((pick) => {
       const signed = pickReturn(pick, state.round, progress, state.scenario);
-      const returnBps = pick.live ? signed * (pick.direction === "Buy" ? 1 : -1) : move(pick.symbol);
+      const returnBps = pick.live || pick.livePrices ? signed * (pick.direction === "Buy" ? 1 : -1) : move(pick.symbol);
       return {
         symbol: pick.symbol as CoinSymbol,
         side: pick.direction,
@@ -55,6 +56,10 @@ export function fromDemoState(state: DemoState, opts: { samples?: number } = {})
   const symbols = new Set(players.flatMap((p) => p.picks.map((pick) => pick.symbol)));
   const prices: PriceSeries = {};
   for (const symbol of symbols) {
+    if (usingLivePrices(state)) {
+      prices[symbol] = (state.feed!.history[symbol] ?? []).map(priceNumber);
+      continue;
+    }
     const open = COINS.find((coin) => coin.symbol === symbol)!.priceMicros / 1_000_000;
     prices[symbol] = Array.from({ length: samples }, (_, i) =>
       open * (1 + coinMove(symbol, state.round, (progress * i) / (samples - 1), state.scenario) / 10_000));

@@ -17,7 +17,9 @@ Unsupported WebGL falls back to the existing CSS coin faces.
 Click a table coin to open its chart dialog, then confirm Buy or Sell. Confirmation
 adds or updates the pick and returns to the table; closing the dialog makes no
 selection. The dialog also supports removing an existing pick. Chart and token
-quotes share one simulated clock, with Live prices following the scoring path.
+quotes share the live backend feed when all eight coins are available. Live starts
+snapshot round opening prices; integer bps returns drive scoring. Disconnected or
+incomplete feeds retain the deterministic simulation, identified in the HUD.
 Once picks are locked, charts remain available with the action buttons disabled.
 
 Picks form a separate hand beside each avatar, with no card frames. Your hand
@@ -35,8 +37,8 @@ spin is applied, and reduced motion shows the final face without the flip.
 
 During Live, the center shows the player's sealed picks rather than the full
 draft board. Tabs switch the focused pick; its 3D coin, direction, current quote,
-return and price path remain visible. Quotes and returns use the same simulation
-as scoring. Unsealed picks show a forfeit state instead of an active position.
+return and price path remain visible. Quotes and returns use the same price source
+as scoring. Live charts contain received history only (up to 15 minutes). Unsealed picks show a forfeit state instead of an active position.
 
 The HUD's 2D/3D toggle (per tab, default 2D) swaps the board for the read-only
 `TableView3D` scene during Reveal, Live and results. Commit always uses the 2D
@@ -70,8 +72,11 @@ pnpm --filter frontend lint
 pnpm --filter frontend build
 ```
 
-All data is local to `src/mocks/table.ts`; the reducer owns simulation state.
-There are no wallet transactions, backend calls, or persisted season credits.
+Game fixtures remain local to `src/mocks/table.ts`; the reducer owns demo state.
+`lib/game/livePrices.ts` shares one reconnecting prices WebSocket across subscribers,
+with at most one history sample per coin per second. Tests inject feed snapshots
+through the reducer; omitting them retains the original simulation. There are no
+wallet transactions or persisted season credits.
 `/play` uses Farhan's shared shell. The fixed table keeps a compact local HUD
 and hides the shared banner/nav/footer through `data-site-chrome` markers.
 The arena wrapper imports the existing world without changing Mario's files;

@@ -1,3 +1,4 @@
+import { priceMove, priceNumber, type LivePrices, type LiveTick } from "@/lib/game/livePrices";
 import type { ServerView } from "@/lib/game/toDemoState";
 import { botPicks, COINS, LIVE_SECONDS, PLAYERS, type CommitSkill, type GamePreset, type Phase, type Pick, type Scenario } from "@/mocks/table";
 
@@ -6,14 +7,16 @@ import type { SkillName, SkillPick, SkillTarget } from "@/components/skills/type
 import type { IncomingSkill } from "@/components/skills/IncomingSkillToast";
 
 export type LiveSkill = Exclude<SkillName, CommitSkill>;
-type LiveCast = { skill: LiveSkill; by: string; progress: number; originalSymbol: string; originalDirection: Pick["direction"]; swapSymbol?: string };
-export type DemoPick = Pick & { live?: LiveCast; serverReturn?: { raw: number; ret: number; void: boolean } };
+type LiveCast = { skill: LiveSkill; by: string; progress: number; originalSymbol: string; originalDirection: Pick["direction"]; swapSymbol?: string; prices?: Record<string, LiveTick> };
+export type DemoPick = Pick & { livePrices?: { start: Record<string, LiveTick>; current: Record<string, LiveTick> }; live?: LiveCast; serverReturn?: { raw: number; ret: number; void: boolean } };
 const ATTACKS: readonly SkillName[] = ["FREEZE", "FLIP", "SWAP"];
 const REWARDS: readonly SkillName[] = ["INSURANCE", "LOCK", "FLIP", "SWAP", "FREEZE", "BOOST"];
 
 export type RoundResult = { scores: Record<string, number>; winners: string[]; forfeited: string[] };
 export type DemoState = {
   server?: ServerView;
+  feed?: LivePrices;
+  liveStart?: Record<string, LiveTick>;
   preset: GamePreset; phase: Phase; round: number; scenario: Scenario;
   remaining: number; deadline: number; marketTick: number; picks: Pick[]; locked: boolean; lockingUntil: number;
   hand: SkillName[]; effects: Record<string, LiveCast>; usedSkills: string[]; incoming: IncomingSkill | null; history: RoundResult[]; earned: SkillName[]; toast: string; error: string; paused: boolean;
@@ -22,6 +25,7 @@ export type DemoState = {
 export type Outcome = "win" | "tie" | "second" | "third" | "last";
 export const OUTCOMES: Outcome[] = ["win", "tie", "second", "third", "last"];
 export type DemoAction =
+  | { type: "prices"; feed: LivePrices }
   | { type: "tick"; now: number }
   | { type: "select"; symbol: string }
   | { type: "direction"; symbol: string; direction: Pick["direction"] }
@@ -68,6 +72,16 @@ export function coinMove(symbol: string, round: number, progress: number, scenar
 export function rawPickReturn(pick: DemoPick, round: number, progress: number, scenario: Scenario) {
   if (pick.serverReturn) return pick.serverReturn.raw;
   const cast = pick.live;
+  if (pick.livePrices) {
+    const { start, current } = pick.livePrices;
+    const original = cast?.originalSymbol ?? pick.symbol;
+    const sign = (cast?.originalDirection ?? pick.direction) === "Buy" ? 1 : -1;
+    if (!cast?.prices) return priceMove(start[original], current[original]) * sign;
+    const first = priceMove(start[original], cast.prices[original]) * sign;
+    if (cast.skill === "LOCK" || cast.skill === "FREEZE") return first;
+    const symbol = cast.swapSymbol ?? original;
+    return first + priceMove(cast.prices[symbol], current[symbol]) * sign * (cast.skill === "FLIP" ? -1 : 1);
+  }
   if (!cast) return coinMove(pick.symbol, round, progress, scenario) * (pick.direction === "Buy" ? 1 : -1);
   const sign = cast.originalDirection === "Buy" ? 1 : -1;
   const first = coinMove(cast.originalSymbol, round, Math.min(progress, cast.progress), scenario) * sign;
@@ -88,7 +102,7 @@ export function pickReturn(pick: DemoPick, round: number, progress: number, scen
 export function pickIsVoid(pick: DemoPick, round: number, progress: number, scenario: Scenario) {
   if (pick.serverReturn) return pick.serverReturn.void;
   // A cast holds its first segment even when the underlying market later returns to zero.
-  return Math.abs(pick.live ? rawPickReturn(pick, round, progress, scenario) : coinMove(pick.symbol, round, progress, scenario)) < 1;
+  return Math.abs(pick.live || pick.livePrices ? rawPickReturn(pick, round, progress, scenario) : coinMove(pick.symbol, round, progress, scenario)) < 1;
 }
 
 export function scorePicks(picks: DemoPick[], cap: number, round: number, progress: number, scenario: Scenario) {
@@ -103,7 +117,8 @@ export function playerPicks(state: DemoState): Record<string, DemoPick[]> {
   const base = { you: state.locked ? state.picks : [], ...botPicks(state.round, state.preset.caps[state.round], state.scenario) };
   return Object.fromEntries(Object.entries(base).map(([owner, picks]) => [owner, picks.map((pick, index) => {
     const live = state.effects[`${owner}:${index}`];
-    return live ? { ...pick, live, symbol: live.swapSymbol ?? pick.symbol, direction: live.skill === "FLIP" ? pick.direction === "Buy" ? "Sell" as const : "Buy" as const : pick.direction } : pick;
+    const priced = usingLivePrices(state) && state.liveStart ? { ...pick, livePrices: { start: state.liveStart, current: state.feed!.prices } } : pick;
+    return live ? { ...priced, live, symbol: live.swapSymbol ?? pick.symbol, direction: live.skill === "FLIP" ? pick.direction === "Buy" ? "Sell" as const : "Buy" as const : pick.direction } : priced;
   })]));
 }
 
@@ -132,7 +147,7 @@ export function castLiveSkill(state: DemoState, caster: string, skill: LiveSkill
   if (attack && Object.entries(state.effects).some(([id, effect]) => id.startsWith(`${chosen.ownerId}:`) && ATTACKS.includes(effect.skill))) return state;
   if (skill === "SWAP" && (!target.swapTo || !COINS.some((coin) => coin.symbol === target.swapTo!.symbol) || chosen.pickedSymbols?.includes(target.swapTo.symbol) || all[chosen.ownerId].some((pick) => pick.symbol === target.swapTo!.symbol))) return state;
   const pick = all[chosen.ownerId][Number(target.pickId.split(":")[1])];
-  const effect: LiveCast = { skill, by: caster, progress: liveProgress(state), originalSymbol: pick.symbol, originalDirection: pick.direction, ...(skill === "SWAP" ? { swapSymbol: target.swapTo!.symbol } : {}) };
+  const effect: LiveCast = { ...(usingLivePrices(state) ? { prices: { ...state.feed!.prices } } : {}), skill, by: caster, progress: liveProgress(state), originalSymbol: pick.symbol, originalDirection: pick.direction, ...(skill === "SWAP" ? { swapSymbol: target.swapTo!.symbol } : {}) };
   return { ...state, effects: { ...state.effects, [target.pickId]: effect }, usedSkills: [...state.usedSkills, caster],
     hand: caster === "you" ? state.hand.filter((_, index) => index !== state.hand.indexOf(skill)) : state.hand,
     incoming: attack && chosen.ownerId === "you" ? { skill: skill as "FREEZE" | "FLIP" | "SWAP", casterName: PLAYERS.find((p) => p.id === caster)!.name, symbol: pick.symbol as CoinSymbol, heldBps: pickReturn(pick, state.round, liveProgress(state), state.scenario), swapSymbol: target.swapTo?.symbol } : state.incoming,
@@ -161,7 +176,16 @@ export function liveProgress(state: DemoState) {
 
 // One quote source for the table tokens and their chart dialog. Preview moves do
 // not affect scoring; Live quotes use the exact round path used by settlement.
+export function usingLivePrices(state: DemoState) {
+  return Boolean(state.feed?.connected && COINS.every((coin) => state.feed!.prices[coin.symbol]));
+}
+
 export function marketMove(state: DemoState, symbol: string) {
+  if (usingLivePrices(state)) {
+    const current = state.feed!.prices[symbol];
+    const start = state.liveStart?.[symbol] ?? state.feed!.history[symbol]?.[0] ?? current;
+    return priceMove(start, current);
+  }
   if (state.server) return state.server.moves[symbol] ?? 0;
   if (state.phase === "live" || state.phase === "results" || state.phase === "finished") return coinMove(symbol, state.round, liveProgress(state), state.scenario);
   if (state.scenario === "void") return 0;
@@ -215,20 +239,26 @@ function nextPhase(state: DemoState, now: number): DemoState {
   let next: DemoState;
   if (state.phase === "commit") {
     next = { ...state, phase: "reveal", lockingUntil: 0, error: "" };
-  } else if (state.phase === "reveal") next = { ...state, phase: "live" };
+  } else if (state.phase === "reveal") next = { ...state, phase: "live", liveStart: usingLivePrices(state) ? { ...state.feed!.prices } : undefined };
   else if (state.phase === "live") next = settle({ ...botAttack({ ...state, remaining: 0 }), phase: "results" });
   else if (state.round === state.preset.caps.length - 1) next = { ...state, phase: "finished", toast: "" };
-  else next = { ...state, phase: "commit", round: state.round + 1, locked: false, lockingUntil: 0, picks: [], effects: {}, usedSkills: [], incoming: null, toast: "", error: "" };
+  else next = { ...state, phase: "commit", liveStart: undefined, round: state.round + 1, locked: false, lockingUntil: 0, picks: [], effects: {}, usedSkills: [], incoming: null, toast: "", error: "" };
   const remaining = phaseSeconds(next.phase, next.round);
   return { ...next, remaining, deadline: now + remaining * 1000 };
 }
 
 export function demoReducer(state: DemoState, action: DemoAction): DemoState {
+  if (action.type === "prices") {
+    const next = { ...state, feed: action.feed };
+    // Direct Live previews snapshot the first complete feed; normal rounds snapshot at the phase boundary.
+    if (state.phase === "live" && !state.liveStart && usingLivePrices(next)) next.liveStart = { ...action.feed.prices };
+    return next;
+  }
   if (action.type === "dismiss-incoming") return { ...state, incoming: null };
   if (action.type === "cast") return castLiveSkill(state, "you", action.skill, action.target, action.now);
   if (action.type === "preview") {
     const next = createDemo(state.preset, action.phase, action.scenario, action.outcome);
-    return { ...next, deadline: action.now + next.remaining * 1000, paused: true };
+    return { ...next, feed: state.feed, liveStart: action.phase === "live" && usingLivePrices(state) ? { ...state.feed!.prices } : undefined, deadline: action.now + next.remaining * 1000, paused: true };
   }
   if (action.type === "pause") return { ...state, paused: !state.paused, deadline: action.now + state.remaining * 1000 };
   if (action.type === "advance") return nextPhase({ ...state, paused: action.preview ? true : state.paused }, action.now);
@@ -280,6 +310,7 @@ export function price(micros: number) {
 
 /** Display prices retain integer units until formatting. Missing server quotes never use demo prices. */
 export function marketPrice(state: DemoState, symbol: string): string {
+  if (usingLivePrices(state)) return price(priceNumber(state.feed!.prices[symbol]) * 1_000_000);
   if (!state.server) { const coin = COINS.find((c) => c.symbol === symbol); return coin ? price(Math.round(coin.priceMicros * (10000 + marketMove(state, symbol)) / 10000)) : "—"; }
   const quote = state.server.prices[symbol];
   if (!quote) return "—";
