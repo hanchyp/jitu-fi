@@ -1,7 +1,7 @@
-import { PLAYERS, type Pick } from "@/mocks/table";
-import { playerPicks, type DemoState } from "./demo-engine";
+import { PLAYERS } from "@/mocks/table";
+import { playerPicks, type DemoPick, type DemoState } from "./demo-engine";
 
-export type SeatHandView = { count: number; concealed: boolean; picks: Pick[] };
+export type SeatHandView = { count: number; concealed: boolean; picks: DemoPick[] };
 
 // Concealed hands expose their count only, including to labels and seat details.
 export function seatHandView(state: DemoState, playerId: string): SeatHandView {

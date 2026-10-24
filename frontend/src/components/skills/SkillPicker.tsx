@@ -1,12 +1,11 @@
 "use client";
 
-// Target picker for one skill card. LOCK, FLIP, BOOST and INSURANCE take one of your picks; SWAP
-// takes one of your picks, then a free coin and its side; FREEZE takes a rival's pick.
+// Commit skills and LOCK help your picks; FLIP, SWAP and FREEZE target rivals.
 
 import { useState, type ReactNode } from "react";
 import { GameActionButton } from "@/components/ui/GameButton";
 import { formatBps } from "@/components/table-scene/model";
-import type { CoinSymbol, PickSide } from "@/components/table-scene/types";
+import type { CoinSymbol } from "@/components/table-scene/types";
 import { COIN } from "@/lib/coins";
 import { SKILLS } from "./info";
 import { swapCoins, targetBlock, targetsFor } from "./rules";
@@ -73,18 +72,17 @@ export function SkillPicker({ card, table, pending, onCancel, onConfirm }: Skill
   const info = SKILLS[card.skill];
   const [pickId, setPickId] = useState<string>();
   const [coin, setCoin] = useState<CoinSymbol>();
-  const [side, setSide] = useState<PickSide>();
 
   const picks = targetsFor(card, table);
   const pick = picks.find((p) => p.id === pickId);
   const swap = info.target === "swap";
-  const ready = Boolean(pick) && (!swap || (coin && side));
+  const ready = Boolean(pick) && (!swap || (coin && swapCoins(table, pick).includes(coin)));
   const verb = info.timing === "commit" ? "Add" : "Cast";
-  const opponent = info.target === "opponent";
+  const opponent = info.target !== "own";
 
   const confirm = () => {
     if (!pick) return;
-    onConfirm(swap && coin && side ? { pickId: pick.id, swapTo: { symbol: coin, side } } : { pickId: pick.id });
+    onConfirm(swap && coin ? { pickId: pick.id, swapTo: { symbol: coin, side: pick.side } } : { pickId: pick.id });
   };
 
   return (
@@ -105,16 +103,16 @@ export function SkillPicker({ card, table, pending, onCancel, onConfirm }: Skill
                 block={targetBlock(card, p, table)}
                 selected={p.id === pickId}
                 showOwner={opponent}
-                onSelect={() => setPickId(p.id)}
+                onSelect={() => { setPickId(p.id); setCoin(undefined); }}
               />
             ))}
           </div>
         </Step>
 
-        {swap && (
+        {swap && pick && (
           <Step n={2} title="Choose the new coin">
             <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
-              {swapCoins(table).map((c) => (
+              {swapCoins(table, pick).map((c) => (
                 <button
                   key={c}
                   type="button"
@@ -130,23 +128,7 @@ export function SkillPicker({ card, table, pending, onCancel, onConfirm }: Skill
           </Step>
         )}
 
-        {swap && (
-          <Step n={3} title="Choose its side">
-            <div className="grid max-w-xs grid-cols-2 gap-2">
-              {(["Buy", "Sell"] as const).map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  aria-pressed={s === side}
-                  onClick={() => setSide(s)}
-                  className={`${TOGGLE} font-display bg-papan px-3 py-2 text-center text-lg hover:bg-papan-terang ${s === "Buy" ? "text-naik" : "text-turun"}`}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </Step>
-        )}
+
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
@@ -154,7 +136,7 @@ export function SkillPicker({ card, table, pending, onCancel, onConfirm }: Skill
           <p className="mr-auto text-sm font-bold text-white/70">
             {opponent ? `${pick.ownerName}'s ` : "Your "}
             {pick.symbol} {pick.side}
-            {swap && coin && side && ` becomes ${coin} ${side}`}
+            {swap && coin && ` becomes ${coin} ${pick.side}`}
           </p>
         )}
         <GameActionButton variant="night" size="sm" onClick={onCancel} disabled={pending}>

@@ -19,11 +19,13 @@ export type SkillPick = {
   side: PickSide;
   /** Signed return so far in bps, from the owner's side. Omitted before Live. */
   returnBps?: number;
-  /** A pick carries at most one effect; one that has it can't be targeted again. */
+  /** A pick carries one live effect; commit skills may coexist with an attack. */
   effect?: SkillName;
+  /** Original round picks, retained after a SWAP. */
+  pickedSymbols?: readonly CoinSymbol[];
 };
 
-/** What a cast skill acts on. SWAP also carries the new coin and its call. */
+/** What a cast skill acts on. SWAP carries the new coin; side mirrors the victim. */
 export type SkillTarget = {
   pickId: string;
   swapTo?: { symbol: CoinSymbol; side: PickSide };
@@ -39,9 +41,9 @@ export type SkillHandProps = {
   usedThisRound?: boolean;
   /** Your picks this round (during commit: the picks drafted so far). */
   ownPicks: readonly SkillPick[];
-  /** The bots' revealed picks, for FREEZE. */
+  /** The bots' revealed picks, for FREEZE, FLIP and SWAP. */
   opponentPicks?: readonly SkillPick[];
-  /** The table's coins, for SWAP's new coin. Coins you already picked are left out. */
+  /** The table's coins, for SWAP. Coins the victim picked are left out. */
   boardCoins?: readonly CoinSymbol[];
   /**
    * Called on confirm. Return a promise to keep the hand in its pending state until it settles;
@@ -49,4 +51,6 @@ export type SkillHandProps = {
    */
   onUse?: (card: SkillCard, target: SkillTarget) => void | Promise<void>;
   className?: string;
+  /** Compact dock cards; the target picker opens in the shared modal. */
+  compact?: boolean;
 };

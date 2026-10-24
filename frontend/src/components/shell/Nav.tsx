@@ -15,6 +15,7 @@ import { useDummyWallet } from "./DummyWallet";
 const LINKS = [
   { href: "/play", label: "Play" },
   { href: "/leaderboard", label: "Leaderboard" },
+  { href: "/profile", label: "Profile" },
 ] as const;
 
 const INSTANT = { duration: 0 } as const;

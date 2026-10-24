@@ -75,9 +75,40 @@ There are no wallet transactions, backend calls, or persisted season credits.
 `/play` uses Farhan's shared shell. The fixed table keeps a compact local HUD
 and hides the shared banner/nav/footer through `data-site-chrome` markers.
 The arena wrapper imports the existing world without changing Mario's files;
-his coin spirits, live skills, and price chart can consume table state through
-props when available. No dependencies or shared package files were changed.
+coin spirits and skills consume the same table state through props. No dependencies or shared package files were changed.
 
 Game styles use explicit `jitu-game-` class names. The existing Tailwind/Turbopack
 loader treats CSS modules as global CSS and drops their class exports, so the
 game imports `game-styles.ts` and its scoped stylesheet instead.
+
+
+The dock mounts the compact `SkillHand` in Commit and Live. Its shared modal
+picker adds BOOST/INSURANCE to a drafted pick (Clear skill undoes this before
+locking), or casts LOCK on your pick and FREEZE/FLIP/SWAP on a rival. A sealed
+commit skill counts as your one skill for the round. The one-card starting
+hand and deterministic round-win rewards follow the start/deal limits. Rewards
+cycle all six skills. Live previews start with LOCK/FLIP/SWAP; a normal Commit
+hand starts with BOOST (INSURANCE in the insured-pick fixture).
+
+`effects` uses stable owner/slot ids, separate from commit skills. Each live
+cast records its original coin, side and cast progress. LOCK/FREEZE retain the
+first segment; FLIP/SWAP add separately truncated price-relative segments.
+SWAP preserves the victim's side and cannot use their original/current round
+coins. One live effect per pick and one attack per victim apply to bots too.
+A bot with an unused skill attacks an eligible human at 40% of Live, rotating
+FREEZE, FLIP and SWAP across rounds. Tie/void fixtures skip bot attacks so those
+previews retain their purpose. Reload still resets everything.
+
+Round bursts and final confetti use the shipped table-fx assets, held static
+under reduced motion. Earned-card and incoming-attack notices own a dock row,
+so they cannot cover the near seat. Finished shows simulated season credits,
+See your rank, Game details and Play again, with no automatic redirect.
+`/leaderboard?highlight=you` identifies the existing own row;
+`/profile?game=latest` expands the latest sample game. These destinations remain
+fixtures, and the table explicitly says the demo result is not saved.
+
+Additional rules/segment/adapter tests:
+
+```sh
+pnpm --filter backend exec tsx --tsconfig ../frontend/tsconfig.json --test ../frontend/src/components/table/*.test.ts ../frontend/src/components/table-scene/*.test.ts
+```

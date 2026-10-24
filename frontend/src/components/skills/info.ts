@@ -3,7 +3,7 @@
 import type { SkillName } from "./types";
 
 export type SkillTiming = "commit" | "live";
-/** own: one of your picks. swap: your pick, then a new coin and its side. opponent: an opponent's pick. */
+/** own: your pick. swap: rival pick, then a new coin. opponent: rival pick. */
 export type SkillTargetKind = "own" | "swap" | "opponent";
 
 export type SkillInfo = {
@@ -19,8 +19,8 @@ export const SKILLS: Record<SkillName, SkillInfo> = {
   BOOST: { effect: "Doubles one pick's weight.", timing: "commit", target: "own", done: "Boosted" },
   INSURANCE: { effect: "A losing pick scores 0 instead.", timing: "commit", target: "own", done: "Insured" },
   LOCK: { effect: "Seals one pick's return at the current price.", timing: "live", target: "own", done: "Locked" },
-  FLIP: { effect: "Reverses one pick's call from now on.", timing: "live", target: "own", done: "Flipped" },
-  SWAP: { effect: "Trades one pick for a new coin and call.", timing: "live", target: "swap", done: "Swapped" },
+  FLIP: { effect: "Reverses one rival pick’s call from now on.", timing: "live", target: "opponent", done: "Flipped" },
+  SWAP: { effect: "Moves one rival pick to another coin. Its Buy/Sell stays the same.", timing: "live", target: "swap", done: "Swapped" },
   FREEZE: { effect: "Stops one rival pick's return where it is.", timing: "live", target: "opponent", done: "Froze" },
 };
 

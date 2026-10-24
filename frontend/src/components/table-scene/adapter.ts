@@ -2,7 +2,7 @@
 // 3D scene and the 2D table draw the same game. Pure: no timers, no React.
 
 import { COINS, PLAYERS, type Phase } from "@/mocks/table";
-import { coinMove, gameScores, liveProgress, playerPicks, roundResult, type DemoState } from "@/components/table/demo-engine";
+import { coinMove, gameScores, liveProgress, playerPicks, pickReturn, pickIsVoid, roundResult, type DemoState } from "@/components/table/demo-engine";
 import type { CoinSymbol, PriceSeries, ScenePlayer, TablePhase, TableSceneProps } from "./types";
 
 const PHASE: Record<Phase, TablePhase> = { commit: "commit", reveal: "reveal", live: "live", results: "result", finished: "result" };
@@ -34,14 +34,17 @@ export function fromDemoState(state: DemoState, opts: { samples?: number } = {})
     color: p.color,
     isYou: p.human,
     picks: picks[p.id].map((pick) => {
-      const returnBps = move(pick.symbol);
+      const signed = pickReturn(pick, state.round, progress, state.scenario);
+      const returnBps = pick.live ? signed * (pick.direction === "Buy" ? 1 : -1) : move(pick.symbol);
       return {
         symbol: pick.symbol as CoinSymbol,
         side: pick.direction,
         returnBps,
         // Void only means something once prices move.
-        void: (state.phase === "live" || settled) && Math.abs(returnBps) < 1,
-        effect: pick.skill,
+        void: (state.phase === "live" || settled) && pickIsVoid(pick, state.round, progress, state.scenario),
+        effect: pick.live?.skill ?? pick.skill,
+        effectBy: pick.live && pick.live.by !== p.id ? PLAYERS.find((player) => player.id === pick.live!.by)?.name : undefined,
+        swappedFrom: pick.live?.swapSymbol ? pick.live.originalSymbol as CoinSymbol : undefined,
       };
     }),
     score: settled ? scores[p.id] : undefined,

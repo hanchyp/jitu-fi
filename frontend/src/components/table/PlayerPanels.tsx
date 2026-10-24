@@ -2,7 +2,7 @@ import Image from "next/image";
 import type { CSSProperties } from "react";
 import { COINS, PLAYERS, type Player } from "@/mocks/table";
 import { coinDataUrl } from "@/lib/coins";
-import { bps, coinMove, gameScores, liveProgress, pickReturn, playerPicks, roundResult, type DemoState } from "./demo-engine";
+import { bps, pickIsVoid, gameScores, liveProgress, pickReturn, playerPicks, roundResult, type DemoState } from "./demo-engine";
 import styles from "./game-styles";
 
 export function PlayerPanels({ state }: { state: DemoState }) {
@@ -25,9 +25,9 @@ export function PlayerSeat({ state, player, index = 0 }: { state: DemoState; pla
         <div className={styles.playerTop}><Image src={player.portrait} alt="" width={36} height={36} className={styles.avatar} /><div><p className={styles.playerName}>{player.name}</p><p className={styles.small}>{finalScores ? `Final rank #${rank}` : winner ? "Round winner" : player.human ? "Challenger" : "House bot"}</p></div><span className={styles.playerScore}>{finalScores ? finalScores[player.id] : showScore ? result.scores[player.id] : "—"}</span></div>
         <div className={styles.playerPicks}>
           {finalScores ? <span className={styles.small}>Game points · {player.human ? "Your final score" : "No season points"}</span> : hidden ? <span className={styles.small}>{player.human ? state.lockingUntil ? "Sealing picks…" : state.locked ? "Picks locked" : "Choosing picks…" : "Picks hidden"}</span> : forfeited ? <span className={styles.sell}>Forfeit · No sealed picks · 0 pts</span> : allPicks[player.id].map((pick, pickIndex) => {
-            const isVoid = showScore && Math.abs(coinMove(pick.symbol, state.round, progress, state.scenario)) < 1;
+            const isVoid = showScore && pickIsVoid(pick, state.round, progress, state.scenario);
             return <div key={pick.symbol} className={state.phase === "reveal" ? styles.revealPick : ""} style={{ animationDelay: `${index * .12 + pickIndex * .07}s` }}>
-              <div className={styles.pickLine}><span className="jitu-table-seatPick"><Image src={coinDataUrl(COINS.find((coin) => coin.symbol === pick.symbol)!)} alt="" width={16} height={16} unoptimized /><span className={pick.direction === "Buy" ? styles.buy : styles.sell}>{pick.direction}</span> {pick.symbol} {pick.skill && <span className={styles.skillLabel}>{pick.skill}</span>}</span><span>{showScore ? isVoid ? "Void <1 bps" : bps(pickReturn(pick, state.round, progress, state.scenario)) : "Sealed ✓"}</span></div>
+              <div className={styles.pickLine}><span className="jitu-table-seatPick"><Image src={coinDataUrl(COINS.find((coin) => coin.symbol === pick.symbol)!)} alt="" width={16} height={16} unoptimized /><span className={pick.direction === "Buy" ? styles.buy : styles.sell}>{pick.direction}</span> {pick.symbol} {pick.skill && <span className={styles.skillLabel}>{pick.skill}</span>}{pick.live && <span className={styles.skillLabel}>{pick.live.skill}{pick.live.by !== player.id ? ` by ${PLAYERS.find((p) => p.id === pick.live!.by)?.name}` : ""}</span>}</span><span>{showScore ? isVoid ? "Void <1 bps" : bps(pickReturn(pick, state.round, progress, state.scenario)) : "Sealed ✓"}</span></div>
             </div>;
           })}
         </div>
