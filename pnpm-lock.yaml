@@ -168,6 +168,9 @@ importers:
 
   backend:
     dependencies:
+      '@jitu-fi/shared':
+        specifier: workspace:*
+        version: link:../packages/shared
       '@libsql/client':
         specifier: ^0.18.0
         version: 0.18.0

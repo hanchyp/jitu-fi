@@ -4,14 +4,13 @@ import {
   clampGameScore,
   gameScore,
   pickReturn,
-  PRESET_CAPS,
   roundScore,
   roundWinners,
   seasonCredits,
   type PickEffect,
   type PickInput,
-  type Preset,
 } from "../src/scoring.js";
+import { PRESETS, type PresetId } from "../src/config.js";
 import { awardSkill, checkLiveSkill, checkPicks, spendSkill, type RoundState } from "../src/skills.js";
 
 type JsonPick = Omit<PickInput, "start" | "end" | "effect" | "coin"> & {
@@ -21,7 +20,14 @@ type JsonPick = Omit<PickInput, "start" | "end" | "effect" | "coin"> & {
   effect?: Record<string, string>;
 };
 
-const vectors = JSON.parse(readFileSync(new URL("../test-vectors/scoring.json", import.meta.url), "utf8"));
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Case = Record<string, any>;
+type Vectors = Record<"pickReturns" | "rounds" | "winners" | "games" | "seasonCredits", Case[]> & {
+  liveSkillChecks: { state: RoundState; cases: Case[] };
+  pickChecks: { coins: string[]; cases: Case[] };
+};
+
+const vectors: Vectors = JSON.parse(readFileSync(new URL("../test-vectors/scoring.json", import.meta.url), "utf8"));
 
 function toPick(p: JsonPick): PickInput {
   const e = p.effect;
@@ -45,7 +51,7 @@ describe("scoring vectors", () => {
   });
 
   it.each(vectors.games)("game: $name", ({ preset, roundScores, expected, clamped }) => {
-    const score = gameScore(roundScores, PRESET_CAPS[preset as Preset]);
+    const score = gameScore(roundScores, PRESETS[preset.toLowerCase() as PresetId].caps);
     expect(score).toBe(expected);
     expect(clampGameScore(score)).toBe(clamped);
   });
@@ -72,10 +78,5 @@ describe("hands", () => {
   it("spends one copy", () => {
     expect(spendSkill(["LOCK", "LOCK", "FLIP"], "LOCK")).toEqual(["LOCK", "FLIP"]);
     expect(() => spendSkill(["FLIP"], "LOCK")).toThrow();
-  });
-
-  it("presets have the documented caps", () => {
-    expect(PRESET_CAPS.Quick.reduce((a, b) => a + b)).toBe(6);
-    expect(PRESET_CAPS.Marathon).toHaveLength(10);
   });
 });

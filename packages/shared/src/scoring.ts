@@ -2,30 +2,13 @@
 // Integer math only (bigint), truncating toward zero like Solidity. Rules: DECISIONS.md
 // (2026-10-23 redesign, 2026-10-24 FLIP/SWAP attacks) and the game-table / game-skills specs.
 
+import { MAX_GAME_SCORE } from "./config.js";
+
 export type Side = "Buy" | "Sell";
-export type Preset = "Quick" | "Standard" | "Long" | "Marathon";
 
-/** Per-round pick caps; their sum divides the game score. */
-export const PRESET_CAPS: Record<Preset, readonly number[]> = {
-  Quick: [1, 2, 3],
-  Standard: [1, 1, 2, 2, 3],
-  Long: [1, 1, 2, 2, 3, 3, 4],
-  Marathon: [1, 1, 2, 2, 3, 3, 4, 4, 5, 5],
-};
+export const LIVE_SKILL_MAX_AGE_SECONDS = 5;
+export const BOOST_WEIGHT = 2;
 
-export const GAME = {
-  playersPerTable: 4,
-  coinsPerTable: 8,
-  commitSeconds: 20,
-  revealSeconds: 10,
-  liveMinSeconds: 60,
-  liveMaxSeconds: 120,
-  liveSkillMaxAgeSeconds: 5,
-  maxHand: 3,
-  boostWeight: 2,
-  /** GameManager.MAX_GAME_SCORE: recordGame reverts above this. */
-  maxGameScore: 10_000,
-} as const;
 
 /**
  * A live effect on a pick. Prices are raw Pyth integers; a pick's segments only ever divide prices
@@ -100,7 +83,7 @@ export function roundScore(cap: number, picks: readonly PickInput[], forfeit = f
   for (const pick of picks) {
     const result = pickReturn(pick);
     if (result.void) continue;
-    const w = pick.boosted ? BigInt(GAME.boostWeight) : 1n;
+    const w = pick.boosted ? BigInt(BOOST_WEIGHT) : 1n;
     weighted += w * BigInt(result.ret);
     weights += w;
   }
@@ -128,7 +111,7 @@ export function gameScore(roundScores: readonly number[], caps: readonly number[
 
 /** The score sent to recordGame: capped at MAX_GAME_SCORE (unbounded below, as on-chain). */
 export function clampGameScore(score: number): number {
-  return Math.min(score, GAME.maxGameScore);
+  return Math.min(score, MAX_GAME_SCORE);
 }
 
 /** Season points per game: max(0, score) for the first K games in order; later games earn 0. */

@@ -1,6 +1,7 @@
 // Skill and pick rules (pure state checks). Timing rules (the Live deadline, the 5 s price age)
 // are enforced by the engine, which owns the clock and the price book.
-import { GAME, type Side } from "./scoring.js";
+import { MAX_SKILLS_IN_HAND } from "./config.js";
+import type { Side } from "./scoring.js";
 
 export const SKILLS = ["BOOST", "INSURANCE", "LOCK", "FLIP", "SWAP", "FREEZE"] as const;
 export type Skill = (typeof SKILLS)[number];
@@ -99,7 +100,7 @@ export function checkPicks(
 
 /** A round winner gains one skill if their hand has room. */
 export function awardSkill(hand: readonly Skill[], skill: Skill): Skill[] {
-  return hand.length < GAME.maxHand ? [...hand, skill] : [...hand];
+  return hand.length < MAX_SKILLS_IN_HAND ? [...hand, skill] : [...hand];
 }
 
 /** Removes one copy of a used skill from the hand. */
