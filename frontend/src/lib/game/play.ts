@@ -1,4 +1,4 @@
-import { API_URL } from "./config";
+import { API_HEADERS, API_URL } from "./config";
 import { clearAuthToken, getAuthToken } from "./session";
 
 type Preset = "quick" | "standard" | "long" | "marathon";
@@ -23,7 +23,7 @@ async function request<T>(path: string, valid: (data: Record<string, unknown>) =
     const token = explicitToken ?? getAuthToken();
     response = await fetch(`${API_URL}${path}`, {
       method: body === undefined ? "GET" : "POST", cache: "no-store",
-      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
+      headers: { ...API_HEADERS, ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
   } catch { return { ok: false, code: "NETWORK", message: messages.NETWORK }; }

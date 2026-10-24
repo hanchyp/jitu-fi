@@ -1,4 +1,4 @@
-import { API_URL } from "../game/config";
+import { API_HEADERS, API_URL } from "../game/config";
 import type { LeaderboardResponse } from "@/mocks/leaderboard";
 import type { ProfileResponse } from "@/mocks/profile";
 import type { SeasonTenor } from "@/mocks/season";
@@ -15,7 +15,7 @@ export function parseStatsJson(text: string): unknown {
 }
 
 async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, { signal, cache: "no-store" });
+  const response = await fetch(`${API_URL}${path}`, { signal, cache: "no-store", headers: API_HEADERS });
   if (!response.ok) throw new Error("Stats unavailable");
   return parseStatsJson(await response.text()) as T;
 }

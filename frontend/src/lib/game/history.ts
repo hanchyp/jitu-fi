@@ -1,4 +1,4 @@
-import { API_URL } from "./config";
+import { API_HEADERS, API_URL } from "./config";
 
 /** `practice`: seasonId 0, no season points and never recorded on-chain. */
 export type Credit = { kind: "counted" | "outside-k" | "after-end" | "practice"; gameNumber?: number; points?: number };
@@ -28,7 +28,7 @@ export function parseHistory(data: unknown): HistoryGame[] {
 }
 
 export async function fetchHistory(address: string): Promise<HistoryGame[]> {
-  const response = await fetch(`${API_URL}/users/${encodeURIComponent(address)}/history`, { cache: "no-store" });
+  const response = await fetch(`${API_URL}/users/${encodeURIComponent(address)}/history`, { cache: "no-store", headers: API_HEADERS });
   if (!response.ok) throw new Error(`HTTP_${response.status}`);
   return parseHistory(await response.json());
 }

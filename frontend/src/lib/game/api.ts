@@ -1,4 +1,4 @@
-import { API_URL } from "./config";
+import { API_HEADERS, API_URL } from "./config";
 import { getAuthToken } from "./session";
 import type { LiveSkill, PickSubmission, TableState } from "./types";
 
@@ -13,7 +13,7 @@ async function request<T>(path: string, body?: unknown): Promise<T> {
   let response: Response;
   const sentAt = Date.now();
   try {
-    response = await fetch(`${API_URL}${path}`, { method: body === undefined ? "GET" : "POST", cache: "no-store", headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(body === undefined ? {} : { "Content-Type": "application/json" }) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+    response = await fetch(`${API_URL}${path}`, { method: body === undefined ? "GET" : "POST", cache: "no-store", headers: { ...API_HEADERS, ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(body === undefined ? {} : { "Content-Type": "application/json" }) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
   } catch { throw new ApiError("NETWORK", "Network unavailable. Reconnecting…"); }
   const serverDate = Date.parse(response.headers.get("date") || "");
   if (Number.isFinite(serverDate)) clockOffsetMs = serverDate + 500 - (sentAt + Date.now()) / 2;

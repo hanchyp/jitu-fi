@@ -1,3 +1,4 @@
+import { API_HEADERS } from "@/lib/game/config";
 import { API_URL } from "@/lib/web3/config";
 
 export class ApiError extends Error {
@@ -17,6 +18,7 @@ export async function apiFetch<T>(path: string, { method = "GET", body, token }:
   const res = await fetch(`${API_URL}${path}`, {
     method,
     headers: {
+      ...API_HEADERS,
       ...(body !== undefined ? { "content-type": "application/json" } : {}),
       ...(token ? { authorization: `Bearer ${token}` } : {}),
     },
