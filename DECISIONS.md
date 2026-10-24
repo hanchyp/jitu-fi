@@ -2,6 +2,13 @@
 
 Ambiguous design calls and known limitations, newest first. Each entry picks the simplest safe option. The full design rationale lives in `openspec/changes/build-crypto-draft-mvp/design.md`.
 
+## 2026-10-24 — Production testnet shortcuts for season managers
+
+- The production routes support presentation controls on Monad testnet (10143): `N` on `/table/[id]` ends the manager's own current phase through the normal server transition; `Shift+R` on `/play` opens a confirmation to create a new season. Both backend writes require a SIWE session whose wallet holds the vault's `SEASON_MANAGER_ROLE`. Ordinary players cannot invoke them.
+- Phase requests carry the expected phase and round, so repeated or stale requests do not advance twice. Skipping Live closes it at the actual server time and uses normal price settlement and result recording. Skipping Commit before a seat submits can cause that seat to forfeit.
+- New seasons use the keeper's existing serialized sender, with 120-second enrollment and the existing 15/30-minute demo lengths. Creation requires the keeper and `DEMO_MODE`; it does not reset old seasons, deposits or maturity. The controls work in production builds without a localhost restriction; keyboard events in editable fields or open dialogs are ignored.
+- The separate `/play?demo=1` local simulation remains development-only. Its `N` shortcut does not affect the backend or chain.
+
 ## 2026-10-24 — /play follows landing and tutorial motion
 
 - Preset selection and its checkmark reuse the tutorial's spring (stiffness 420, damping 20). Mode details and the primary-action label use its 0.25-second ease-out slide/fade; the controls enter with the landing CTA spring (380/16) and no interaction delay. Preset hover/focus and press follow the shared button's 100 ms lift and collapsing bevel.
