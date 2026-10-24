@@ -4,32 +4,37 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { GameActionButton, GameButton } from "@/components/ui/GameButton";
-import { BonusScene, CallScene, DepositScene, PickScene, WinScene } from "./scenes";
+import { BonusScene, CallScene, DepositScene, PickScene, TableScene, WinScene } from "./scenes";
 
 const STEPS: { title: string; body: string; Scene: ComponentType<{ reduce: boolean }> }[] = [
   {
     title: "Deposit",
-    body: "Deposit mUSD into this season's vault. Your principal is locked in the crystal and always comes back in full.",
+    body: "Deposit mUSD into a season vault. Your principal is locked in the crystal and always comes back in full. Playing is free: no entry fee.",
     Scene: DepositScene,
   },
   {
-    title: "Pick 3 coins",
-    body: "Each round, 8 coins are dealt onto the table. Pick the 3 you want to play.",
+    title: "Face the champions",
+    body: "You sit down with 3 house champions. Choose Quick 3, Standard 5, Long 7 or Marathon 10 rounds. Each round lets you pick a few more coins than the last.",
+    Scene: TableScene,
+  },
+  {
+    title: "Pick only what you trust",
+    body: "Each round deals 8 coins. Pick up to the round's cap. Fewer picks = more confidence: your score is still multiplied by the full cap.",
     Scene: PickScene,
   },
   {
-    title: "Call it: Up or Down",
-    body: "For each coin, call where its price goes this round. Up if you think it rises, Down if you think it falls.",
+    title: "Call it, cast a skill",
+    body: "Call Buy if you think the price rises, Sell if it falls. Then cast up to one skill: BOOST, INSURANCE, LOCK, FLIP, SWAP or FREEZE.",
     Scene: CallScene,
   },
   {
-    title: "Win the round",
-    body: "When the round ends, real price moves score your calls. If you're the only player with a call, it counts ×1.5. The top score earns the most points.",
+    title: "Score the round",
+    body: "Prices run live for 60–120 s. Round score = cap × weighted average return in bps. Moves under 1 bps are void. Champions play too, but never earn points.",
     Scene: WinScene,
   },
   {
-    title: "Collect your bonus",
-    body: "When the season ends, everyone gets their principal and base yield. Your season points decide your share of the bonus pot.",
+    title: "Collect at maturity",
+    body: "Your first 5 games of a season (2 in the demo) earn season points. At maturity everyone gets principal plus base yield; points win your share of the bonus pot.",
     Scene: BonusScene,
   },
 ];

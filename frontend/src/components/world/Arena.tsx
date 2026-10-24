@@ -1,7 +1,7 @@
 "use client";
 
 // The floating stone duel platform: craggy underside, rim stones, glowing runes, pillars with
-// crystal flames and four podiums. Each podium carries an empty avatar slot (see PodiumAvatar).
+// crystal flames and four podiums. Each podium carries a player avatar (see PodiumAvatar).
 
 import { useFrame } from "@react-three/fiber";
 import { useLayoutEffect, useMemo, useRef } from "react";
@@ -164,9 +164,8 @@ function Podiums({ gradient, still }: { gradient: THREE.Texture; still: boolean 
             <ringGeometry args={[0.62, 0.68, 32]} />
             <meshBasicMaterial color={rings[i]} toneMapped={false} />
           </mesh>
-          {/* Avatar slot: Wave 2 mounts the player sprite in here. */}
           <group name={`podium-slot-${i}`} position={[0, 0.73, 0]}>
-            <PodiumAvatar seat={i} color={color} still={still} />
+            <PodiumAvatar seat={i} still={still} />
           </group>
         </group>
       ))}

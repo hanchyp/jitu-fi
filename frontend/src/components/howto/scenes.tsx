@@ -5,6 +5,7 @@
 
 import { animate, AnimatePresence, motion, useMotionValue, useTransform } from "motion/react";
 import { useEffect, useState } from "react";
+import { CHAMPIONS } from "@/lib/champions";
 import { COIN, TABLE_COINS, coinDataUrl, type Coin } from "@/lib/coins";
 
 const POP = { type: "spring", stiffness: 420, damping: 20 } as const;
@@ -132,19 +133,94 @@ export function DepositScene({ reduce }: { reduce: boolean }) {
   );
 }
 
-/* 2. Pick 3 coins: 8 coins are dealt, three get picked one by one. */
-const PICKED = ["BTC", "ETH", "DOGE"];
+/* 2. Face the champions: you and the 3 house champions take their seats, then a preset is chosen. */
+const SCENE_PRESETS = [
+  { name: "Quick", caps: [1, 2, 3] },
+  { name: "Standard", caps: [1, 1, 2, 2, 3] },
+  { name: "Long", caps: [1, 1, 2, 2, 3, 3, 4] },
+  { name: "Marathon", caps: [1, 1, 2, 2, 3, 3, 4, 4, 5, 5] },
+];
 
-export function PickScene({ reduce }: { reduce: boolean }) {
-  const picked = useTimeline([1100, 1700, 2300], reduce);
+function Seat({ name, src, ring, you = false, className = "" }: { name: string; src: string; ring: string; you?: boolean; className?: string }) {
+  return (
+    <div className={`flex flex-col items-center gap-1 ${className}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt=""
+        width={64}
+        height={64}
+        className="h-14 w-14 rounded-full border-[3px] border-garis bg-malam sm:h-16 sm:w-16"
+        style={{ boxShadow: `inset 0 0 0 3px ${ring}` }}
+      />
+      <span className={`rounded-full border-2 border-garis px-2 text-xs font-black ${you ? "bg-emas text-garis" : "bg-malam text-white"}`}>
+        {name}
+      </span>
+    </div>
+  );
+}
+
+export function TableScene({ reduce }: { reduce: boolean }) {
+  const step = useTimeline([300, 550, 800, 1050, 1700], reduce);
+  const seats = [
+    { name: "You", src: "/assets/landing/portrait-hero.webp", ring: "#FFC93C", you: true },
+    ...CHAMPIONS.map((c) => ({ name: c.short, src: c.portrait, ring: c.color, you: false })),
+  ];
+  const chosen = step >= 5;
 
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 px-3">
-      <div className="flex items-center gap-2 rounded-full border-[3px] border-garis bg-malam px-4 py-1 font-extrabold text-white">
-        Picked
-        <motion.span key={picked} initial={reduce ? false : { scale: 1.8, color: "#FFC93C" }} animate={{ scale: 1, color: "#FFFFFF" }} className="font-display text-xl">
-          {picked}/3
-        </motion.span>
+      <div className="flex items-end gap-3 sm:gap-5">
+        {seats.map((seat, i) => (
+          <motion.div
+            key={seat.name}
+            initial={reduce ? false : { opacity: 0, y: 24, scale: 0.7 }}
+            animate={step > i ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 24, scale: 0.7 }}
+            transition={POP}
+          >
+            <Seat {...seat} className={i === 0 ? "mr-2 sm:mr-4" : ""} />
+          </motion.div>
+        ))}
+      </div>
+      <div className="grid w-full max-w-md grid-cols-2 gap-2 sm:grid-cols-4">
+        {SCENE_PRESETS.map((preset) => {
+          const active = chosen && preset.name === "Standard";
+          return (
+            <motion.div
+              key={preset.name}
+              animate={active && !reduce ? { scale: [1, 1.08, 1] } : { scale: 1 }}
+              transition={{ duration: 0.35 }}
+              className={`rounded-[12px] border-[3px] px-2 py-1 text-center ${active ? "border-emas bg-[#24406E]" : "border-garis bg-[#183056]"}`}
+            >
+              <p className="text-xs font-black text-white">
+                {preset.name} <span className="font-display text-base text-emas">{preset.caps.length}</span>
+              </p>
+              <p className="text-[10px] font-bold tracking-wide text-white/60">{preset.caps.join("·")}</p>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* 3. Pick: 8 coins are dealt, the cap is 3, and you pick only the 2 you trust. */
+const PICKED = ["BTC", "ETH"];
+const CAP = 3;
+
+export function PickScene({ reduce }: { reduce: boolean }) {
+  const picked = useTimeline([1100, 1700], reduce);
+
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-4 px-3">
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 rounded-full border-[3px] border-garis bg-malam px-4 py-1 font-extrabold text-white">
+          Picked
+          <motion.span key={picked} initial={reduce ? false : { scale: 1.8, color: "#FFC93C" }} animate={{ scale: 1, color: "#FFFFFF" }} className="font-display text-xl">
+            {picked}/{CAP}
+          </motion.span>
+        </div>
+        <span className="rounded-full border-[3px] border-garis bg-emas px-3 py-1 text-sm font-black text-garis">Cap ×{CAP}</span>
       </div>
       <div className="grid grid-cols-4 gap-2.5 sm:gap-4">
         {TABLE_COINS.map((coin, i) => {
@@ -183,131 +259,151 @@ export function PickScene({ reduce }: { reduce: boolean }) {
   );
 }
 
-/* 3. Call it: each picked coin gets an Up or Down call. */
-const CALLS: { coin: Coin; dir: "up" | "down" }[] = [
-  { coin: COIN.BTC, dir: "up" },
-  { coin: COIN.ETH, dir: "down" },
-  { coin: COIN.DOGE, dir: "up" },
+/* 4. Call it: each pick gets Buy or Sell, then one skill (BOOST) lands on a pick. */
+const CALLS: { coin: Coin; dir: "buy" | "sell" }[] = [
+  { coin: COIN.BTC, dir: "buy" },
+  { coin: COIN.ETH, dir: "sell" },
 ];
 
-function CallPill({ dir, active, reduce }: { dir: "up" | "down"; active: boolean; reduce: boolean }) {
-  const up = dir === "up";
+const SKILL_NAMES = ["BOOST", "INSURANCE", "LOCK", "FLIP", "SWAP", "FREEZE"];
+
+function CallPill({ dir, active, reduce }: { dir: "buy" | "sell"; active: boolean; reduce: boolean }) {
+  const buy = dir === "buy";
   return (
     <motion.span
       animate={active && !reduce ? { scale: [1, 1.18, 1] } : { scale: 1 }}
       transition={{ duration: 0.35 }}
-      className={`rounded-[10px] border-[3px] px-2 py-0.5 text-sm font-black transition-colors ${
+      className={`whitespace-nowrap rounded-[10px] border-[3px] px-2 py-0.5 text-sm font-black transition-colors ${
         active
-          ? up
+          ? buy
             ? "border-garis bg-naik text-garis"
             : "border-garis bg-turun text-garis"
           : "border-white/15 text-white/45"
       }`}
     >
-      {up ? "▲ Up" : "▼ Down"}
+      {buy ? "▲ Buy" : "▼ Sell"}
     </motion.span>
   );
 }
 
 export function CallScene({ reduce }: { reduce: boolean }) {
-  const called = useTimeline([700, 1300, 1900], reduce);
+  const step = useTimeline([700, 1300, 2000], reduce);
+  const boosted = step >= 3;
 
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-4 px-3">
-      <div className="flex gap-2.5 sm:gap-5">
+    <div className="flex h-full flex-col items-center justify-center gap-3 px-3 sm:gap-4">
+      <div className="flex gap-3 sm:gap-5">
         {CALLS.map(({ coin, dir }, i) => {
-          const done = called > i;
+          const done = step > i;
           return (
             <motion.div
               key={coin.symbol}
               initial={reduce ? false : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: reduce ? 0 : i * 0.1 }}
-              className={`flex w-[98px] flex-col items-center gap-2 rounded-[16px] border-[3px] bg-[#183056] px-2 py-3 sm:w-[124px] ${
-                done ? (dir === "up" ? "border-naik" : "border-turun") : "border-garis"
+              className={`relative flex w-[150px] flex-col items-center gap-2 rounded-[16px] border-[3px] bg-[#183056] px-2 py-3 ${
+                done ? (dir === "buy" ? "border-naik" : "border-turun") : "border-garis"
               }`}
             >
               <CoinToken coin={coin} size={46} />
               <span className="text-sm font-black text-white">{coin.symbol}</span>
-              <div className="flex flex-col gap-1.5 sm:flex-row">
-                <CallPill dir="up" active={done && dir === "up"} reduce={reduce} />
-                <CallPill dir="down" active={done && dir === "down"} reduce={reduce} />
+              <div className="flex gap-1.5">
+                <CallPill dir="buy" active={done && dir === "buy"} reduce={reduce} />
+                <CallPill dir="sell" active={done && dir === "sell"} reduce={reduce} />
               </div>
+              <AnimatePresence>
+                {boosted && i === 0 && (
+                  <motion.span
+                    initial={reduce ? false : { scale: 0, rotate: -20, y: 60 }}
+                    animate={{ scale: 1, rotate: 8, y: 0 }}
+                    transition={POP}
+                    className="absolute -right-3 -top-3 rounded-full border-[3px] border-garis bg-kristal px-1.5 text-xs font-black text-white"
+                  >
+                    BOOST ×2
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </motion.div>
           );
         })}
       </div>
-      <p className="max-w-sm text-center text-sm font-bold text-white/70">
-        <span className="text-naik">Up</span> = you think the price rises.{" "}
-        <span className="text-turun">Down</span> = you think it falls.
-      </p>
+      <div className="flex max-w-md flex-wrap justify-center gap-1.5" aria-label="Skills">
+        {SKILL_NAMES.map((name) => (
+          <span
+            key={name}
+            className={`rounded-[8px] border-2 px-1.5 text-[11px] font-black ${
+              name === "BOOST" && boosted ? "border-garis bg-kristal text-white" : "border-white/15 text-kristal-terang/70"
+            }`}
+          >
+            {name}
+          </span>
+        ))}
+      </div>
+      <p className="text-center text-xs font-bold text-white/60">Max 1 skill per round.</p>
     </div>
   );
 }
 
-/* 4. Win the round: calls get scored, then the table ranking settles with you on top. */
+/* 5. Score the round: returns in bps, BOOST weighs double, cap multiplies; then the table ranks. */
 const RESULTS = [
-  { coin: COIN.BTC, dir: "up", move: "+1.2%", score: "+1.2", good: true, bonus: false },
-  { coin: COIN.ETH, dir: "down", move: "−2.0%", score: "+3.0", good: true, bonus: true },
-  { coin: COIN.DOGE, dir: "up", move: "−0.4%", score: "−0.4", good: false, bonus: false },
+  { coin: COIN.BTC, call: "▲ Buy", move: "price +1.20%", bps: "+120", weight: "×2", good: true },
+  { coin: COIN.ETH, call: "▼ Sell", move: "price −0.60%", bps: "+60", weight: "×1", good: true },
 ] as const;
 
-const BEFORE = ["Ayu", "Bima", "You", "Dewi"];
+const BEFORE = ["Bruno", "You", "Dex", "Bera"];
 const AFTER = [
-  { name: "You", score: "+3.8%", pts: "+4 pts" },
-  { name: "Bima", score: "+2.1%", pts: "+3 pts" },
-  { name: "Dewi", score: "+0.6%", pts: "+2 pts" },
-  { name: "Ayu", score: "−1.3%", pts: "+1 pt" },
+  { name: "You", score: "+300" },
+  { name: "Bruno", score: "+180" },
+  { name: "Dex", score: "+45" },
+  { name: "Bera", score: "−90" },
 ];
 
 export function WinScene({ reduce }: { reduce: boolean }) {
-  const step = useTimeline([500, 900, 1300, 2100], reduce);
+  const step = useTimeline([500, 900, 1500, 2300], reduce);
   const ranked = step >= 4;
-  const rows = ranked ? AFTER : BEFORE.map((name) => ({ name, score: "", pts: "" }));
+  const rows = ranked ? AFTER : BEFORE.map((name) => ({ name, score: "" }));
 
   return (
     <div className="flex h-full flex-col items-center justify-center gap-3 px-3 sm:flex-row sm:gap-6">
-      <div className="flex gap-2 sm:flex-col">
-        {RESULTS.map((r, i) => (
-          <motion.div
-            key={r.coin.symbol}
-            initial={reduce ? false : { opacity: 0.4 }}
-            animate={{ opacity: step > i ? 1 : 0.4 }}
-            className="relative flex items-center gap-1.5 rounded-[14px] border-[3px] border-garis bg-[#183056] px-1.5 py-1 sm:gap-2 sm:px-2 sm:py-1.5"
-          >
-            <CoinToken coin={r.coin} size={26} className="hidden sm:block" />
-            <div className="leading-tight">
-              <p className={`text-xs font-black ${r.dir === "up" ? "text-naik" : "text-turun"}`}>
-                <span className="text-white sm:hidden">{r.coin.symbol} </span>
-                {r.dir === "up" ? "▲ Up" : "▼ Down"}
-              </p>
-              <p className="text-[11px] font-bold text-white/60">price {r.move}</p>
-            </div>
-            <AnimatePresence>
-              {step > i && (
-                <motion.span
-                  initial={reduce ? false : { scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={POP}
-                  className={`font-display ml-1 text-lg ${r.good ? "text-naik" : "text-turun"}`}
-                >
-                  {r.score}
-                </motion.span>
-              )}
-            </AnimatePresence>
-            {r.bonus && step > i && (
-              <motion.span
-                initial={reduce ? false : { scale: 0, rotate: -20 }}
-                animate={{ scale: 1, rotate: 8 }}
-                transition={{ ...POP, delay: reduce ? 0 : 0.15 }}
-                className="absolute -right-3 -top-3 rounded-full border-[3px] border-garis bg-kristal px-1.5 text-xs font-black text-white"
-                title="Only you made this call"
-              >
-                ×1.5
-              </motion.span>
-            )}
-          </motion.div>
-        ))}
+      <div className="flex flex-col gap-1.5 sm:gap-2">
+        <div className="flex gap-2 sm:flex-col">
+          {RESULTS.map((r, i) => (
+            <motion.div
+              key={r.coin.symbol}
+              initial={reduce ? false : { opacity: 0.4 }}
+              animate={{ opacity: step > i ? 1 : 0.4 }}
+              className="flex items-center gap-1.5 rounded-[14px] border-[3px] border-garis bg-[#183056] px-1.5 py-1 sm:gap-2 sm:px-2 sm:py-1.5"
+            >
+              <CoinToken coin={r.coin} size={26} className="hidden sm:block" />
+              <div className="leading-tight">
+                <p className={`text-xs font-black ${r.call.includes("Buy") ? "text-naik" : "text-turun"}`}>
+                  <span className="text-white sm:hidden">{r.coin.symbol} </span>
+                  {r.call} <span className="text-kristal-terang">{r.weight}</span>
+                </p>
+                <p className="text-[11px] font-bold text-white/60">{r.move}</p>
+              </div>
+              <AnimatePresence>
+                {step > i && (
+                  <motion.span
+                    initial={reduce ? false : { scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={POP}
+                    className="font-display ml-1 text-lg text-naik"
+                  >
+                    {r.bps}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          ))}
+        </div>
+        <motion.p
+          initial={reduce ? false : { opacity: 0, y: 6 }}
+          animate={step >= 3 ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
+          className="rounded-[12px] border-[3px] border-garis bg-malam px-2 py-1 text-center text-xs font-black text-white"
+        >
+          cap 3 × avg 100 bps = <span className="font-display text-base text-emas">300</span>
+        </motion.p>
       </div>
 
       <ol className="w-full max-w-[230px] space-y-1">
@@ -325,7 +421,7 @@ export function WinScene({ reduce }: { reduce: boolean }) {
               {row.name}
               {ranked && row.name === "You" && <span className="ml-1 text-emas">★</span>}
             </span>
-            {ranked && <span className="text-sm text-emas">{row.pts}</span>}
+            {ranked && <span className="text-sm text-emas">{row.score}</span>}
           </motion.li>
         ))}
       </ol>
@@ -367,7 +463,7 @@ export function BonusScene({ reduce }: { reduce: boolean }) {
       )}
 
       <div className="relative w-full max-w-[340px] rounded-[18px] border-[3px] border-garis bg-malam px-4 py-3 shadow-[0_6px_0_0_#050B14]">
-        <p className="font-display text-lg text-white">Season claim</p>
+        <p className="font-display text-lg text-white">Claim at maturity</p>
         <dl className="mt-1.5 space-y-1.5">
           {rows.map((row, i) => (
             <motion.div
