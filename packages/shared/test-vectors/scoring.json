@@ -1,0 +1,112 @@
+{
+  "_comment": "Crypto Draft scoring vectors. Prices are raw integers as strings; with start 10000 a move of N equals N bps. Every expected value is hand-computed with truncation toward zero.",
+  "pickReturns": [
+    { "name": "buy up", "pick": { "side": "Buy", "start": "10000", "end": "10050" }, "expected": { "raw": 50, "ret": 50, "void": false } },
+    { "name": "sell up loses", "pick": { "side": "Sell", "start": "10000", "end": "10050" }, "expected": { "raw": -50, "ret": -50, "void": false } },
+    { "name": "under 1 bps is void", "pick": { "side": "Buy", "start": "1000000", "end": "1000099" }, "expected": { "raw": 0, "ret": 0, "void": true } },
+    { "name": "negative truncates toward zero", "pick": { "side": "Buy", "start": "3", "end": "2" }, "expected": { "raw": -3333, "ret": -3333, "void": false } },
+    { "name": "sell negative truncates toward zero", "pick": { "side": "Sell", "start": "3", "end": "4" }, "expected": { "raw": -3333, "ret": -3333, "void": false } },
+    { "name": "insured loss floors at 0 but is not void", "pick": { "side": "Buy", "insured": true, "start": "10000", "end": "9970" }, "expected": { "raw": -30, "ret": 0, "void": false } },
+    { "name": "LOCK keeps the gain", "pick": { "side": "Buy", "start": "10000", "end": "9800", "effect": { "kind": "LOCK", "price": "10100" } }, "expected": { "raw": 100, "ret": 100, "void": false } },
+    { "name": "FREEZE caps a winner", "pick": { "side": "Buy", "start": "10000", "end": "10090", "effect": { "kind": "FREEZE", "price": "10020" } }, "expected": { "raw": 20, "ret": 20, "void": false } },
+    { "name": "FLIP on a rising pick", "pick": { "side": "Buy", "start": "10000", "end": "10051", "effect": { "kind": "FLIP", "price": "10030" } }, "expected": { "raw": 10, "ret": 10, "void": false } },
+    { "name": "FLIP backfires", "pick": { "side": "Buy", "start": "10000", "end": "10009", "effect": { "kind": "FLIP", "price": "10030" } }, "expected": { "raw": 50, "ret": 50, "void": false } },
+    { "name": "FLIP segments cancel to void", "pick": { "side": "Buy", "start": "10000", "end": "10021", "effect": { "kind": "FLIP", "price": "10010" } }, "expected": { "raw": 0, "ret": 0, "void": true } },
+    { "name": "SWAP onto a falling coin", "pick": { "side": "Buy", "start": "10000", "end": "10500", "effect": { "kind": "SWAP", "price": "10025", "newCoin": "DOGE", "newStart": "20000", "newEnd": "19920" } }, "expected": { "raw": -15, "ret": -15, "void": false } },
+    { "name": "SWAP keeps the victim's Sell", "pick": { "side": "Sell", "start": "10000", "end": "10000", "effect": { "kind": "SWAP", "price": "9990", "newCoin": "SOL", "newStart": "5000", "newEnd": "5010" } }, "expected": { "raw": -10, "ret": -10, "void": false } },
+    { "name": "INSURANCE floors after a FLIP", "pick": { "side": "Buy", "insured": true, "start": "10000", "end": "10061", "effect": { "kind": "FLIP", "price": "10010" } }, "expected": { "raw": -40, "ret": 0, "void": false } }
+  ],
+  "rounds": [
+    { "name": "single confident pick", "cap": 3, "picks": [{ "side": "Buy", "start": "10000", "end": "10050" }], "expected": 150 },
+    { "name": "mixed picks", "cap": 3, "picks": [
+      { "side": "Buy", "start": "10000", "end": "10050" },
+      { "side": "Buy", "start": "10000", "end": "10020" },
+      { "side": "Buy", "start": "10000", "end": "9970" }
+    ], "expected": 40 },
+    { "name": "void pick excluded", "cap": 2, "picks": [
+      { "side": "Buy", "start": "10000", "end": "10060" },
+      { "side": "Buy", "start": "1000000", "end": "1000099" }
+    ], "expected": 120 },
+    { "name": "BOOST weight 2", "cap": 2, "picks": [
+      { "side": "Buy", "boosted": true, "start": "10000", "end": "10060" },
+      { "side": "Buy", "start": "10000", "end": "9980" }
+    ], "expected": 66 },
+    { "name": "INSURANCE counts as 0", "cap": 2, "picks": [
+      { "side": "Buy", "start": "10000", "end": "10040" },
+      { "side": "Buy", "insured": true, "start": "10000", "end": "9970" }
+    ], "expected": 40 },
+    { "name": "all void scores 0", "cap": 1, "picks": [{ "side": "Sell", "start": "1000000", "end": "1000050" }], "expected": 0 },
+    { "name": "forfeit scores 0", "cap": 3, "forfeit": true, "picks": [{ "side": "Buy", "start": "10000", "end": "10050" }], "expected": 0 },
+    { "name": "no picks scores 0", "cap": 2, "picks": [], "expected": 0 },
+    { "name": "negative round truncates toward zero", "cap": 2, "picks": [
+      { "side": "Buy", "start": "10000", "end": "9990" },
+      { "side": "Buy", "boosted": true, "start": "10000", "end": "9985" }
+    ], "expected": -26 }
+  ],
+  "winners": [
+    { "name": "tied winners", "scores": [
+      { "seat": 0, "score": 150, "forfeit": false }, { "seat": 1, "score": 40, "forfeit": false },
+      { "seat": 2, "score": 150, "forfeit": false }, { "seat": 3, "score": -20, "forfeit": false }
+    ], "expected": [0, 2] },
+    { "name": "forfeit cannot win", "scores": [
+      { "seat": 0, "score": 0, "forfeit": true }, { "seat": 1, "score": -10, "forfeit": false },
+      { "seat": 2, "score": -5, "forfeit": false }, { "seat": 3, "score": -5, "forfeit": false }
+    ], "expected": [2, 3] },
+    { "name": "everyone forfeits", "scores": [
+      { "seat": 0, "score": 0, "forfeit": true }, { "seat": 1, "score": 0, "forfeit": true }
+    ], "expected": [] }
+  ],
+  "games": [
+    { "name": "Quick", "preset": "Quick", "roundScores": [50, 120, -30], "expected": 23, "clamped": 23 },
+    { "name": "negative game truncates toward zero", "preset": "Quick", "roundScores": [-51, -10, 0], "expected": -10, "clamped": -10 },
+    { "name": "Standard", "preset": "Standard", "roundScores": [10, 20, 30, 40, 50], "expected": 16, "clamped": 16 },
+    { "name": "Long", "preset": "Long", "roundScores": [0, 0, 0, 0, 0, 0, 1600], "expected": 100, "clamped": 100 },
+    { "name": "Marathon", "preset": "Marathon", "roundScores": [0, 0, 0, 0, 0, 0, 0, 0, 0, 3000], "expected": 100, "clamped": 100 },
+    { "name": "clamped to MAX_GAME_SCORE", "preset": "Quick", "roundScores": [10000, 20000, 30000], "expected": 10000, "clamped": 10000 },
+    { "name": "above MAX_GAME_SCORE", "preset": "Quick", "roundScores": [25000, 50000, 75000], "expected": 25000, "clamped": 10000 }
+  ],
+  "seasonCredits": [
+    { "name": "first K only, negatives count", "k": 2, "gameScores": [-40, 30, 50], "expected": [
+      { "credited": 0, "counted": true }, { "credited": 30, "counted": true }, { "credited": 0, "counted": false }
+    ] }
+  ],
+  "liveSkillChecks": {
+    "state": {
+      "phase": "Live",
+      "coins": ["BTC", "ETH", "SOL", "DOGE", "BNB", "XRP", "AVAX", "MON"],
+      "seats": {
+        "0": { "hand": ["LOCK", "FLIP", "SWAP"], "usedSkill": false, "attacked": false, "picks": [{ "coin": "BTC" }, { "coin": "ETH" }] },
+        "1": { "hand": ["FREEZE"], "usedSkill": false, "attacked": false, "picks": [{ "coin": "SOL" }, { "coin": "DOGE", "effect": "LOCK" }] },
+        "2": { "hand": ["SWAP"], "usedSkill": false, "attacked": true, "picks": [{ "coin": "BNB", "effect": "FREEZE" }, { "coin": "XRP" }] },
+        "3": { "hand": ["FLIP"], "usedSkill": true, "attacked": false, "picks": [{ "coin": "MON" }] }
+      }
+    },
+    "cases": [
+      { "name": "LOCK own pick", "req": { "seat": 0, "skill": "LOCK", "targetSeat": 0, "targetCoin": "BTC" }, "expected": null },
+      { "name": "LOCK someone else's pick", "req": { "seat": 0, "skill": "LOCK", "targetSeat": 1, "targetCoin": "SOL" }, "expected": "OWN_PICK_ONLY" },
+      { "name": "FLIP an opponent", "req": { "seat": 0, "skill": "FLIP", "targetSeat": 1, "targetCoin": "SOL" }, "expected": null },
+      { "name": "FLIP own pick", "req": { "seat": 0, "skill": "FLIP", "targetSeat": 0, "targetCoin": "ETH" }, "expected": "NO_SELF_ATTACK" },
+      { "name": "locked pick is immune", "req": { "seat": 0, "skill": "FLIP", "targetSeat": 1, "targetCoin": "DOGE" }, "expected": "PICK_HAS_EFFECT" },
+      { "name": "one attack per target per round", "req": { "seat": 0, "skill": "FLIP", "targetSeat": 2, "targetCoin": "XRP" }, "expected": "TARGET_ALREADY_ATTACKED" },
+      { "name": "skill not in hand", "req": { "seat": 1, "skill": "FLIP", "targetSeat": 0, "targetCoin": "BTC" }, "expected": "NOT_IN_HAND" },
+      { "name": "one skill per round", "req": { "seat": 3, "skill": "FLIP", "targetSeat": 0, "targetCoin": "BTC" }, "expected": "ALREADY_USED_SKILL" },
+      { "name": "no such pick", "req": { "seat": 1, "skill": "FREEZE", "targetSeat": 0, "targetCoin": "MON" }, "expected": "NO_SUCH_PICK" },
+      { "name": "SWAP onto a free table coin", "req": { "seat": 0, "skill": "SWAP", "targetSeat": 1, "targetCoin": "SOL", "swapTo": "AVAX" }, "expected": null },
+      { "name": "SWAP onto a coin the victim holds", "req": { "seat": 0, "skill": "SWAP", "targetSeat": 1, "targetCoin": "SOL", "swapTo": "DOGE" }, "expected": "BAD_SWAP_COIN" },
+      { "name": "SWAP off the table", "req": { "seat": 0, "skill": "SWAP", "targetSeat": 1, "targetCoin": "SOL", "swapTo": "LINK" }, "expected": "BAD_SWAP_COIN" }
+    ]
+  },
+  "pickChecks": {
+    "coins": ["BTC", "ETH", "SOL", "DOGE", "BNB", "XRP", "AVAX", "MON"],
+    "cases": [
+      { "name": "valid pair with BOOST", "phase": "Commit", "cap": 2, "hand": ["BOOST"], "picks": [{ "coin": "BTC", "side": "Buy", "boosted": true }, { "coin": "ETH", "side": "Sell" }], "expected": null },
+      { "name": "wrong phase", "phase": "Live", "cap": 2, "hand": [], "picks": [{ "coin": "BTC", "side": "Buy" }], "expected": "WRONG_PHASE" },
+      { "name": "empty", "phase": "Commit", "cap": 2, "hand": [], "picks": [], "expected": "NO_PICKS" },
+      { "name": "over cap", "phase": "Commit", "cap": 1, "hand": [], "picks": [{ "coin": "BTC", "side": "Buy" }, { "coin": "ETH", "side": "Buy" }], "expected": "OVER_CAP" },
+      { "name": "duplicate coin", "phase": "Commit", "cap": 2, "hand": [], "picks": [{ "coin": "BTC", "side": "Buy" }, { "coin": "BTC", "side": "Sell" }], "expected": "DUPLICATE_COIN" },
+      { "name": "coin not on table", "phase": "Commit", "cap": 1, "hand": [], "picks": [{ "coin": "LINK", "side": "Buy" }], "expected": "COIN_NOT_ON_TABLE" },
+      { "name": "BOOST and INSURANCE together", "phase": "Commit", "cap": 2, "hand": ["BOOST", "INSURANCE"], "picks": [{ "coin": "BTC", "side": "Buy", "boosted": true }, { "coin": "ETH", "side": "Buy", "insured": true }], "expected": "TWO_COMMIT_SKILLS" },
+      { "name": "INSURANCE not in hand", "phase": "Commit", "cap": 1, "hand": ["BOOST"], "picks": [{ "coin": "BTC", "side": "Buy", "insured": true }], "expected": "NOT_IN_HAND" }
+    ]
+  }
+}
