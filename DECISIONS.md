@@ -24,7 +24,7 @@ Ambiguous design calls and known limitations, newest first. Each entry picks the
 - **Podium seats:** gold front-right is the challenger (player), green is Bruno, coral is Dex, and blue is Bera.
 - **Champion sprites** are cylindrical (Y-axis) billboards, so their feet stay planted. Their idle is a squash-and-stretch breath anchored at the feet. They use alpha test 0.5 with premultiplied blending, so they write depth and get the toon outline with no halo.
 - **Calls are named Buy/Sell** everywhere. The old copy said Up/Down.
-- **Demo season stats follow the season-vault spec:** 15 or 30 minute seasons, a 2 minute enrollment, the first 2 games count, and max weight 1,000 mUSD. "Min. deposit 10 mUSD" was removed because the spec does not define it.
+- **Demo season stats follow the season-vault spec:** 15 or 30 minute seasons, a 2 minute enrollment, the first 2 games count, and max weight 1,000 mUSD. "Min. deposit 10 mUSD" was removed from the landing stats. *Correction: the specs do define a 10 mUSD minimum (`contracts-season-vault`, `frontend-vault-ui`), so the deposit screen enforces it; the landing simply doesn't list it.*
 - **Reduced-motion hydration fix:** `initial` is always the hidden state, and reduced motion uses a zero-duration transition.
 
 ## 2026-10-23 — Logo and palette from the crest
