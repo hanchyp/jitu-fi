@@ -72,7 +72,6 @@ function HowToPlayModal({ onClose }: { onClose: () => void }) {
   const reduce = useReducedMotion() ?? false;
   const [step, setStep] = useState(0);
   const [dir, setDir] = useState(1);
-  const [replay, setReplay] = useState(0);
   const nextButton = useRef<HTMLButtonElement>(null);
   const last = step === STEPS.length - 1;
 
@@ -130,30 +129,21 @@ function HowToPlayModal({ onClose }: { onClose: () => void }) {
             Step {step + 1} of {STEPS.length}
             <span className="ml-2 text-xs font-bold text-white/45">Example numbers</span>
           </p>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setReplay((r) => r + 1)}
-              className="rounded-full border-2 border-white/20 bg-malam px-3 py-1 text-xs font-extrabold text-white/80 hover:text-white"
-            >
-              Replay
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close"
-              className="flex h-9 w-9 items-center justify-center rounded-full border-[3px] border-garis bg-malam text-lg font-black text-white transition-transform hover:scale-105 active:scale-95"
-            >
-              ✕
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="flex h-9 w-9 items-center justify-center rounded-full border-[3px] border-garis bg-malam text-lg font-black text-white transition-transform hover:scale-105 active:scale-95"
+          >
+            ✕
+          </button>
         </div>
 
         {/* Stage */}
         <div className="relative mx-4 mt-3 h-[clamp(240px,46svh,300px)] shrink-0 overflow-hidden rounded-[20px] border-[3px] border-garis bg-[radial-gradient(ellipse_at_50%_80%,#3A2F86_0%,#1B2552_55%,#0F1D3D_100%)] sm:mx-6 sm:h-[280px]">
           <AnimatePresence mode="wait" initial={false} custom={dir}>
             <motion.div
-              key={`${step}-${replay}`}
+              key={step}
               custom={dir}
               initial={reduce ? false : { opacity: 0, x: dir * 60 }}
               animate={{ opacity: 1, x: 0 }}
