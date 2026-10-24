@@ -71,7 +71,6 @@ export function ArenaTable(props: ArenaTableProps) {
   useHandMotion(stage, props.state);
   return <section ref={bindStage} className="jitu-table-stage" aria-label="Arena game table" data-renderer="2d" data-phase={props.state.phase}>
     <p className="jitu-table-instruction">{props.state.phase === "commit" ? props.state.locked ? "Picks sealed on your podium. Waiting for reveal." : `Tap a coin, read the chart, then choose Buy or Sell. Pick up to ${props.state.preset.caps[props.state.round]}.` : props.state.phase === "reveal" ? "The four seats reveal their calls." : props.state.phase === "live" ? "Your calls are live. Tap a coin to follow its chart." : props.state.phase === "results" ? "The winning seats take the light." : "Final scores at every seat."}</p>
-    {props.state.phase === "finished" && <Image className="jitu-table-confetti" src="/assets/table-fx/podium-confetti.webp" alt="" fill sizes="100vw" />}
     <StaticTable {...props} onInspect={setInspected} />
     <p className="jitu-table-crystalLabel"><NetworkIcon className="" />Principal Crystal · Always protected</p>
     {modelHost && webgl && <CoinModels host={modelHost} still={Boolean(reduced)} />}

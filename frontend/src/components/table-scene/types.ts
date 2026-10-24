@@ -80,7 +80,7 @@ export type TableSceneProps = {
    * always draws the matching flat effects.
    */
   renderEffect?: (ctx: SpiritEffectContext) => ReactNode;
-  /** Final podium: sprays confetti over the table (held still under reduced motion). */
+  /** Final podium: the 3D winner podiums play a one-shot rising halo and coin spiral (none under reduced motion). */
   celebrate?: boolean;
   /** "auto" picks 3D unless WebGL is missing or the user prefers reduced motion. */
   view?: "auto" | "3d" | "2d";
