@@ -31,6 +31,11 @@ function isCurrent(current: string | undefined, href: string) {
   return current === href || current?.startsWith(`${href}/`);
 }
 
+/** On /deposit the page owns the one gold primary, so the nav CTA steps down to night. */
+function depositCta(current: string | undefined) {
+  return isCurrent(current, "/deposit") ? ({ variant: "night", "aria-current": "page" } as const) : {};
+}
+
 /** The shared nav board: crest lockup, page links, dummy Connect and the Deposit CTA. */
 export function Nav({ floating = false, current }: NavProps) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -64,7 +69,7 @@ export function Nav({ floating = false, current }: NavProps) {
       <div className="flex items-center gap-2">
         <ConnectButton />
         <span className="hidden md:block">
-          <GameButton href="/deposit" size="sm">
+          <GameButton href="/deposit" size="sm" {...depositCta(current)}>
             Deposit mUSD
           </GameButton>
         </span>
@@ -159,7 +164,7 @@ function MobileMenu({ open, onClose, current }: { open: boolean; onClose: () => 
             </li>
           ))}
         </ul>
-        <GameButton href="/deposit" onClick={onClose} className="mt-4 w-full text-center">
+        <GameButton href="/deposit" onClick={onClose} className="mt-4 w-full text-center" {...depositCta(current)}>
           Deposit mUSD
         </GameButton>
       </motion.div>

@@ -30,8 +30,8 @@ export function PositionCard({ position, action, id, tone = "raised", className 
 
   const rows = [
     { label: "Principal", value: formatMusd(p.principal), hint: "Comes back in full" },
-    { label: "Base yield", value: plus(p.baseYield), hint: yieldHint },
-    { label: "Bonus", value: plus(p.bonus), hint: enrolling ? "Earned with season points" : "Estimate, simulated" },
+    { label: "Base yield", value: enrolling ? null : plus(p.baseYield), hint: yieldHint },
+    { label: "Bonus", value: enrolling ? null : plus(p.bonus), hint: enrolling ? "Earned with season points" : "Estimate, simulated" },
   ];
 
   return (
@@ -61,7 +61,11 @@ export function PositionCard({ position, action, id, tone = "raised", className 
                 {row.label}
                 <span className="block text-sm font-bold text-white/55">{row.hint}</span>
               </dt>
-              <dd className="font-display whitespace-nowrap text-right text-xl text-white tabular-nums">{row.value}</dd>
+              <dd
+                  className={`font-display whitespace-nowrap text-right text-xl tabular-nums ${row.value === null ? "text-white/55" : "text-white"}`}
+                >
+                  {row.value ?? "Not started"}
+                </dd>
             </div>
           ))}
           <div className="flex items-end justify-between gap-3 px-1 pt-2">

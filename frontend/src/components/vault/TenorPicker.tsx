@@ -31,7 +31,7 @@ export function TenorPicker({ options, value, onChange, closed, onEnrollmentEnd,
           <label
             key={option.tenor}
             className={`relative block cursor-pointer rounded-[16px] border-[3px] border-garis px-4 pb-4 pt-3 shadow-[0_4px_0_0_#040B10] transition-[background-color] has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-[6px] has-[:focus-visible]:outline-emas has-[:disabled]:cursor-default ${
-              selected ? "bg-papan-terang ring-[3px] ring-emas" : "bg-papan hover:bg-papan-terang"
+              isClosed ? "bg-dasar" : selected ? "bg-papan-terang ring-[3px] ring-emas" : "bg-papan hover:bg-papan-terang"
             }`}
           >
             <input
@@ -49,12 +49,12 @@ export function TenorPicker({ options, value, onChange, closed, onEnrollmentEnd,
                 Your season
               </span>
             )}
-            <span className="font-display block text-3xl text-white">{option.label}</span>
+            <span className={`font-display block text-3xl ${isClosed ? "text-white/60" : "text-white"}`}>{option.label}</span>
             <span className="block font-extrabold text-white/75">{option.demoMinutes} minutes in the demo</span>
 
             <span id={`tenor-${option.tenor}-details`} className="mt-3 block">
               {isClosed ? (
-                <span className="font-display inline-block rounded-[14px] border-[3px] border-garis bg-dasar px-2.5 py-0.5 text-lg text-white/60">
+                <span className="font-display inline-block rounded-[14px] border-[3px] border-garis bg-malam px-2.5 py-0.5 text-lg text-white/60">
                   Enrollment closed
                 </span>
               ) : (
@@ -71,7 +71,7 @@ export function TenorPicker({ options, value, onChange, closed, onEnrollmentEnd,
                 <span className="block text-sm font-extrabold text-white/70">Bonus pot</span>
                 <span className="font-display block text-2xl text-emas tabular-nums">{formatMusd(option.bonusPot)}</span>
                 <span className="block text-sm font-bold text-white/55">
-                  Includes {formatMusd(option.sponsorFunds)} from sponsors
+                  Includes {formatMusd(option.sponsorFunds)} from sponsors. The rest is simulated yield.
                 </span>
               </span>
             </span>

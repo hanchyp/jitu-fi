@@ -1,5 +1,6 @@
 "use client";
 
+import { useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AmountInput } from "@/components/ui/AmountInput";
 import { Board } from "@/components/ui/Board";
@@ -50,7 +51,7 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
 
 function Note({ children }: { children: ReactNode }) {
   return (
-    <div className="rounded-[14px] border-[3px] border-garis bg-dasar px-3 py-2 font-semibold leading-relaxed text-white/80">
+    <div className="rounded-[14px] border-[3px] border-garis bg-dasar px-3 py-2 font-semibold leading-relaxed text-white/85">
       {children}
     </div>
   );
@@ -89,12 +90,17 @@ export function DepositScreen({
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   const later = (fn: () => void, ms: number) => timers.current.push(setTimeout(fn, ms));
 
-  // Focus follows the player into the success board after a real deposit (not on first render).
+  // After a real deposit (not on first render), bring the success board on-screen first, so the
+  // chest moment is visible on phones, then move focus to its heading without scrolling again.
+  const reduce = useReducedMotion() ?? false;
+  const successBoard = useRef<HTMLDivElement>(null);
   const successTitle = useRef<HTMLHeadingElement>(null);
   const movedToSuccess = useRef(false);
   useEffect(() => {
-    if (phase === "success" && movedToSuccess.current) successTitle.current?.focus();
-  }, [phase]);
+    if (phase !== "success" || !movedToSuccess.current) return;
+    successBoard.current?.scrollIntoView({ block: "start", behavior: reduce ? "instant" : "smooth" });
+    successTitle.current?.focus({ preventScroll: true });
+  }, [phase, reduce]);
 
   const option = options.find((o) => o.tenor === tenor) ?? options[0];
   const held = position && position.tenor === tenor ? position.principal : ZERO;
@@ -124,7 +130,7 @@ export function DepositScreen({
   };
 
   const deposit = () => {
-    if (!canDeposit || parsed === null) return;
+    if (pending || !canDeposit || parsed === null) return;
     setPhase("pending");
     later(() => {
       setBalance((b) => b - parsed);
@@ -166,32 +172,34 @@ export function DepositScreen({
     );
   } else if (phase === "success" && position) {
     main = (
-      <Board tone="raised">
-        <div className="text-center" role="status">
-          <ChestDrop amount={deposited} />
-          <h2 ref={successTitle} tabIndex={-1} className="font-display title-outline mt-2 text-4xl text-gading outline-none!">
-            Locked in
-          </h2>
-          <p className="mx-auto mt-2 max-w-md font-semibold leading-relaxed text-white/80">
-            {formatMusd(deposited)} is in the Principal Crystal for the {asAdjective(position.tenorLabel)} season. All of it comes
-            back at maturity.
-          </p>
-        </div>
-        <PositionCard
-          id="position"
-          tone="night"
-          position={position}
-          className="mt-6"
-          action={
-            <div className="flex flex-wrap gap-3">
-              <GameButton href="/play">Go to the arena</GameButton>
-              <GameActionButton variant="night" onClick={() => setPhase("form")}>
-                Deposit more
-              </GameActionButton>
-            </div>
-          }
-        />
-      </Board>
+      <div ref={successBoard} className="scroll-mt-4">
+        <Board tone="raised">
+          <div className="text-center" role="status">
+            <ChestDrop amount={deposited} mode="drop" />
+            <h2 ref={successTitle} tabIndex={-1} className="font-display title-outline mt-2 text-4xl text-gading outline-none!">
+              Locked in
+            </h2>
+            <p className="mx-auto mt-2 max-w-md font-semibold leading-relaxed text-white/75">
+              {formatMusd(deposited)} is in the Principal Crystal for the {asAdjective(position.tenorLabel)} season. All of it comes
+              back at maturity.
+            </p>
+          </div>
+          <PositionCard
+            id="position"
+            tone="night"
+            position={position}
+            className="mt-6"
+            action={
+              <div className="flex flex-wrap gap-3">
+                <GameButton href="/play">Go to the arena</GameButton>
+                <GameActionButton variant="night" onClick={() => setPhase("form")}>
+                  Deposit more
+                </GameActionButton>
+              </div>
+            }
+          />
+        </Board>
+      </div>
     );
   } else {
     main = (
@@ -207,44 +215,62 @@ export function DepositScreen({
               heldTenor={position?.tenor}
               disabled={pending}
             />
+            {(otherTenorHeld || enrollmentClosed) && (
+              <div className="mt-4">
+                {otherTenorHeld && position && (
+                  <Note>
+                    You already hold a {asAdjective(position.tenorLabel)} position in Season #{position.seasonId}. You can be in one season at a
+                    time, so your points always count toward one bonus pot. Pick {position.tenorLabel} to add to it.{" "}
+                    <a href="#position" className={textLink}>
+                      See your position
+                    </a>
+                  </Note>
+                )}
+                {!otherTenorHeld && enrollmentClosed && (
+                  <Note>
+                    Enrollment for the {asAdjective(option.label)} season closed when it started.{" "}
+                    {stillOpen.length > 0
+                      ? `Pick ${stillOpen.map((o) => o.label).join(" or ")}, which is still enrolling, or come back for the next ${asAdjective(option.label)} season.`
+                      : "Come back for the next season."}
+                  </Note>
+                )}
+              </div>
+            )}
           </Step>
 
           <Step n={2} title="Choose an amount">
-            <AmountInput
-              label="Amount to lock"
-              value={amount}
-              onChange={setAmount}
-              max={balance}
-              error={amountError}
-              hint={`Minimum ${formatMusd(rules.minDeposit)}. It stays locked until maturity.`}
-              disabled={pending}
-            />
-            <div className="mt-4">
-              <WeightMeter principal={held + (parsed ?? ZERO)} cap={rules.weightCap} held={held} />
+            <div className="grid items-center gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
+              <div>
+                <AmountInput
+                  label="Amount to lock"
+                  value={amount}
+                  onChange={setAmount}
+                  max={balance}
+                  error={amountError}
+                  hint={`Minimum ${formatMusd(rules.minDeposit)}. It stays locked until maturity.`}
+                  disabled={pending}
+                />
+                <div className="mt-4">
+                  <WeightMeter principal={held + (parsed ?? ZERO)} cap={rules.weightCap} held={held} />
+                </div>
+              </div>
+              {/* The open chest waits beside the amount; a deposit drops the chip into it. */}
+              <ChestDrop amount={valid ? parsed : null} mode="waiting" />
             </div>
           </Step>
         </div>
 
-        <div className="mt-8 space-y-4 border-t-[3px] border-garis pt-6">
-          {otherTenorHeld && position && (
-            <Note>
-              You already hold a {asAdjective(position.tenorLabel)} position in Season #{position.seasonId}. You can be in one season at a
-              time, so your points always count toward one bonus pot. Pick {position.tenorLabel} to add to it.{" "}
-              <a href="#position" className={textLink}>
-                See your position
-              </a>
-            </Note>
-          )}
-          {!otherTenorHeld && enrollmentClosed && (
-            <Note>
-              Enrollment for the {asAdjective(option.label)} season closed when it started.{" "}
-              {stillOpen.length > 0
-                ? `Pick ${stillOpen.map((o) => o.label).join(" or ")}, which is still enrolling, or come back for the next ${asAdjective(option.label)} season.`
-                : "Come back for the next season."}
-            </Note>
-          )}
+        <div className="mt-8 border-t-[3px] border-garis pt-6">
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-            <GameActionButton size="lg" onClick={deposit} disabled={!canDeposit}>
+            {/* While pending the button stays full strength (busy, not invalid); deposit() ignores clicks. */}
+            <GameActionButton
+              size="lg"
+              onClick={deposit}
+              disabled={!canDeposit && !pending}
+              aria-disabled={pending || undefined}
+              aria-busy={pending || undefined}
+              className={pending ? "cursor-progress" : ""}
+            >
               {pending ? "Depositing" : held > ZERO ? "Add to deposit" : "Lock deposit"}
             </GameActionButton>
             <p aria-live="polite" className="font-bold text-white/70">
@@ -255,6 +281,7 @@ export function DepositScreen({
                   : ""}
             </p>
           </div>
+          <p className="mt-3 text-sm font-bold text-white/60">All of it comes back at maturity.</p>
         </div>
       </Board>
     );
@@ -266,12 +293,14 @@ export function DepositScreen({
         <header className="grid gap-6 lg:grid-cols-[1fr_minmax(0,24rem)] lg:items-end">
           <div>
             <h1 className="font-display title-outline text-4xl text-gading sm:text-5xl">
-              {live ? "Your deposit is locked" : "Lock your deposit"}
+              {live ? "Your deposit is locked" : phase === "success" ? "Deposit locked" : "Lock your deposit"}
             </h1>
             <p className="mt-3 max-w-xl text-lg font-semibold text-white/75">
               {live
                 ? "Your season is live. Play your counted games to earn season points for the bonus pot."
-                : "Pick a season and an amount. Your mUSD earns yield while you play, and all of it comes back at maturity."}
+                : phase === "success"
+                  ? "Your mUSD is in the Principal Crystal until maturity."
+                  : "Pick a season and an amount. Your mUSD earns yield while you play, and all of it comes back at maturity."}
             </p>
           </div>
           <FaucetCard
@@ -279,6 +308,7 @@ export function DepositScreen({
             amount={rules.faucetAmount}
             cooldownLeft={faucetLeft}
             pending={faucetPending}
+            busy={pending}
             onClaim={claimFaucet}
             onReady={() => setFaucetLeft(0)}
           />

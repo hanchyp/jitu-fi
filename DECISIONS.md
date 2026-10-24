@@ -12,7 +12,11 @@ Ambiguous design calls and known limitations, newest first. Each entry picks the
 - **Dummy clock:** mocks use unix seconds relative to a fixed `MOCK_NOW`; countdowns then tick locally. When an enrollment countdown reaches zero on the page, that tenor flips to "Enrollment closed", so `default` changes after about 2 minutes. Reload to reset.
 - **The faucet button stays visible but disabled during the cooldown,** with the time left under it (frontend-vault-ui spec).
 - **Kit fixes made here:** the dev-state hooks are now defined in the `"use client"` module `src/lib/use-dev-state.ts` and re-exported from `src/lib/dev-state.ts` (same names and signatures), because a server component importing `dev-state.ts` failed the build (`useSearchParams` in a server module). `AmountInput`'s inner input now uses `focus-visible:outline-none!`: the global unlayered `:focus-visible` rule beat the layered utility and drew a second ring inside the field.
-- **Known overlap:** the nav's gold "Deposit mUSD" CTA also shows on /deposit, so this view has two gold buttons. The nav is shell-owned and was left unchanged.
+- **One gold primary on /deposit:** the nav's "Deposit mUSD" CTA renders as `night` with `aria-current="page"` there (desktop bar and phone menu). It is still gold in the nav's Suspense fallback, which has no pathname.
+- **The chest is on screen before the deposit:** an open chest sits beside the amount step with the typed amount as a gold chip above it (static, no idle motion). On success, the same chip drops into the chest. That is still the screen's one orchestrated moment, and it is skipped under reduced motion.
+- **Pending is busy, not invalid:** the gold button keeps full strength with `aria-disabled` + `aria-busy` (clicks are ignored), and the faucet claim is blocked until the deposit resolves.
+- **Closed seasons look closed:** a tenor board whose enrollment closed uses `bg-dasar`, a dimmed label, no hover and no gold ring. The blocking notes sit directly under the season boards.
+- **Bonus pots are labelled as part simulated:** "Includes X from sponsors. The rest is simulated yield."
 
 ## 2026-10-23 — Shared shell and UI kit
 
