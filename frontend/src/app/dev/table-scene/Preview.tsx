@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useReducer } from "react";
 import { TableScene, TableView3D } from "@/components/table-scene";
+import { ServerPreview } from "@/components/table-scene/ServerPreview";
 import { createDemo, demoReducer } from "@/components/table/demo-engine";
 import { COINS, getPreset } from "@/mocks/table";
 import { FIXTURE_SEATS, useFixtureTable } from "@/components/table-scene/fixture";
@@ -52,6 +53,7 @@ function DemoScene({ preset }: { preset: string }) {
 
 export function Preview() {
   const params = useSearchParams();
+  if (params.get("source") === "server") return <ServerPreview />;
   if (params.get("source") === "demo") {
     return (
       <main className="relative h-[100svh] overflow-hidden bg-malam">
