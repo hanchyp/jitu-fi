@@ -6,13 +6,14 @@
 
 import { animate, motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
-import { useEffect, useId, useRef, useSyncExternalStore, type CSSProperties } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { GameActionButton, GameButton } from "@/components/ui/GameButton";
 import { useDialog } from "@/components/ui/useDialog";
 import { DEMO_SEASON, PLAYERS } from "@/mocks/table";
 import { gameScores, type DemoState } from "./demo-engine";
-import { finalOutcome, rankOf } from "./result-outcome";
+import { fetchHistory, sessionAddress, type HistoryGame } from "@/lib/game/history";
+import { finalOutcome, rankOf, recordLines } from "./result-outcome";
 
 const noop = () => () => {};
 const INSTANT = { duration: 0 } as const;
@@ -45,7 +46,29 @@ function CountUp({ value, delay, still }: { value: number; delay: number; still:
   return <span ref={node} aria-hidden="true">{(still ? value : 0).toLocaleString("en-US")}</span>;
 }
 
-export function ResultPopup({ state, onClose }: { state: DemoState; onClose: () => void }) {
+// Polls history every 3 s (max ~30 s) until this table's result is recorded on-chain.
+function useRecord(tableId: number | undefined) {
+  const [game, setGame] = useState<HistoryGame>();
+  useEffect(() => {
+    const address = sessionAddress();
+    if (tableId === undefined || !address) return;
+    let live = true, tries = 0, timer: ReturnType<typeof setTimeout>;
+    const poll = async () => {
+      let final = false;
+      try {
+        const found = (await fetchHistory(address)).find((g) => g.tableId === tableId);
+        if (live && found) { setGame(found); final = ["recorded", "skipped", "failed"].includes(found.recordStatus); }
+      } catch { /* keep polling */ }
+      if (live && !final && ++tries < 10) timer = setTimeout(poll, 3000);
+    };
+    void poll();
+    return () => { live = false; clearTimeout(timer); };
+  }, [tableId]);
+  return game;
+}
+
+export function ResultPopup({ state, onClose, tableId }: { state: DemoState; onClose: () => void; tableId?: number }) {
+  const record = useRecord(state.server ? tableId : undefined);
   const still = useReducedMotion() ?? false;
   const panel = useRef<HTMLDivElement>(null);
   const titleId = useId();
@@ -93,7 +116,8 @@ export function ResultPopup({ state, onClose }: { state: DemoState; onClose: () 
         <Image src={player.portrait} alt="" width={32} height={32} /><span>#{rankOf(scores, player.id)} {player.name}</span><strong>{scores[player.id]}</strong>
       </li>)}</ol>
       <motion.div className="jitu-result-points" initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} transition={at(1.35, 420, 14)}>
-        {state.server ? <strong>Season credit pending backend confirmation</strong> : <strong>+{credited} season points <small>(simulated)</small>{eligible && <> · Game {DEMO_SEASON.gamesPlayed + 1}/{DEMO_SEASON.countedGames}</>}</strong>}
+        {state.server ? (() => { const r = recordLines(record, DEMO_SEASON.countedGames); return <><strong aria-live="polite">{sessionAddress() || record ? r.credit : "Sign in to see your season credit"}</strong>
+          {(r.note || r.txUrl) && <p>{r.note} {r.txUrl && <a className="jitu-result-tx" href={r.txUrl} target="_blank" rel="noopener noreferrer"><b>Recorded on-chain</b> ↗</a>}</p>}</>; })() : <strong>+{credited} season points <small>(simulated)</small>{eligible && <> · Game {DEMO_SEASON.gamesPlayed + 1}/{DEMO_SEASON.countedGames}</>}</strong>}
         {reason && <p>{reason}</p>}
       </motion.div>
       {state.earned.length > 0 && <motion.div className="jitu-result-skills" {...rise(1.45)}><span>Skills earned</span>
