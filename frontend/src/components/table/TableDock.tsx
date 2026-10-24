@@ -36,14 +36,14 @@ export function TableDock({ state, dispatch, onShowResult }: { state: DemoState;
       liveDeadlinePassed={state.remaining <= 0}
       ownPicks={targets.filter((pick) => pick.ownerId === "you")}
       opponentPicks={targets.filter((pick) => pick.ownerId !== "you")}
-      boardCoins={COINS.map((coin) => coin.symbol as CoinSymbol)}
+      boardCoins={COINS.filter((coin) => !state.server || state.server.coins.includes(coin.symbol)).map((coin) => coin.symbol as CoinSymbol)}
       onUse={(card, target) => {
         if (card.skill === "BOOST" || card.skill === "INSURANCE") {
           const pick = targets.find((pick) => pick.id === target.pickId);
           if (pick && editable) dispatch({ type: "skill", symbol: pick.symbol, skill: card.skill });
         } else {
           const now = Date.now();
-          if (castLiveSkill(state, "you", card.skill, target, now) === state) throw new Error("That target is no longer available. Check the Live deadline and choose again.");
+          if (!state.server && castLiveSkill(state, "you", card.skill, target, now) === state) throw new Error("That target is no longer available. Check the Live deadline and choose again.");
           dispatch({ type: "cast", skill: card.skill, target, now });
         }
       }}
