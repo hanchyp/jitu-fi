@@ -32,3 +32,4 @@ Thumbs.db
 
 # Worker screenshots / previews
 frontend/.screenshots/
+contracts/deployments/31337.json
