@@ -4,8 +4,22 @@
     {
       "name": "frontend",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "frontend", "dev"],
+      "runtimeArgs": [
+        "--filter",
+        "frontend",
+        "dev"
+      ],
       "port": 3000
+    },
+    {
+      "name": "backend",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "backend",
+        "dev"
+      ],
+      "port": 4000
     }
   ]
 }
