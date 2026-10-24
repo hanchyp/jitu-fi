@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "pnpm --filter @jitu-fi/shared build && next build",
     "start": "next start",
     "lint": "eslint",
     "check:format": "tsx src/lib/format.check.ts"

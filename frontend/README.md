@@ -31,6 +31,18 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This frontend depends on the workspace package `@jitu-fi/shared`. Its exports point to
+`packages/shared/dist`, which is generated and is not committed. The frontend's
+`pnpm run build` builds that package before running `next build`, so a fresh checkout
+does not depend on local build artifacts.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Configure the Vercel project with:
+
+- **Root Directory:** `frontend`
+- **Include source files outside of the Root Directory in the Build Step:** enabled
+- **Framework Preset:** Next.js
+- **Build Command:** `pnpm run build`
+
+Run the workspace install from the repository root with `pnpm install --frozen-lockfile`.
+Keep the repository's `pnpm-lock.yaml` and `pnpm-workspace.yaml` available to the build.
+Set the public frontend environment variables using `.env.example` as a reference.
