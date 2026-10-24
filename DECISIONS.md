@@ -2,6 +2,14 @@
 
 Ambiguous design calls and known limitations, newest first. Each entry picks the simplest safe option. The full design rationale lives in `openspec/changes/build-crypto-draft-mvp/design.md`.
 
+## 2026-10-23 — Visual direction: arena world + card-draft table
+
+Agreed with the project owner after a brainstorm (options: arena vs house champions, Balatro-style card draft, cozy garden).
+- **Landing:** the 3D "Arena Jitu" world from `frontend/DESIGN.md` stays. The 3 house bots become named rival characters (house champions) standing on the podiums; the player challenges them.
+- **Game table:** a fantasy card draft in the spirit of Balatro/Hearthstone. Coins are cards, skills are spell cards, with juicy number and card animations.
+- **No casino cues:** no green felt, chips, dice, roulette or slot imagery, so the game never reads as gambling.
+- Rejected: the cozy garden direction (weak fit with competitive play and live skills, and it would discard the 3D arena).
+
 ## 2026-10-23 — Game and tokenomics redesign
 
 Agreed with the project owner. It replaces the build spec's game rules: contrarian multiplier, 4/3/2/1 rank points, ×1/×1.5/×2 round multipliers, fixed 3 picks, and the GIFT_COIN/SHIELD skills.
