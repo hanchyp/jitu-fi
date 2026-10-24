@@ -4,7 +4,7 @@ Ambiguous design calls and known limitations, newest first. Each entry picks the
 
 ## 2026-10-23 — No champions section; skills not tied to characters
 
-- **The "Meet the champions" landing section was removed.** The 3 bots are neutral "house bots" (`frontend/src/lib/bots.ts`). Their characters still stand on the 3D podiums and appear in the tutorial seat row, but they have no signature skills or Buy/Sell bias.
+- **The "Meet the champions" landing section was removed.** The 3 bots are neutral "house bots" (`frontend/src/lib/bots.ts`). They have no signature skills or Buy/Sell bias. Their portraits appear only in the tutorial seat row: per user feedback, no characters stand on the 3D podiums, which show only their glowing tops and rings.
 - **Skills belong to no character.** The skill-hand rule is unchanged: 1 random skill at start, +1 per round won, hand max 3, max 1 skill per round. Bots follow the same rules.
 
 ## 2026-10-23 — Landing wave 2 (champions and new-rules copy)
