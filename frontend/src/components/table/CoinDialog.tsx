@@ -46,8 +46,7 @@ export function CoinDialog({ symbol, state, dispatch, onClose }: { symbol: strin
 
   function choose(direction: Pick["direction"]) {
     if (!editable || full) return;
-    if (!pick) dispatch({ type: "select", symbol });
-    dispatch({ type: "direction", symbol, direction });
+    dispatch({ type: "choose", symbol, direction });
     onClose();
   }
 

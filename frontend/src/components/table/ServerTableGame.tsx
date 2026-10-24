@@ -65,7 +65,7 @@ export function ServerTableGame({ id }: { id: number }) {
       if (targetSeat < 0 || !targetCoin) throw new Error(skillErrorMessage("NO_SUCH_PICK"));
       setPending(true); setActionError("");
       return postSkill(id, { skill: action.skill, targetSeat, targetCoin, swapTo: action.target.swapTo?.symbol }).then(() => table.refetch()).catch((err) => { const message = skillErrorMessage(err); setActionError(message); throw new Error(message); }).finally(() => setPending(false));
-    } else if (["select", "direction", "skill"].includes(action.type) && state.phase === "commit" && state.remaining > 0) {
+    } else if (["select", "direction", "choose", "skill"].includes(action.type) && state.phase === "commit" && state.remaining > 0) {
       const next = demoReducer(state, action);
       setDraft({ round: state.round, picks: next.picks }); setActionError(next.error);
     }
