@@ -13,6 +13,9 @@ const ArenaScene = dynamic(() => import("./ArenaScene"), {
 });
 
 const EASE_OUT = [0.22, 1, 0.36, 1] as const;
+// The server can't know the reduced-motion setting, so every intro starts from the same hidden
+// state on both sides (no hydration mismatch); with reduced motion it then snaps to the end.
+const INSTANT = { duration: 0 } as const;
 
 function StaticBackdrop() {
   return (
@@ -79,17 +82,17 @@ export function TitleScreen({ nav }: { nav: ReactNode }) {
       <div className="pointer-events-none relative z-10 flex flex-1 flex-col items-center justify-between px-4 pb-16 pt-[3vh] text-center sm:pb-20 sm:pt-[4vh]">
         <div className="flex flex-col items-center">
           <motion.h1
-            initial={reduce ? false : { opacity: 0, y: -120, scaleY: 1.2 }}
+            initial={{ opacity: 0, y: -120, scaleY: 1.2 }}
             animate={{ opacity: 1, y: 0, scaleY: 1 }}
-            transition={{ delay: 0.9, type: "spring", stiffness: 260, damping: 13 }}
+            transition={reduce ? INSTANT : { delay: 0.9, type: "spring", stiffness: 260, damping: 13 }}
             className="font-display wordmark text-[4.6rem] leading-none text-emas sm:text-[7rem] lg:text-[8.5rem]"
           >
             jitu.fi
           </motion.h1>
           <motion.p
-            initial={reduce ? false : { opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.35, duration: 0.5, ease: EASE_OUT }}
+            transition={reduce ? INSTANT : { delay: 1.35, duration: 0.5, ease: EASE_OUT }}
             className="mt-2 max-w-sm text-lg font-extrabold text-white [text-shadow:0_2px_0_#0B1626] sm:max-w-xl sm:text-2xl"
           >
             The deposit you can play.
@@ -97,9 +100,9 @@ export function TitleScreen({ nav }: { nav: ReactNode }) {
           </motion.p>
         </div>
         <motion.div
-          initial={reduce ? false : { opacity: 0, scale: 0.6 }}
+          initial={{ opacity: 0, scale: 0.6 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 1.7, type: "spring", stiffness: 380, damping: 16 }}
+          transition={reduce ? INSTANT : { delay: 1.7, type: "spring", stiffness: 380, damping: 16 }}
           className="pointer-events-auto flex flex-col items-center gap-4"
         >
           <p className="hidden rounded-full border-[3px] border-garis bg-malam/80 px-4 py-1 font-extrabold text-white sm:block">
