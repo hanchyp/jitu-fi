@@ -490,6 +490,28 @@ body:has(.jitu-game-shell[data-game="true"]) [data-site-chrome] { display: none;
 .jitu-live-quote p { font-size: 10px; font-weight: 700; color: #bdcdd8; }
 .jitu-live-empty { text-align: center; }
 .jitu-live-empty p { color: #bdcdd8; font-size: 12px; margin-top: 7px; }
+/* Keep the positioning transform on the outer panel; only the readout slides. */
+.jitu-live-focus > header { margin-inline: 35px; min-height: 28px; }
+.jitu-live-focus h2 small { margin-left: 4px; color: var(--color-emas); font-family: var(--font-nunito), sans-serif; font-size: 10px; white-space: nowrap; }
+.jitu-live-focus .jitu-live-arrow { position: absolute; top: 9px; width: 32px; height: 32px; border-radius: 10px; z-index: 1; }
+.jitu-live-previous { left: 7px; }
+.jitu-live-next { right: 7px; }
+.jitu-live-previous svg { transform: rotate(90deg); }
+.jitu-live-next svg { transform: rotate(-90deg); }
+.jitu-live-viewport { overflow: hidden; padding: 4px; margin: -4px; }
+.jitu-live-content { min-width: 0; }
+.jitu-live-empty { min-height: 110px; display: flex; flex-direction: column; justify-content: center; }
+.jitu-live-empty h3 { font-family: var(--font-bree), Georgia, serif; color: var(--color-gading); }
+.jitu-live-focus:focus-visible, .jitu-live-focus button:focus-visible { outline: 2px solid var(--color-emas); outline-offset: 2px; }
+@media (max-width: 540px), (max-height: 720px) {
+  .jitu-live-focus .jitu-live-arrow { top: 4px; }
+  .jitu-live-focus > header { min-height: 32px; }
+  .jitu-live-focus > header > span { display: none; }
+  .jitu-live-empty { min-height: 88px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jitu-live-focus .jitu-live-content { opacity: 1 !important; transform: none !important; }
+}
 @media (max-width: 540px) {
   .jitu-live-focus { top: 60%; width: calc(100% - 24px); padding: 7px 10px; border-radius: 12px; }
   .jitu-live-focus h2 { font-size: 15px; }
