@@ -13,8 +13,8 @@ const STEPS: { title: string; body: string; Scene: ComponentType<{ reduce: boole
     Scene: DepositScene,
   },
   {
-    title: "Face the champions",
-    body: "You sit down with 3 house champions. Choose Quick 3, Standard 5, Long 7 or Marathon 10 rounds. Each round lets you pick a few more coins than the last.",
+    title: "Take a seat",
+    body: "You sit down with 3 house bots. Choose Quick 3, Standard 5, Long 7 or Marathon 10 rounds. Each round lets you pick a few more coins than the last.",
     Scene: TableScene,
   },
   {
@@ -24,12 +24,12 @@ const STEPS: { title: string; body: string; Scene: ComponentType<{ reduce: boole
   },
   {
     title: "Call it, cast a skill",
-    body: "Call Buy if you think the price rises, Sell if it falls. Then cast up to one skill: BOOST, INSURANCE, LOCK, FLIP, SWAP or FREEZE.",
+    body: "Call Buy if you think the price rises, Sell if it falls. Then cast up to one skill: BOOST, INSURANCE, LOCK, FLIP, SWAP or FREEZE. You start with 1 random skill and earn 1 more for each round won, hand max 3. Skills aren't tied to any character, and bots follow the same rules.",
     Scene: CallScene,
   },
   {
     title: "Score the round",
-    body: "Prices run live for 60–120 s. Round score = cap × weighted average return in bps. Moves under 1 bps are void. Champions play too, but never earn points.",
+    body: "Prices run live for 60–120 s. Round score = cap × weighted average return in bps. Moves under 1 bps are void. House bots play too, but never earn points.",
     Scene: WinScene,
   },
   {
