@@ -1,5 +1,5 @@
 // Backend entry point: one process running prices, the game engine, bots, matchmaker and the API.
-// The keeper (season admin + recordGame) is started here once it lands.
+// The keeper (season admin + recordGame) starts when its key and GAME_ID_SALT are set.
 import "dotenv/config";
 import { Auth } from "./api/auth.js";
 import { createChainReads } from "./api/chain.js";
@@ -11,6 +11,7 @@ import { HouseBots } from "./engine/bots.js";
 import { GameEngine } from "./engine/engine.js";
 import { Matchmaker } from "./engine/matchmaker.js";
 import type { EngineEvent } from "./engine/types.js";
+import { startKeeper } from "./keeper/keeper.js";
 import { createLogger } from "./logger.js";
 import { createPriceSource } from "./prices/index.js";
 
@@ -40,6 +41,14 @@ listeners.push(onEngineEvent);
 
 const resumed = await engine.resume();
 await app.listen({ port: config.PORT, host: "0.0.0.0" });
+
+// The keeper activates/finalizes seasons, renews demo seasons and posts finished games on-chain.
+// Without its key the game still runs, but results stay queued (recordStatus = pending).
+const stopKeeper =
+  config.KEEPER_PRIVATE_KEY && config.GAME_ID_SALT
+    ? startKeeper({ config, db, logger: log, publicClient })
+    : (log.warn("KEEPER_PRIVATE_KEY or GAME_ID_SALT not set: keeper disabled, results stay queued"), async () => {});
+
 log.info({ chainId: chain.id, demoMode: config.DEMO_MODE, priceSource: config.PRICE_SOURCE, resumed }, "backend started");
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
@@ -47,6 +56,7 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
     engine.stop();
     bots.stop();
     source.stop();
+    await stopKeeper();
     await app.close();
     process.exit(0);
   });
