@@ -34,7 +34,7 @@ export type ArenaTableViewProps = ArenaTableProps & { onInspect: (symbol: string
 function StaticTable({ state, onInspect }: ArenaTableViewProps) {
   return <div className="jitu-table-static" data-testid="static-game-table">
     <div className="jitu-table-stone"><StoneTableArt /><div className="jitu-table-crystal" aria-hidden="true"><NetworkIcon className="" /></div>
-      {state.phase === "live" ? <LivePicks state={state} onInspect={onInspect} /> : <div className="jitu-table-market" role="group" aria-label="Eight coins on the arena table">{COINS.map((coin) => <TableCoin key={coin.symbol} symbol={coin.symbol} state={state} onInspect={onInspect} />)}</div>}
+      {state.phase === "live" ? <LivePicks state={state} onInspect={onInspect} /> : <div className="jitu-table-market" role="group" aria-label="Eight coins on the arena table">{COINS.filter((coin) => !state.server || state.server.coins.includes(coin.symbol)).map((coin) => <TableCoin key={coin.symbol} symbol={coin.symbol} state={state} onInspect={onInspect} />)}</div>}
     </div>
     {PLAYERS.map((player) => <CompactSeat key={player.id} player={player} state={state} onInspect={onInspect} />)}
   </div>;

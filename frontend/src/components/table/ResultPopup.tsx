@@ -93,12 +93,12 @@ export function ResultPopup({ state, onClose }: { state: DemoState; onClose: () 
         <Image src={player.portrait} alt="" width={32} height={32} /><span>#{rankOf(scores, player.id)} {player.name}</span><strong>{scores[player.id]}</strong>
       </li>)}</ol>
       <motion.div className="jitu-result-points" initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} transition={at(1.35, 420, 14)}>
-        <strong>+{credited} season points <small>(simulated)</small>{eligible && <> · Game {DEMO_SEASON.gamesPlayed + 1}/{DEMO_SEASON.countedGames}</>}</strong>
+        {state.server ? <strong>Season credit pending backend confirmation</strong> : <strong>+{credited} season points <small>(simulated)</small>{eligible && <> · Game {DEMO_SEASON.gamesPlayed + 1}/{DEMO_SEASON.countedGames}</>}</strong>}
         {reason && <p>{reason}</p>}
       </motion.div>
       {state.earned.length > 0 && <motion.div className="jitu-result-skills" {...rise(1.45)}><span>Skills earned</span>
         <ul>{state.earned.map((skill, i) => <li key={i}><Image src={`/assets/skills/${skill.toLowerCase()}.webp`} alt="" width={28} height={40} />{skill}</li>)}</ul></motion.div>}
-      <motion.p className="jitu-result-safe" {...rise(1.5)}>Your principal is safe. Demo result only, not saved.</motion.p>
+      <motion.p className="jitu-result-safe" {...rise(1.5)}>{state.server ? "Game complete. Your principal stays safe." : "Your principal is safe. Demo result only, not saved."}</motion.p>
       <div className="jitu-result-actions">
         <motion.div {...rise(1.55)}><GameButton href="/play" data-autofocus>Play again</GameButton></motion.div>
         <motion.div {...rise(1.62)}><GameButton href="/leaderboard?highlight=you" variant="night" size="sm">See your rank</GameButton></motion.div>

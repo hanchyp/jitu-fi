@@ -1,3 +1,4 @@
+import type { ServerView } from "@/lib/game/toDemoState";
 import { botPicks, COINS, LIVE_SECONDS, PLAYERS, type CommitSkill, type GamePreset, type Phase, type Pick, type Scenario } from "@/mocks/table";
 
 import type { CoinSymbol } from "@/components/table-scene/types";
@@ -6,12 +7,13 @@ import type { IncomingSkill } from "@/components/skills/IncomingSkillToast";
 
 export type LiveSkill = Exclude<SkillName, CommitSkill>;
 type LiveCast = { skill: LiveSkill; by: string; progress: number; originalSymbol: string; originalDirection: Pick["direction"]; swapSymbol?: string };
-export type DemoPick = Pick & { live?: LiveCast };
+export type DemoPick = Pick & { live?: LiveCast; serverReturn?: { raw: number; ret: number; void: boolean } };
 const ATTACKS: readonly SkillName[] = ["FREEZE", "FLIP", "SWAP"];
 const REWARDS: readonly SkillName[] = ["INSURANCE", "LOCK", "FLIP", "SWAP", "FREEZE", "BOOST"];
 
 export type RoundResult = { scores: Record<string, number>; winners: string[]; forfeited: string[] };
 export type DemoState = {
+  server?: ServerView;
   preset: GamePreset; phase: Phase; round: number; scenario: Scenario;
   remaining: number; deadline: number; marketTick: number; picks: Pick[]; locked: boolean; lockingUntil: number;
   hand: SkillName[]; effects: Record<string, LiveCast>; usedSkills: string[]; incoming: IncomingSkill | null; history: RoundResult[]; earned: SkillName[]; toast: string; error: string; paused: boolean;
@@ -64,6 +66,7 @@ export function coinMove(symbol: string, round: number, progress: number, scenar
 
 /** Signed return before insurance. Each post-cast price-relative segment truncates separately. */
 export function rawPickReturn(pick: DemoPick, round: number, progress: number, scenario: Scenario) {
+  if (pick.serverReturn) return pick.serverReturn.raw;
   const cast = pick.live;
   if (!cast) return coinMove(pick.symbol, round, progress, scenario) * (pick.direction === "Buy" ? 1 : -1);
   const sign = cast.originalDirection === "Buy" ? 1 : -1;
@@ -77,11 +80,13 @@ export function rawPickReturn(pick: DemoPick, round: number, progress: number, s
 }
 
 export function pickReturn(pick: DemoPick, round: number, progress: number, scenario: Scenario) {
+  if (pick.serverReturn) return pick.serverReturn.ret;
   const signed = rawPickReturn(pick, round, progress, scenario);
   return pick.skill === "INSURANCE" ? Math.max(0, signed) : signed;
 }
 
 export function pickIsVoid(pick: DemoPick, round: number, progress: number, scenario: Scenario) {
+  if (pick.serverReturn) return pick.serverReturn.void;
   // A cast holds its first segment even when the underlying market later returns to zero.
   return Math.abs(pick.live ? rawPickReturn(pick, round, progress, scenario) : coinMove(pick.symbol, round, progress, scenario)) < 1;
 }
@@ -94,6 +99,7 @@ export function scorePicks(picks: DemoPick[], cap: number, round: number, progre
 }
 
 export function playerPicks(state: DemoState): Record<string, DemoPick[]> {
+  if (state.server) return state.server.picks;
   const base = { you: state.locked ? state.picks : [], ...botPicks(state.round, state.preset.caps[state.round], state.scenario) };
   return Object.fromEntries(Object.entries(base).map(([owner, picks]) => [owner, picks.map((pick, index) => {
     const live = state.effects[`${owner}:${index}`];
@@ -156,12 +162,14 @@ export function liveProgress(state: DemoState) {
 // One quote source for the table tokens and their chart dialog. Preview moves do
 // not affect scoring; Live quotes use the exact round path used by settlement.
 export function marketMove(state: DemoState, symbol: string) {
+  if (state.server) return state.server.moves[symbol] ?? 0;
   if (state.phase === "live" || state.phase === "results" || state.phase === "finished") return coinMove(symbol, state.round, liveProgress(state), state.scenario);
   if (state.scenario === "void") return 0;
   return Math.round(Math.sin(state.marketTick * .65 + COINS.findIndex((coin) => coin.symbol === symbol)) * 3);
 }
 
 export function roundResult(state: DemoState, progress = 1): RoundResult {
+  if (state.server) return state.server.result;
   const picks = playerPicks(state);
   const scores = Object.fromEntries(PLAYERS.map((player) => [player.id, scorePicks(picks[player.id], state.preset.caps[state.round], state.round, progress, state.scenario)]));
   const forfeited = state.locked ? [] : ["you"];
@@ -171,6 +179,7 @@ export function roundResult(state: DemoState, progress = 1): RoundResult {
 }
 
 export function gameScores(state: DemoState): Record<string, number> {
+  if (state.server?.gameScores) return state.server.gameScores;
   const caps = state.preset.caps.reduce((total, cap) => total + cap, 0);
   return Object.fromEntries(PLAYERS.map((player) => [player.id, Math.trunc(state.history.reduce((total, result) => total + result.scores[player.id], 0) / caps)]));
 }
@@ -267,4 +276,16 @@ export function bps(value: number) {
 
 export function price(micros: number) {
   return (micros / 1_000_000).toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: micros < 1_000_000 ? 4 : 2, maximumFractionDigits: micros < 1_000_000 ? 4 : 2 });
+}
+
+/** Display prices retain integer units until formatting. Missing server quotes never use demo prices. */
+export function marketPrice(state: DemoState, symbol: string): string {
+  if (!state.server) { const coin = COINS.find((c) => c.symbol === symbol); return coin ? price(Math.round(coin.priceMicros * (10000 + marketMove(state, symbol)) / 10000)) : "—"; }
+  const quote = state.server.prices[symbol];
+  if (!quote) return "—";
+  const value = BigInt(quote.price);
+  const digits = Math.max(0, -quote.expo);
+  if (quote.expo >= 0) return `$${(value * BigInt(10) ** BigInt(quote.expo)).toLocaleString("en-US")}`;
+  const scale = BigInt(10) ** BigInt(digits);
+  return `$${(value / scale).toLocaleString("en-US")}.${(value % scale).toString().padStart(digits, "0").slice(0, Math.max(2, value < scale ? 4 : 2)).padEnd(2, "0")}`;
 }
