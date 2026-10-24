@@ -1,12 +1,12 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import { usePathname, useRouter } from "next/navigation";
-import { Suspense, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { GameActionButton } from "@/components/ui/GameButton";
 import { NetworkIcon } from "@/components/ui/icons";
 import { useDialog } from "@/components/ui/useDialog";
-import { useRawDevState, WRONG_NETWORK_STATE } from "@/lib/dev-state";
+import { DEV_STATE_PARAM, WRONG_NETWORK_STATE } from "@/lib/dev-state";
 
 const INSTANT = { duration: 0 } as const;
 
@@ -28,7 +28,7 @@ export function WrongNetwork({ currentNetwork = "Ethereum", onSwitch, pending = 
   return (
     <div className="fixed inset-0 z-[55] flex items-center justify-center p-3 sm:p-6">
       <motion.div
-        className="absolute inset-0 bg-[#040B10]/80"
+        className="absolute inset-0 bg-garis/80"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={reduce ? INSTANT : { duration: 0.15 }}
@@ -44,7 +44,7 @@ export function WrongNetwork({ currentNetwork = "Ethereum", onSwitch, pending = 
         transition={reduce ? INSTANT : { type: "spring", stiffness: 320, damping: 26 }}
         className="relative w-full max-w-md rounded-[26px] border-[3px] border-garis bg-malam p-6 text-center shadow-[0_8px_0_0_#040B10] sm:p-8"
       >
-        <NetworkIcon className="mx-auto h-16 w-16" />
+        <NetworkIcon className="mx-auto h-24 w-24" />
         <h2 id="wrong-network-title" className="font-display title-outline mt-3 text-4xl text-gading">
           Wrong network
         </h2>
@@ -61,17 +61,28 @@ export function WrongNetwork({ currentNetwork = "Ethereum", onSwitch, pending = 
 }
 
 function Gate() {
-  const state = useRawDevState();
+  const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const [pending, setPending] = useState(false);
-  if (state !== WRONG_NETWORK_STATE) return null;
-  // Dummy switch: pending for a moment, then drop the dev state, as a real switch would resolve.
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
+  if (params.get(DEV_STATE_PARAM) !== WRONG_NETWORK_STATE) return null;
+  // Dummy switch: pending for a moment, then drop only the dev state, as a real switch would resolve.
   const onSwitch = () => {
     setPending(true);
-    setTimeout(() => {
+    timer.current = setTimeout(() => {
+      timer.current = null;
       setPending(false);
-      router.replace(pathname, { scroll: false });
+      const next = new URLSearchParams(params.toString());
+      next.delete(DEV_STATE_PARAM);
+      const query = next.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
     }, 1200);
   };
   return <WrongNetwork onSwitch={onSwitch} pending={pending} />;

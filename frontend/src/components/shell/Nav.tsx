@@ -68,16 +68,17 @@ export function Nav({ floating = false, current }: NavProps) {
             Deposit mUSD
           </GameButton>
         </span>
-        <button
-          type="button"
+        <GameActionButton
+          variant="night"
+          size="icon"
           onClick={() => setMenuOpen(true)}
           aria-label="Open menu"
           aria-haspopup="dialog"
           aria-expanded={menuOpen}
-          className="flex h-10 w-10 items-center justify-center rounded-[12px] border-[3px] border-garis bg-malam text-white hover:bg-papan md:hidden"
+          className="md:hidden"
         >
           <MenuIcon />
-        </button>
+        </GameActionButton>
       </div>
       <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} current={current} />
     </nav>
@@ -117,7 +118,7 @@ function MobileMenu({ open, onClose, current }: { open: boolean; onClose: () => 
   return createPortal(
     <div className="fixed inset-0 z-40 md:hidden">
       <motion.div
-        className="absolute inset-0 bg-[#040B10]/75"
+        className="absolute inset-0 bg-garis/75"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={reduce ? INSTANT : { duration: 0.15 }}
@@ -135,15 +136,9 @@ function MobileMenu({ open, onClose, current }: { open: boolean; onClose: () => 
       >
         <div className="flex items-center justify-between">
           <p className="font-display text-2xl text-gading">Menu</p>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close menu"
-            data-autofocus
-            className="flex h-10 w-10 items-center justify-center rounded-[12px] border-[3px] border-garis bg-malam text-white hover:bg-papan"
-          >
+          <GameActionButton variant="night" size="icon" onClick={onClose} aria-label="Close menu" data-autofocus>
             <CloseIcon />
-          </button>
+          </GameActionButton>
         </div>
         <ul className="mt-3 grid gap-2">
           <li>

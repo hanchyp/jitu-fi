@@ -55,7 +55,7 @@ export function Tabs<T extends string>({ label, tabs, value, onChange, children,
               aria-controls={`${base}-panel`}
               tabIndex={active ? 0 : -1}
               onClick={() => onChange(tab.id)}
-              className={`font-display whitespace-nowrap rounded-[11px] border-[3px] px-3.5 py-1 text-lg transition-colors ${
+              className={`font-display whitespace-nowrap rounded-[14px] border-[3px] px-3.5 py-1 text-lg transition-colors ${
                 active ? "border-garis bg-emas text-garis" : "border-transparent text-white/75 hover:text-white"
               }`}
             >

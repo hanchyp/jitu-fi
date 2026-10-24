@@ -7,6 +7,8 @@ import { Nav } from "./Nav";
 /**
  * Routes that render their own floating nav inside a full-bleed hero, so the layout skips it.
  * The landing passes <Nav floating /> into its TitleScreen.
+ * A new full-bleed route needs both: its path here AND <Nav floating /> rendered in its hero.
+ * With only one, the page shows two navs or none.
  */
 const FLOATING_NAV_ROUTES = new Set(["/"]);
 

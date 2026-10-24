@@ -3,6 +3,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useId, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { GameActionButton } from "./GameButton";
 import { CloseIcon } from "./icons";
 import { useDialog } from "./useDialog";
 
@@ -34,7 +35,7 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
       {open && (
         <div className="fixed inset-0 z-50 flex items-end justify-center p-3 sm:items-center sm:p-6">
           <motion.div
-            className="absolute inset-0 bg-[#040B10]/75"
+            className="absolute inset-0 bg-garis/75"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -56,14 +57,9 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
               <h2 id={titleId} className="font-display title-outline text-3xl text-gading">
                 {title}
               </h2>
-              <button
-                type="button"
-                onClick={onClose}
-                aria-label="Close"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-[3px] border-garis bg-malam text-white hover:bg-papan"
-              >
+              <GameActionButton variant="night" size="icon" onClick={onClose} aria-label="Close">
                 <CloseIcon />
-              </button>
+              </GameActionButton>
             </div>
             <div className="px-5 pt-3 font-semibold leading-relaxed text-white/85 sm:px-6">{children}</div>
             {footer ? (

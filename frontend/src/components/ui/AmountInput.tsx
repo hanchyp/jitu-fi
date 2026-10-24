@@ -1,6 +1,7 @@
 "use client";
 
 import { useId } from "react";
+import { GameActionButton } from "./GameButton";
 import { formatMusd, MUSD_DECIMALS, musdToInput } from "@/lib/format";
 
 type AmountInputProps = {
@@ -57,14 +58,9 @@ export function AmountInput({ label, value, onChange, max, error, hint, disabled
         />
         <span className="font-extrabold text-white/60">mUSD</span>
         {max !== undefined && (
-          <button
-            type="button"
-            disabled={disabled}
-            onClick={() => onChange(musdToInput(max))}
-            className="font-display rounded-[10px] border-[3px] border-garis bg-papan px-2.5 py-1 text-white hover:bg-papan-terang disabled:pointer-events-none"
-          >
+          <GameActionButton variant="night" size="sm" disabled={disabled} onClick={() => onChange(musdToInput(max))}>
             Max
-          </button>
+          </GameActionButton>
         )}
       </div>
       {note && (

@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef } from "react";
+import { GameActionButton } from "./GameButton";
 import { CloseIcon } from "./icons";
 
 export type ToastTone = "info" | "success" | "error";
@@ -58,14 +59,9 @@ export function Toast({ open, onClose, title, body, tone = "info", autoHideMs }:
               <p className="font-display text-lg leading-snug text-gading">{title}</p>
               {body && <p className="mt-0.5 text-sm font-semibold leading-relaxed text-white/75">{body}</p>}
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Dismiss"
-              className="m-2 flex h-8 w-8 shrink-0 items-center justify-center self-start rounded-full border-[3px] border-garis bg-dasar text-white hover:bg-papan"
-            >
-              <CloseIcon className="h-3.5 w-3.5" />
-            </button>
+            <GameActionButton variant="night" size="icon" onClick={onClose} aria-label="Dismiss" className="m-2 self-start">
+              <CloseIcon />
+            </GameActionButton>
           </motion.div>
         )}
       </AnimatePresence>

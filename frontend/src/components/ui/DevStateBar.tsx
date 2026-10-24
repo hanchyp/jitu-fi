@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useState, useSyncExternalStore } from "react";
 import { DEV_STATE_PARAM, WRONG_NETWORK_STATE } from "@/lib/dev-state";
 import { chipClass } from "./Chip";
 
@@ -24,10 +24,20 @@ export function DevStateBar({ states }: DevStateBarProps) {
   );
 }
 
+// Phones start collapsed so the bar doesn't cover content; the server snapshot assumes wide.
+const NARROW = "(max-width: 639px)";
+function subscribeNarrow(onChange: () => void) {
+  const query = window.matchMedia(NARROW);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
 function Bar({ states }: DevStateBarProps) {
   const pathname = usePathname();
   const params = useSearchParams();
-  const [open, setOpen] = useState(true);
+  const narrow = useSyncExternalStore(subscribeNarrow, () => window.matchMedia(NARROW).matches, () => false);
+  const [toggled, setToggled] = useState<boolean | null>(null);
+  const open = toggled ?? !narrow;
   const current = params.get(DEV_STATE_PARAM) ?? states[0];
   const all = states.includes(WRONG_NETWORK_STATE) ? states : [...states, WRONG_NETWORK_STATE];
 
@@ -42,7 +52,7 @@ function Bar({ states }: DevStateBarProps) {
   return (
     <nav
       aria-label="Dev states"
-      className="fixed bottom-3 right-3 z-[58] max-w-[calc(100vw-1.5rem)] rounded-[16px] border-[3px] border-garis bg-dasar px-3 py-2 shadow-[0_4px_0_0_#040B10] sm:max-w-md"
+      className="fixed bottom-3 right-3 z-[45] max-w-[calc(100vw-1.5rem)] rounded-[16px] border-[3px] border-garis bg-dasar px-3 py-2 shadow-[0_4px_0_0_#040B10] sm:max-w-md"
     >
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-extrabold text-white/70">
@@ -50,7 +60,7 @@ function Bar({ states }: DevStateBarProps) {
         </p>
         <button
           type="button"
-          onClick={() => setOpen((o) => !o)}
+          onClick={() => setToggled(!open)}
           aria-expanded={open}
           className="text-sm font-extrabold text-emas hover:text-white"
         >

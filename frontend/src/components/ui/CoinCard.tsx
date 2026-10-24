@@ -73,7 +73,7 @@ export function CoinCard({ coin, price, changeBps, side, selected = false, disab
       onClick={onSelect}
       disabled={disabled}
       aria-pressed={selected}
-      className={`${look} shadow-[0_4px_0_0_#040B10] transition-[transform,box-shadow] duration-100 hover:-translate-y-0.5 active:translate-y-1 active:shadow-[0_1px_0_0_#040B10] disabled:pointer-events-none`}
+      className={`${look} shadow-[0_4px_0_0_#040B10] transition-[transform,box-shadow] duration-100 hover:bg-papan-terang active:translate-y-1 active:shadow-[0_1px_0_0_#040B10] disabled:pointer-events-none`}
     >
       {body}
     </button>

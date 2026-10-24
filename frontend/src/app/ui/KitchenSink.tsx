@@ -143,7 +143,7 @@ export function KitchenSink() {
 
       <Section title="Stat badges and chips">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatBadge label="Your principal" value={formatMusd(musd(500), { unit: false })} />
+          <StatBadge label="Your principal" value={formatMusd(musd(500))} />
           <StatBadge label="Base yield" value={formatMusd(musd(4, 250_000))} hint="Simulated" />
           <StatBadge label="Season points" value="1,240" />
           <StatBadge label="Last round" value={formatBps(42)} />

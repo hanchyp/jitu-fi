@@ -45,7 +45,8 @@ export function Countdown({ seconds, format = "clock", ticking = false, urgentAt
   }, [ticking, shown]);
 
   const text = format === "seconds" ? formatSeconds(shown) : formatCountdown(shown);
-  const urgent = urgentAt !== undefined && shown <= urgentAt;
+  const urgent = urgentAt !== undefined && shown > 0 && shown <= urgentAt;
+  const finished = shown === 0;
 
   return (
     <span className={`inline-flex items-center gap-2 font-extrabold text-white/75 ${className}`}>
@@ -53,8 +54,8 @@ export function Countdown({ seconds, format = "clock", ticking = false, urgentAt
       <span
         role="timer"
         aria-label={label ? `${label} ${text}` : text}
-        className={`font-display rounded-[10px] border-[3px] border-garis px-2.5 py-0.5 text-xl tabular-nums ${
-          urgent ? "bg-emas text-garis" : "bg-dasar text-emas"
+        className={`font-display rounded-[14px] border-[3px] border-garis px-2.5 py-0.5 text-xl tabular-nums ${
+          urgent ? "bg-emas text-garis" : finished ? "bg-dasar text-white/55" : "bg-dasar text-emas"
         }`}
       >
         {text}
