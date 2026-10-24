@@ -2,6 +2,22 @@
 
 Ambiguous design calls and known limitations, newest first. Each entry picks the simplest safe option. The full design rationale lives in `openspec/changes/build-crypto-draft-mvp/design.md`.
 
+## 2026-10-23 — Deposit screen (UI only)
+
+- **Screen order follows the flow:** wallet balance and faucet sit in the header (you need mUSD first), then one board with two numbered steps (pick a season, choose an amount) and the single gold "Lock deposit" button. The principal promise sits beside it. The tenor boards are the focal choice; they are native radios, so arrow keys move between them.
+- **Focus on a selected tenor board** uses a 6 px outline offset, so the focus ring stands apart from the gold "selected" ring instead of merging into one band.
+- **`has-position` means a live season** (enrollment closed, games counting): the position card becomes the main board with "Play a game", and the form is replaced by a note that one position is allowed at a time. A position still enrolling (`other-tenor-active`) keeps the form: picking its own tenor turns the button into "Add to deposit", picking the other tenor explains why it is blocked and links to `#position`.
+- **The bonus weight preview** shows min(principal, 1,000 mUSD) for whatever valid number is typed, even while an inline error shows, and adds any amount already locked in that season.
+- **Estimated earnings during enrollment** show 0 base yield and 0 bonus ("starts with the season"), since previewClaim has nothing to report before activation. Live estimates are labelled "Estimate, simulated".
+- **Dummy clock:** mocks use unix seconds relative to a fixed `MOCK_NOW`; countdowns then tick locally. When an enrollment countdown reaches zero on the page, that tenor flips to "Enrollment closed", so `default` changes after about 2 minutes. Reload to reset.
+- **The faucet button stays visible but disabled during the cooldown,** with the time left under it (frontend-vault-ui spec).
+- **Kit fixes made here:** the dev-state hooks are now defined in the `"use client"` module `src/lib/use-dev-state.ts` and re-exported from `src/lib/dev-state.ts` (same names and signatures), because a server component importing `dev-state.ts` failed the build (`useSearchParams` in a server module). `AmountInput`'s inner input now uses `focus-visible:outline-none!`: the global unlayered `:focus-visible` rule beat the layered utility and drew a second ring inside the field.
+- **One gold primary on /deposit:** the nav's "Deposit mUSD" CTA renders as `night` with `aria-current="page"` there (desktop bar and phone menu). It is still gold in the nav's Suspense fallback, which has no pathname.
+- **The chest is on screen before the deposit:** an open chest sits beside the amount step with the typed amount as a gold chip above it (static, no idle motion). On success, the same chip drops into the chest. That is still the screen's one orchestrated moment, and it is skipped under reduced motion.
+- **Pending is busy, not invalid:** the gold button keeps full strength with `aria-disabled` + `aria-busy` (clicks are ignored), and the faucet claim is blocked until the deposit resolves.
+- **Closed seasons look closed:** a tenor board whose enrollment closed uses `bg-dasar`, a dimmed label, no hover and no gold ring. The blocking notes sit directly under the season boards.
+- **Bonus pots are labelled as part simulated:** "Includes X from sponsors. The rest is simulated yield."
+
 ## 2026-10-23 — Shared shell and UI kit
 
 - **One nav for every page.** Links: How to play (opens the tutorial popup), Play, Leaderboard; then a dummy Connect button and the gold "Deposit mUSD" CTA, which is the Deposit entry. The landing's old in-page links (Yield, Season) are gone, so the landing nav differs in its links and the added Connect button; banner, footer and all section geometry are unchanged (measured before and after at 1280 px).

@@ -54,7 +54,7 @@ export function AmountInput({ label, value, onChange, max, error, hint, disabled
             const next = e.target.value.replace(/,/g, "");
             if (VALID.test(next)) onChange(next);
           }}
-          className="font-display w-0 min-w-0 flex-1 bg-transparent text-3xl text-white tabular-nums outline-none placeholder:text-white/30 focus-visible:outline-none"
+          className="font-display w-0 min-w-0 flex-1 bg-transparent text-3xl text-white tabular-nums outline-none placeholder:text-white/30 focus-visible:outline-none!"
         />
         <span className="font-extrabold text-white/60">mUSD</span>
         {max !== undefined && (
