@@ -1,5 +1,3 @@
-import { useSearchParams } from "next/navigation";
-
 /**
  * Dev states: every screen exposes its states through `?state=<name>` (UI_GUARDRAILS §10).
  *
@@ -21,7 +19,9 @@ import { useSearchParams } from "next/navigation";
  *   async function Deposit({ searchParams }) { const state = await readDevState(searchParams, STATES); ... }
  *
  * Client component: `const state = useDevState(STATES)`, with a <Suspense> boundary above it
- * (useSearchParams suspends during prerendering).
+ * (useSearchParams suspends during prerendering). The hooks are defined in the "use client" module
+ * `./use-dev-state` and re-exported here, so server components can import this file without
+ * pulling useSearchParams into the server graph.
  */
 
 export type SearchParams = Record<string, string | string[] | undefined>;
@@ -50,12 +50,4 @@ export async function readDevState<S extends string>(
   return pickDevState((await searchParams)[DEV_STATE_PARAM], states, fallback);
 }
 
-/** Client components. Needs a <Suspense> boundary above it. */
-export function useDevState<S extends string>(states: readonly [S, ...S[]], fallback?: S): S {
-  return pickDevState(useSearchParams().get(DEV_STATE_PARAM), states, fallback);
-}
-
-/** The raw `?state=` value, for shell-level states like the wrong-network overlay. */
-export function useRawDevState(): string | null {
-  return useSearchParams().get(DEV_STATE_PARAM);
-}
+export { useDevState, useRawDevState } from "./use-dev-state";
