@@ -38,3 +38,30 @@ timer updates even with a stable canvas; it is intentionally omitted here.
 - No WebGL, reduced motion, or a crash in the 3D scene: `fallback`.
 
 Preview without the table page: `/dev/table-scene?source=demo&preset=quick`.
+
+## Server state
+
+`<TableView3D source="server" state={tableState} options={{ ticks }} />` accepts the
+JSON snapshot returned by `engine.view()`. Omit `source` (or use `"demo"`) to retain
+the original demo behavior. `fromTableState(state, { ticks })` is the pure adapter;
+its local transport mirror is `server-types.ts`, independent of `lib/game`.
+
+Seat IDs remain `you`, `bruno`, `bera`, `dex`. Commit suppresses rival picks even
+if an unfiltered snapshot reaches the adapter. Reveal opens them. Settled uses
+server round results/winners; Finished uses game scores/winners and celebrates.
+The backend currently immediately starts the next round after settlement; the
+adapter also supports a synthetic `Settled` snapshot for a result presentation.
+
+Live `ticks` are an oldest-first array of `{ coin, price, expo, publishTime }`
+from the current round. Keep received history in the data layer; the adapter
+filters ticks outside the Live window and uses the latest for segment returns.
+Ridges use the opening quote, received ticks, and authoritative settlement quote.
+Only rendered price coordinates use floating point. Returns use bigint division,
+truncated toward zero, including independently truncated FLIP/SWAP segments.
+Because `@jitu-fi/shared` does not resolve from frontend, this adapter mirrors its
+`scoring.ts` return formula locally. Settled raw returns and scores are authoritative.
+`returnBps` retains the price-direction sign: the scene applies Buy/Sell itself;
+INSURANCE does not erase the raw visual loss. BOOST remains a visual skill mark.
+
+`ServerPreview` provides all five phase switches and a fixed no-network API-shaped
+fixture (`fixture-server.ts`) for `/dev/table-scene?source=server&view=2d`.
