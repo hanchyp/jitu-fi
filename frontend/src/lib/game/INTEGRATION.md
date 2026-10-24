@@ -26,8 +26,11 @@ configuration files changed.
 
 Boundaries for coordinator integration:
 
-- Server view currently uses the interactive 2D arena. Demo 2D/3D toggle remains
-  unchanged; M6 can connect its server scene adapter to `ServerTableGame`.
+- Server HUD defaults to 2D and offers the same 2D/3D toggle as the demo.
+  Commit retains the interactive 2D arena. After first selection, the server
+  scene stays mounted, hidden with visibility/inert through 2D and Commit.
+  Current WebSocket prices become server scene ticks; unsupported WebGL and
+  reduced motion reuse the 2D arena fallback.
 - Result popup uses authoritative game scores but leaves season credit pending
   confirmation. M5 owns history/on-chain record evidence.
 - `picks.ts` provides the requested minimal helper signatures; reconcile with
@@ -56,3 +59,19 @@ pnpm exec tsx --tsconfig ../frontend/tsconfig.json --test \
   ../frontend/src/components/table/*.test.ts \
   ../frontend/src/components/table-scene/*.test.ts
 ```
+
+## Server skills and 3D (M4/M6)
+
+The dock reads the private server hand (up to three cards), commit flags, Live
+skill effects and round awards. Commit skills count toward the one-skill limit
+in the mapped state. Live submissions return their promise to the picker, so
+failed requests retain friendly target/deadline/session errors rather than
+reporting success. Incoming bot attacks use the existing toast; dismissals are
+scoped to the round. The reducer consumes spent cards and applies capped awards.
+
+Fixture validation: 60 table/game/scene tests pass, including server skill/error
+mapping. Shared build passes. Frontend build passes with a temporary dummy
+`NEXT_PUBLIC_PRIVY_APP_ID`; without a configured ID, prerender fails in the
+existing wallet provider. Lint reports only the existing LiveLanding/LiveClaim
+render-time Date.now errors. Deposited gameplay and browser viewport checks were
+not performed; the existing fixed arena layout and scene fallbacks are reused.

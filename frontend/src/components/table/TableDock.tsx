@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useState, type Dispatch } from "react";
+import { useCallback, useState } from "react";
 import { GameActionButton } from "@/components/ui/GameButton";
 import { SkillHand } from "@/components/skills/SkillHand";
 import { IncomingSkillToast } from "@/components/skills/IncomingSkillToast";
@@ -9,7 +9,7 @@ import type { CoinSymbol } from "@/components/table-scene/types";
 import { COINS, PLAYERS } from "@/mocks/table";
 import { castLiveSkill, skillPicks, type DemoAction, type DemoState } from "./demo-engine";
 
-export function TableDock({ state, dispatch, onShowResult }: { state: DemoState; dispatch: Dispatch<DemoAction>; onShowResult: () => void }) {
+export function TableDock({ state, dispatch, onShowResult }: { state: DemoState; dispatch: (action: DemoAction) => void | Promise<void>; onShowResult: () => void }) {
   const [historyRound, setHistoryRound] = useState(0);
   const commitPick = state.picks.find((pick) => pick.skill);
   const targets = skillPicks(state);
@@ -44,7 +44,7 @@ export function TableDock({ state, dispatch, onShowResult }: { state: DemoState;
         } else {
           const now = Date.now();
           if (!state.server && castLiveSkill(state, "you", card.skill, target, now) === state) throw new Error("That target is no longer available. Check the Live deadline and choose again.");
-          dispatch({ type: "cast", skill: card.skill, target, now });
+          return dispatch({ type: "cast", skill: card.skill, target, now });
         }
       }}
     />}

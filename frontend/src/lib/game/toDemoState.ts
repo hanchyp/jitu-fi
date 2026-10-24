@@ -48,14 +48,14 @@ export function toDemoState(table: TableState, now: number, prices: Record<strin
   const result = round.results ? resultOf(round) : { scores: Object.fromEntries(scores.map((s) => [seatId(s.seat), s.score])), winners: roundWinners(scores).map(seatId), forfeited: scores.filter((s) => s.forfeit).map((s) => seatId(s.seat)) };
   const preset = PRESETS[table.preset];
   const phase = table.phase === "Finished" ? "finished" : round.results ? "results" : table.phase.toLowerCase() as DemoState["phase"];
-  const attack = [...round.skills].reverse().find((s) => s.targetSeat === 0 && s.skill !== "LOCK");
+  const attack = [...round.skills].reverse().find((s) => s.targetSeat === 0 && s.seat !== 0 && s.skill !== "LOCK");
   return {
     preset: { id: table.preset, name: preset.name, caps: [...preset.caps], description: "" }, phase, round: table.round - 1, scenario: "default",
     remaining: Math.max(0, Math.ceil(((table.phaseDeadlineMs ?? now) - now) / 1000)), deadline: table.phaseDeadlineMs ?? 0, marketTick: 0,
     picks: (round.picks[0] ?? []).map((p): Pick => ({ symbol: p.coin, direction: p.side, skill: p.boosted ? "BOOST" : p.insured ? "INSURANCE" : undefined })),
-    locked: Boolean(round.picks[0]?.length), lockingUntil: 0, hand: table.seats.find((s) => s.seat === 0)?.hand ?? [], effects,
-    usedSkills: round.skills.map((s) => seatId(s.seat)), incoming: attack ? { skill: attack.skill as "FREEZE" | "FLIP" | "SWAP", casterName: PLAYERS[attack.seat]?.name ?? "Opponent", symbol: attack.targetCoin as "BTC", heldBps: 0, swapSymbol: attack.swapTo as "BTC" | undefined } : null,
-    history: table.rounds.filter((r) => r.results).map(resultOf), earned: table.rounds.flatMap((r) => (r.awarded ?? []).filter((a) => a.seat === 0).map((a) => a.skill)), toast: "", error: "", paused: false,
+    locked: Boolean(round.picks[0]?.length), lockingUntil: 0, hand: table.seats.find((s) => s.seat === 0)?.hand?.slice(0, 3) ?? [], effects,
+    usedSkills: [...new Set([...round.skills.map((s) => seatId(s.seat)), ...Object.entries(round.picks).filter(([, picks]) => picks.some((p) => p.boosted || p.insured)).map(([seat]) => seatId(Number(seat)))])], incoming: attack ? { skill: attack.skill as "FREEZE" | "FLIP" | "SWAP", casterName: PLAYERS[attack.seat]?.name ?? "Opponent", symbol: attack.targetCoin as "BTC", heldBps: 0, swapSymbol: attack.swapTo as "BTC" | undefined } : null,
+    history: table.rounds.filter((r) => r.results).map(resultOf), earned: table.rounds.flatMap((r) => (r.awarded ?? []).filter((a) => a.seat === 0).map((a) => a.skill)), toast: (round.awarded ?? []).filter((a) => a.seat === 0).map((a) => `You earned ${a.skill}`).join(" · "), error: "", paused: false,
     server: { picks: all, result, gameScores: table.gameScores && Object.fromEntries(table.gameScores.map((score, seat) => [seatId(seat), score])), moves, prices: quotes, startPrices: round.startPrices ?? {}, coins: round.coins },
   };
 }
