@@ -30,7 +30,7 @@ export function PlayLobby({ initialState = "ready", preview = false }: { initial
   useEffect(() => {
     let active = true;
     const address = getSessionAddress();
-    const useDemo = preview || process.env.NEXT_PUBLIC_USE_MOCKS === "1" || !address;
+    const useDemo = preview || !address;
     // Read browser storage after hydration.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setDemo(useDemo);
@@ -53,20 +53,21 @@ export function PlayLobby({ initialState = "ready", preview = false }: { initial
   async function play() {
     if (blocked || pending || demo === null) return;
     setPending(true);
-    if (!demo) {
-      setError(null);
-      const result = await postPlay(preset.id);
-      if (result.ok) { router.push(`/table/${result.data.tableId}`); return; }
-      if (result.code === "ALREADY_AT_TABLE" && result.tableId) {
-        setResuming(true);
-        router.push(`/table/${result.tableId}`);
-        return;
-      }
-      setError(result);
+    setError(null);
+    if (!getSessionAddress()) {
+      setError({ ok: false, code: "UNAUTHORIZED", message: "Sign in to play" });
       setPending(false);
       return;
     }
-    router.push(view === "active-table" ? "/table/demo-quick?preset=quick" : `/table/demo-${preset.id}?preset=${preset.id}${view === "outside-k" ? "&scenario=outside-k" : ""}`);
+    const result = await postPlay(preset.id);
+    if (result.ok) { router.push(`/table/${result.data.tableId}`); return; }
+    if (result.code === "ALREADY_AT_TABLE" && result.tableId) {
+      setResuming(true);
+      router.push(`/table/${result.tableId}`);
+      return;
+    }
+    setError(result);
+    setPending(false);
   }
   return <>
     <GameArena lobby />
@@ -104,7 +105,6 @@ export function PlayLobby({ initialState = "ready", preview = false }: { initial
         <GameActionButton size="lg" disabled={blocked || pending || demo === null} onClick={play} aria-busy={pending}>
           <motion.span key={label} className="lobby-changing-text" initial={{ opacity: 0, x: direction * 8 }} animate={{ opacity: 1, x: 0 }} transition={reduce ? INSTANT : SLIDE}>{label}</motion.span>
         </GameActionButton>
-        {demo && <p className="lobby-demo-note">Demo mode: using sample data.</p>}
         <p>{demo && <>Counted games <strong>{view === "outside-k" ? DEMO_SEASON.countedGames : DEMO_SEASON.gamesPlayed}/{DEMO_SEASON.countedGames}</strong><span> / </span></>}No entry fee</p>
       </div>
     </motion.section>
