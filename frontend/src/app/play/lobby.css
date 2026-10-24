@@ -89,3 +89,7 @@ body:has(.play-lobby:not([style*="display: none"])) [data-site-chrome="nav"] a[h
   .lobby-mode, .lobby-action button { translate: none !important; transition-duration: 0s !important; }
 }
 
+
+.lobby-resume { margin-bottom: 10px; }
+.lobby-action .lobby-demo-note { font-size: 11px; }
+.play-lobby:has(.lobby-notice, .lobby-resume) .lobby-crystal-space { min-height: 20px; }
