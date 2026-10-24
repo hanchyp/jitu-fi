@@ -7,7 +7,7 @@ import { TitleScreen } from "@/components/world/TitleScreen";
 const QUESTS: { title: string; body: string; Icon: ComponentType<{ className?: string }>; tilt: string }[] = [
   {
     title: "Setor",
-    body: "Titipkan mUSD di Candi Pokok selama satu musim. Pokokmu terkunci aman dan mulai berbunga.",
+    body: "Titipkan mUSD ke Kristal Pokok selama satu musim. Pokokmu terkunci aman dan mulai berbunga.",
     Icon: ChestIcon,
     tilt: "md:-rotate-2",
   },
@@ -27,7 +27,7 @@ const QUESTS: { title: string; body: string; Icon: ComponentType<{ className?: s
 
 // Split of every 100 mUSD of yield, from the vault rules (fee 15%, then 50/50).
 const LOOT = [
-  { label: "Biaya platform", value: "15", share: 15, bar: "bg-white/30", note: "Untuk menjaga lembah tetap jalan." },
+  { label: "Biaya platform", value: "15", share: 15, bar: "bg-white/30", note: "Untuk menjaga arena tetap jalan." },
   { label: "Bunga dasar", value: "42,5", share: 42.5, bar: "bg-langit", note: "Dibagi rata sesuai setoran. Tetap kamu dapat walau kalah." },
   { label: "Pot bonus", value: "42,5", share: 42.5, bar: "bg-emas", note: "Rebutan pemain: poin musim dikali bobot setoran (maks. 1.000 mUSD)." },
 ] as const;
@@ -157,7 +157,7 @@ export default function Home() {
 
         {/* Rules of the valley */}
         <section className="mx-auto max-w-6xl px-4 pb-24 sm:px-6">
-          <SectionTitle>Aturan lembah</SectionTitle>
+          <SectionTitle>Aturan arena</SectionTitle>
           <ul className="mt-10 grid gap-8 md:grid-cols-3">
             {RULES.map(({ title, body, Icon }) => (
               <li key={title} className="flex gap-4">
@@ -171,7 +171,7 @@ export default function Home() {
           </ul>
 
           <div className="mt-20 flex flex-col items-center text-center">
-            <h2 className="font-display title-outline text-4xl text-emas sm:text-6xl">Siap masuk lembah?</h2>
+            <h2 className="font-display title-outline text-4xl text-emas sm:text-6xl">Siap masuk arena?</h2>
             <GameButton href="/deposit" size="lg" className="mt-8">
               Main sekarang
             </GameButton>

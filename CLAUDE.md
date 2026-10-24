@@ -18,7 +18,7 @@ When the spec and this file conflict, **this file wins**.
 ## Conventions
 - Monorepo with pnpm workspaces: `contracts/` (Foundry ≥1.8.0), `backend/`, `frontend/`, `packages/shared/`, `bots/`.
 - Code and comments in English. UI text in Indonesian via a simple i18n file.
-- UI work follows `frontend/DESIGN.md` (game direction "Lembah Jitu": illustrated title screen, chunky outlined buttons, Titan One + Nunito) and the `frontend-design` skill in `.claude/skills/`. All art is original SVG in `frontend/src/components/world/`. Animations use `motion` (`motion/react`).
+- UI work follows `frontend/DESIGN.md` (game direction "Arena Jitu": 3D title screen with the Monad-mark crystal over a duel arena, chunky outlined buttons, Titan One + Nunito) and the `frontend-design` skill in `.claude/skills/`. The 3D scene is modelled in code with three.js + `@react-three/fiber` + `@react-three/drei` in `frontend/src/components/world/`. 2D animations use `motion` (`motion/react`).
 - Integer money only. Stablecoin uses 6 decimals. Returns and scores are in bps.
 - Work phase by phase (spec §10). Tests must be green before commit and before moving to the next phase. Commit messages look like `feat(contracts): ...`. Never add a `Co-Authored-By: Claude` (or any AI attribution) trailer to commits or PRs.
 - Record every ambiguous design decision in `DECISIONS.md`, choosing the simplest safe option.

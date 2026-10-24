@@ -1,81 +1,75 @@
 "use client";
 
-import {
-  motion,
-  useMotionValue,
-  useReducedMotion,
-  useSpring,
-  useTransform,
-  type MotionValue,
-} from "motion/react";
-import type { ComponentType, PointerEvent, ReactNode } from "react";
+import { motion, useReducedMotion } from "motion/react";
+import dynamic from "next/dynamic";
+import { Component, useEffect, useState, type ReactNode } from "react";
 import { GameButton } from "@/components/ui/GameButton";
-import {
-  CandiLayer,
-  CloudLayer,
-  FarMountainLayer,
-  FoliageLayer,
-  NearHillLayer,
-  SkyLayer,
-} from "./layers";
 
-// depth: how far a layer moves with the pointer; rise: how far it starts below on load.
-const LAYERS: { Art: ComponentType; depth: number; rise: number }[] = [
-  { Art: SkyLayer, depth: 0, rise: 0 },
-  { Art: CloudLayer, depth: 6, rise: 30 },
-  { Art: FarMountainLayer, depth: 10, rise: 60 },
-  { Art: CandiLayer, depth: 18, rise: 110 },
-  { Art: NearHillLayer, depth: 28, rise: 160 },
-  { Art: FoliageLayer, depth: 40, rise: 220 },
-];
-
-const COINS = [
-  { glyph: "₿", label: "BTC", left: "16%", top: "34%", size: 64, delay: 0 },
-  { glyph: "Ξ", label: "ETH", left: "78%", top: "28%", size: 58, delay: 0.8 },
-  { glyph: "S", label: "SOL", left: "26%", top: "56%", size: 46, delay: 1.6 },
-  { glyph: "M", label: "MON", left: "70%", top: "54%", size: 50, delay: 0.4 },
-] as const;
+// The 3D bundle loads after the page is interactive; the static backdrop shows until then.
+const ArenaScene = dynamic(() => import("./ArenaScene"), {
+  ssr: false,
+  loading: () => <StaticBackdrop />,
+});
 
 const EASE_OUT = [0.22, 1, 0.36, 1] as const;
 
+function StaticBackdrop() {
+  return (
+    <div className="absolute inset-0">
+      <div className="absolute left-1/2 top-[55%] h-36 w-36 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#836EF9]/40 blur-3xl" />
+      <div className="absolute left-1/2 top-[55%] h-24 w-14 -translate-x-1/2 -translate-y-1/2 [clip-path:polygon(50%_0,100%_50%,50%_100%,0_50%)] bg-[linear-gradient(135deg,#C4B8FF,#836EF9_55%,#4B36D6)]" />
+    </div>
+  );
+}
+
+class SceneBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    return this.state.failed ? <StaticBackdrop /> : this.props.children;
+  }
+}
+
+function hasWebGL() {
+  try {
+    const canvas = document.createElement("canvas");
+    return Boolean(canvas.getContext("webgl2") ?? canvas.getContext("webgl"));
+  } catch {
+    return false;
+  }
+}
+
 export function TitleScreen({ nav }: { nav: ReactNode }) {
   const reduce = useReducedMotion() ?? false;
-  const pointerX = useMotionValue(0);
-  const pointerY = useMotionValue(0);
-  const x = useSpring(pointerX, { stiffness: 60, damping: 18 });
-  const y = useSpring(pointerY, { stiffness: 60, damping: 18 });
+  const [webgl, setWebgl] = useState<boolean | null>(null);
 
-  function onPointerMove(e: PointerEvent<HTMLElement>) {
-    if (reduce || e.pointerType !== "mouse") return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    pointerX.set((e.clientX - rect.left) / rect.width - 0.5);
-    pointerY.set((e.clientY - rect.top) / rect.height - 0.5);
-  }
+  useEffect(() => {
+    // Feature detection has to run in the browser, after hydration.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setWebgl(hasWebGL());
+  }, []);
 
   return (
-    <section
-      onPointerMove={onPointerMove}
-      className="relative isolate flex min-h-[640px] flex-col overflow-hidden bg-[#13284F] h-[100svh] max-h-[1000px]"
-    >
-      {LAYERS.map(({ Art, depth, rise }, i) => (
-        <ParallaxLayer key={i} x={x} y={y} depth={depth} rise={rise} reduce={reduce}>
-          <Art />
-        </ParallaxLayer>
-      ))}
-
-      {COINS.map((coin) => (
-        <CoinSpirit key={coin.label} coin={coin} reduce={reduce} x={x} y={y} />
-      ))}
+    <section className="relative isolate flex h-[100svh] max-h-[1000px] min-h-[640px] flex-col overflow-hidden bg-[radial-gradient(ellipse_at_50%_70%,#3A2F86_0%,#1B2552_38%,#0A1430_78%)]">
+      {webgl ? (
+        <SceneBoundary>
+          <ArenaScene still={reduce} />
+        </SceneBoundary>
+      ) : (
+        <StaticBackdrop />
+      )}
 
       <div className="relative z-10">{nav}</div>
 
-      {/* Title at the top, the candi visible in the middle, start buttons at the bottom. */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-between px-4 pb-16 pt-[3vh] text-center sm:pb-20 sm:pt-[4vh]">
+      {/* Title at the top, the arena visible in the middle, start buttons at the bottom. */}
+      <div className="pointer-events-none relative z-10 flex flex-1 flex-col items-center justify-between px-4 pb-16 pt-[3vh] text-center sm:pb-20 sm:pt-[4vh]">
         <div className="flex flex-col items-center">
           <motion.h1
             initial={reduce ? false : { opacity: 0, y: -120, scaleY: 1.2 }}
             animate={{ opacity: 1, y: 0, scaleY: 1 }}
-            transition={{ delay: 0.55, type: "spring", stiffness: 260, damping: 13 }}
+            transition={{ delay: 0.9, type: "spring", stiffness: 260, damping: 13 }}
             className="font-display wordmark text-[4.6rem] leading-none text-emas sm:text-[7rem] lg:text-[8.5rem]"
           >
             jitu.fi
@@ -83,7 +77,7 @@ export function TitleScreen({ nav }: { nav: ReactNode }) {
           <motion.p
             initial={reduce ? false : { opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.0, duration: 0.5, ease: EASE_OUT }}
+            transition={{ delay: 1.35, duration: 0.5, ease: EASE_OUT }}
             className="mt-2 max-w-sm text-lg font-extrabold text-white [text-shadow:0_2px_0_#0B1626] sm:max-w-xl sm:text-2xl"
           >
             Deposito yang bisa kamu mainkan.
@@ -93,19 +87,19 @@ export function TitleScreen({ nav }: { nav: ReactNode }) {
         <motion.div
           initial={reduce ? false : { opacity: 0, scale: 0.6 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 1.25, type: "spring", stiffness: 380, damping: 16 }}
-          className="flex flex-col items-center gap-4"
+          transition={{ delay: 1.7, type: "spring", stiffness: 380, damping: 16 }}
+          className="pointer-events-auto flex flex-col items-center gap-4"
         >
           <p className="hidden rounded-full border-[3px] border-garis bg-malam/80 px-4 py-1 font-extrabold text-white sm:block">
-            Pokok aman di candi. Bonusnya diperebutkan.
+            Pokok aman di dalam kristal. Bonusnya diperebutkan di arena.
           </p>
           <div className="flex justify-center gap-2.5 sm:gap-3">
-          <GameButton href="/deposit" size="lg">
-            Main sekarang
-          </GameButton>
-          <GameButton href="#cara-main" size="lg" variant="night">
-            Cara main
-          </GameButton>
+            <GameButton href="/deposit" size="lg">
+              Main sekarang
+            </GameButton>
+            <GameButton href="#cara-main" size="lg" variant="night">
+              Cara main
+            </GameButton>
           </div>
         </motion.div>
       </div>
@@ -125,82 +119,5 @@ export function TitleScreen({ nav }: { nav: ReactNode }) {
         />
       </svg>
     </section>
-  );
-}
-
-function ParallaxLayer({
-  x,
-  y,
-  depth,
-  rise,
-  reduce,
-  children,
-}: {
-  x: MotionValue<number>;
-  y: MotionValue<number>;
-  depth: number;
-  rise: number;
-  reduce: boolean;
-  children: ReactNode;
-}) {
-  const tx = useTransform(x, (v) => v * -depth);
-  const ty = useTransform(y, (v) => v * -depth * 0.5);
-
-  return (
-    <motion.div style={{ x: tx, y: ty }} className="absolute -inset-[3%]">
-      <motion.div
-        initial={reduce || rise === 0 ? false : { y: rise }}
-        animate={{ y: 0 }}
-        transition={{ duration: 1.3, ease: EASE_OUT }}
-        className="absolute inset-0"
-      >
-        {children}
-      </motion.div>
-    </motion.div>
-  );
-}
-
-function CoinSpirit({
-  coin,
-  reduce,
-  x,
-  y,
-}: {
-  coin: (typeof COINS)[number];
-  reduce: boolean;
-  x: MotionValue<number>;
-  y: MotionValue<number>;
-}) {
-  const tx = useTransform(x, (v) => v * -22);
-  const ty = useTransform(y, (v) => v * -12);
-
-  return (
-    <motion.div
-      style={{ left: coin.left, top: coin.top, x: tx, y: ty }}
-      className="absolute z-[5] hidden sm:block"
-      aria-hidden="true"
-    >
-      <motion.div
-        initial={reduce ? false : { opacity: 0, scale: 0 }}
-        animate={reduce ? { opacity: 1, scale: 1 } : { opacity: 1, scale: 1, y: [0, -14, 0] }}
-        transition={{
-          opacity: { delay: 1.4 + coin.delay * 0.3, duration: 0.3 },
-          scale: { delay: 1.4 + coin.delay * 0.3, type: "spring", stiffness: 300, damping: 14 },
-          y: { delay: coin.delay, duration: 3.2, repeat: Infinity, ease: "easeInOut" },
-        }}
-        className="relative"
-      >
-        <div
-          className="absolute inset-0 -m-4 rounded-full bg-emas/40 blur-xl"
-          style={{ width: coin.size + 32, height: coin.size + 32 }}
-        />
-        <div
-          className="font-display relative flex items-center justify-center rounded-full border-[3px] border-garis bg-emas text-garis shadow-[inset_0_-5px_0_0_#E0A21E,inset_0_4px_0_0_#FFE28A]"
-          style={{ width: coin.size, height: coin.size, fontSize: coin.size * 0.48 }}
-        >
-          {coin.glyph}
-        </div>
-      </motion.div>
-    </motion.div>
   );
 }

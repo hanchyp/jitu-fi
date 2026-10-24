@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
-/* Tokens from frontend/DESIGN.md (Lembah Jitu game direction). */
+/* Tokens from frontend/DESIGN.md (Arena Jitu game direction). */
 @theme inline {
   --color-malam: #10213d;
   --color-langit: #2a5c9a;
-  --color-senja: #f6b26b;
-  --color-daun: #3e9b4f;
+  --color-kristal: #836ef9;
+  --color-kristal-terang: #c4b8ff;
   --color-emas: #ffc93c;
   --color-garis: #0b1626;
   --color-naik: #3dd68c;
@@ -48,29 +48,4 @@ body {
   outline: 3px solid var(--color-emas);
   outline-offset: 3px;
   border-radius: 10px;
-}
-
-/* Idle loop: the candi vault glow breathes slowly. */
-[data-candi-glow] {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: candi-breathe 4.5s ease-in-out infinite;
-}
-
-@keyframes candi-breathe {
-  0%,
-  100% {
-    opacity: 0.75;
-    transform: scale(0.96);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.04);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-candi-glow] {
-    animation: none;
-  }
 }
