@@ -12,7 +12,7 @@
   --color-turun: #ff6b5e;
 
   --font-sans: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-titan), var(--font-nunito), sans-serif;
+  --font-display: var(--font-bree), Georgia, serif;
 }
 
 :root {
@@ -30,18 +30,19 @@ body {
   font-weight: 400;
 }
 
-/* Chunky outlined game wordmark: stroke painted under the fill, plus a hard drop shadow. */
+/* Outlined game wordmark: stroke painted under the fill, plus a hard drop shadow.
+   Kept thinner than a cartoon outline so the Bree Serif letterforms stay readable. */
 .wordmark {
-  -webkit-text-stroke: 0.09em var(--color-garis);
+  -webkit-text-stroke: 0.06em var(--color-garis);
   paint-order: stroke fill;
-  text-shadow: 0 0.07em 0 var(--color-garis);
-  letter-spacing: 0.01em;
+  text-shadow: 0 0.05em 0 var(--color-garis);
+  letter-spacing: -0.005em;
 }
 
 .title-outline {
-  -webkit-text-stroke: 0.08em var(--color-garis);
+  -webkit-text-stroke: 0.05em var(--color-garis);
   paint-order: stroke fill;
-  text-shadow: 0 0.06em 0 var(--color-garis);
+  text-shadow: 0 0.045em 0 var(--color-garis);
 }
 
 :focus-visible {

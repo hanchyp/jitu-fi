@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Nunito, Titan_One } from "next/font/google";
+import { Bree_Serif, Nunito } from "next/font/google";
 import "./globals.css";
 
-const titan = Titan_One({
-  variable: "--font-titan",
+const bree = Bree_Serif({
+  variable: "--font-bree",
   weight: "400",
   subsets: ["latin"],
 });
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en"className={`${titan.variable} ${nunito.variable} h-full antialiased`}>
+    <html lang="en" className={`${bree.variable} ${nunito.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

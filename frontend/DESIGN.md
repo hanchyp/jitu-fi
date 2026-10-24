@@ -42,7 +42,7 @@ There are also two scene-only colors:
 `naik` `#3DD68C` and `turun` `#FF6B5E` are used only for Buy/Sell on cards.
 
 **Type:**
-- **Titan One** for the wordmark, headings and buttons, with a dark stroke and a hard drop shadow on the wordmark.
+- **Bree Serif** for the wordmark, headings and buttons: a friendly slab with a classic card-game feel, chosen over cartoon display faces (Titan One read as meme-coin) and costume fonts (pirate, uncial). It gets a thin dark stroke (0.05–0.06em) and a hard drop shadow; heavier outlines blur its letterforms.
 - **Nunito** (600–900) for body and UI text.
 - Sentence case.
 
