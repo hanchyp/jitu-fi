@@ -51,7 +51,7 @@ export function ServerTableGame({ id }: { id: number }) {
     <header className={styles.tableHeader}><div><h1 className={styles.heading}>{state.preset.name} · {state.phase === "finished" ? "Game complete" : `Round ${state.round + 1}/${state.preset.caps.length}`}</h1><div className={styles.headerMeta}><span>{state.phase}</span><span>Table #{id}</span><span>Pick up to {state.preset.caps[state.round]}</span></div></div><span className={styles.clockValue} aria-label={`${state.remaining} seconds remaining`}>{state.remaining}s</span></header>
     <div className="jitu-table-session"><div className="jitu-table-board"><ArenaTable state={state} dispatch={dispatch} winners={winners} /></div>
       <TableDock key={`${state.phase}-${state.round}`} state={state} dispatch={dispatch} onShowResult={() => setDismissed(false)} />
-      {state.phase === "finished" && !dismissed && <ResultPopup state={state} onClose={() => setDismissed(true)} />}
+      {state.phase === "finished" && !dismissed && <ResultPopup state={state} tableId={id} onClose={() => setDismissed(true)} />}
     </div><p className={styles.footer}>Server game · House bots never earn season points</p>
   </div>;
 }
