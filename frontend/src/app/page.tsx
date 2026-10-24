@@ -86,8 +86,10 @@ const RULES = [
 function Nav() {
   return (
     <nav className="mx-auto mt-3 flex w-[calc(100%-1.5rem)] max-w-5xl items-center justify-between gap-3 rounded-[18px] border-[3px] border-garis bg-malam/85 px-3 py-2 backdrop-blur-sm sm:px-4">
-      <Link href="/" className="font-display wordmark text-2xl text-emas">
-        jitu.fi
+      {/* Horizontal lockup built from the crest and wordmark crops of the logo. */}
+      <Link href="/" aria-label="jitu.fi home" className="flex shrink-0 items-center gap-1.5 rounded-[10px]">
+        <Image src="/brand/jitu-crest.webp" alt="" width={36} height={40} loading="eager" className="h-10 w-9 object-contain" />
+        <Image src="/brand/jitu-wordmark.webp" alt="" width={77} height={34} loading="eager" className="h-[34px] w-[77px]" />
       </Link>
       <div className="hidden items-center gap-6 font-extrabold text-white/85 md:flex">
         <HowToPlayTrigger look="link" className="font-extrabold hover:text-emas">
@@ -105,7 +107,7 @@ function Nav() {
 }
 
 function SectionTitle({ children }: { children: string }) {
-  return <h2 className="font-display title-outline text-4xl text-white sm:text-5xl">{children}</h2>;
+  return <h2 className="font-display title-outline text-4xl text-gading sm:text-5xl">{children}</h2>;
 }
 
 export default function Home() {
@@ -126,7 +128,7 @@ export default function Home() {
             {QUESTS.map(({ title, body, art, alt, tilt }, i) => (
               <li
                 key={title}
-                className={`relative rounded-[22px] border-[3px] border-garis bg-[#183056] p-6 shadow-[0_8px_0_0_#0B1626] ${tilt}`}
+                className={`relative rounded-[22px] border-[3px] border-garis bg-papan p-6 shadow-[0_8px_0_0_#040B10] ${tilt}`}
               >
                 <span className="font-display absolute -left-3 -top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border-[3px] border-garis bg-emas text-xl text-garis">
                   {i + 1}
@@ -140,15 +142,15 @@ export default function Home() {
 
           {/* The game in two boards: how long a game runs, and what you can cast. */}
           <div className="mt-14 grid gap-6 lg:grid-cols-2">
-            <div className="rounded-[22px] border-[3px] border-garis bg-malam p-5 shadow-[0_6px_0_0_#050B14] sm:p-6">
-              <h3 className="font-display text-2xl text-white">Pick your game length</h3>
+            <div className="rounded-[22px] border-[3px] border-garis bg-malam p-5 shadow-[0_6px_0_0_#040B10] sm:p-6">
+              <h3 className="font-display text-2xl text-gading">Pick your game length</h3>
               <p className="mt-1 font-semibold leading-relaxed text-white/70">
                 Each round lets you pick a few more coins than the last. Fewer picks means more confidence: your round
                 score is the cap times the average return of your calls.
               </p>
               <ul className="mt-4 grid grid-cols-2 gap-3">
                 {PRESETS.map((preset) => (
-                  <li key={preset.name} className="rounded-[14px] border-[3px] border-garis bg-[#183056] px-3 py-2">
+                  <li key={preset.name} className="rounded-[14px] border-[3px] border-garis bg-papan px-3 py-2">
                     <p className="font-extrabold text-white">
                       {preset.name} <span className="font-display text-xl text-emas">{preset.caps.length}</span>
                       <span className="text-sm text-white/60"> rounds</span>
@@ -172,16 +174,16 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="rounded-[22px] border-[3px] border-garis bg-malam p-5 shadow-[0_6px_0_0_#050B14] sm:p-6">
-              <h3 className="font-display text-2xl text-white">Cast a skill</h3>
+            <div className="rounded-[22px] border-[3px] border-garis bg-malam p-5 shadow-[0_6px_0_0_#040B10] sm:p-6">
+              <h3 className="font-display text-2xl text-gading">Cast a skill</h3>
               <p className="mt-1 font-semibold leading-relaxed text-white/70">
                 Start with one random skill and earn another for every round you win. One skill per round, so pick
                 your moment.
               </p>
               <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {SKILLS.map((skill) => (
-                  <li key={skill.name} className="rounded-[14px] border-[3px] border-garis bg-[#24205A] px-3 py-2">
-                    <p className="font-display text-lg text-kristal-terang">{skill.name}</p>
+                  <li key={skill.name} className="rounded-[14px] border-[3px] border-garis bg-dasar px-3 py-2">
+                    <p className="font-display text-lg text-zamrud">{skill.name}</p>
                     <p className="text-sm font-semibold leading-snug text-white/75">{skill.body}</p>
                   </li>
                 ))}
@@ -191,7 +193,7 @@ export default function Home() {
         </section>
 
         {/* House champions */}
-        <section id="champions" className="border-t-[3px] border-garis bg-[#0C1A31]">
+        <section id="champions" className="border-t-[3px] border-garis bg-dasar">
           <div className="mx-auto max-w-6xl scroll-mt-6 px-4 py-20 sm:px-6 sm:py-24">
             <SectionTitle>Meet the champions</SectionTitle>
             <p className="mt-3 max-w-2xl text-lg font-semibold text-white/75">
@@ -202,7 +204,7 @@ export default function Home() {
               {CHAMPIONS.map((champ, i) => (
                 <li
                   key={champ.name}
-                  className={`relative rounded-[22px] border-[3px] border-garis bg-[#183056] p-6 pt-5 shadow-[0_8px_0_0_#050B14] ${
+                  className={`relative rounded-[22px] border-[3px] border-garis bg-papan p-6 pt-5 shadow-[0_8px_0_0_#040B10] ${
                     ["md:rotate-1", "md:-rotate-1", "md:rotate-2"][i]
                   }`}
                 >
@@ -217,7 +219,7 @@ export default function Home() {
                       style={{ boxShadow: `inset 0 0 0 4px ${champ.color}` }}
                     />
                     <div>
-                      <h3 className="font-display text-2xl leading-tight text-white sm:text-3xl">{champ.name}</h3>
+                      <h3 className="font-display text-2xl leading-tight text-gading sm:text-3xl">{champ.name}</h3>
                       <p className="mt-1 font-extrabold" style={{ color: champ.color }}>
                         {champ.title}
                       </p>
@@ -233,7 +235,7 @@ export default function Home() {
                             ? "bg-naik text-garis"
                             : skill === "Sell"
                               ? "bg-turun text-garis"
-                              : "bg-[#24205A] text-kristal-terang"
+                              : "bg-dasar text-zamrud"
                         }`}
                       >
                         {skill}
@@ -255,7 +257,7 @@ export default function Home() {
             </p>
 
             <div
-              className="mt-10 flex h-12 w-full overflow-hidden rounded-[14px] border-[3px] border-garis shadow-[0_6px_0_0_#050B14]"
+              className="mt-10 flex h-12 w-full overflow-hidden rounded-[14px] border-[3px] border-garis shadow-[0_6px_0_0_#040B10]"
               role="img"
               aria-label="15 platform fee, 42.5 base yield, 42.5 bonus pot"
             >
@@ -282,7 +284,7 @@ export default function Home() {
 
         {/* Season banner. Live status and countdown come from the backend in a later phase. */}
         <section id="season" className="mx-auto max-w-6xl scroll-mt-6 px-4 py-20 sm:px-6 sm:py-24">
-          <div className="relative overflow-hidden rounded-[26px] border-[3px] border-garis bg-malam p-6 shadow-[0_8px_0_0_#0B1626] sm:p-10">
+          <div className="relative overflow-hidden rounded-[26px] border-[3px] border-garis bg-malam p-6 shadow-[0_8px_0_0_#040B10] sm:p-10">
             <Image
               src={`${ART}/season-banner.webp`}
               alt=""
@@ -293,12 +295,12 @@ export default function Home() {
             {/* Dark overlay, heaviest under the copy on the left, so text stays readable. */}
             <div
               aria-hidden="true"
-              className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(10,20,48,0.86),rgba(10,20,48,0.6))] lg:bg-[linear-gradient(to_right,rgba(10,20,48,0.92)_0%,rgba(10,20,48,0.7)_45%,rgba(10,20,48,0.3)_100%)]"
+              className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(10,34,53,0.86),rgba(10,34,53,0.6))] lg:bg-[linear-gradient(to_right,rgba(10,34,53,0.92)_0%,rgba(10,34,53,0.7)_45%,rgba(10,34,53,0.3)_100%)]"
             />
             <div className="relative grid gap-8 lg:grid-cols-[1fr_1.3fr] lg:items-center">
               <div>
                 <p className="font-extrabold text-emas">Demo season #1</p>
-                <h2 className="font-display title-outline mt-1 text-4xl text-white sm:text-5xl">A season in minutes</h2>
+                <h2 className="font-display title-outline mt-1 text-4xl text-gading sm:text-5xl">A season in minutes</h2>
                 <p className="mt-3 max-w-md text-lg font-semibold text-white/85">
                   A real season lasts a week or a month. For the hackathon it lasts 15 or 30 minutes, so you can play
                   the whole cycle: deposit, play, claim at maturity.
@@ -340,7 +342,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="border-t-[3px] border-garis bg-[#0C1A31]">
+      <footer className="border-t-[3px] border-garis bg-dasar">
         <div className="mx-auto flex max-w-6xl flex-wrap justify-between gap-2 px-4 py-6 text-sm font-semibold text-white/60 sm:px-6">
           <p>jitu.fi runs on Monad testnet.</p>
           <p>Built for a hackathon.</p>
