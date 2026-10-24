@@ -1,13 +1,13 @@
 ﻿/* Only /play owns this viewport; the table and other shared-shell pages keep their layouts. */
-html:has(.play-lobby) { height: 100dvh; }
-body:has(.play-lobby) { height: 100dvh; min-height: 0; background: var(--color-dasar); }
-body:has(.play-lobby) > div:has(.play-lobby) { flex: 1; min-height: 0; }
-body:has(.play-lobby) [data-site-chrome="footer"] { display: none; }
-body:has(.play-lobby) [data-site-chrome="banner"],
-body:has(.play-lobby) [data-site-chrome="nav"] { flex-shrink: 0; }
-body:has(.play-lobby) [data-site-chrome="nav"] { position: relative; z-index: 20; }
+html:has(.play-lobby:not([style*="display: none"])) { height: 100dvh; }
+body:has(.play-lobby:not([style*="display: none"])) { height: 100dvh; min-height: 0; background: var(--color-dasar); }
+body:has(.play-lobby:not([style*="display: none"])) > div:has(.play-lobby:not([style*="display: none"])) { flex: 1; min-height: 0; }
+body:has(.play-lobby:not([style*="display: none"])) [data-site-chrome="footer"] { display: none; }
+body:has(.play-lobby:not([style*="display: none"])) [data-site-chrome="banner"],
+body:has(.play-lobby:not([style*="display: none"])) [data-site-chrome="nav"] { flex-shrink: 0; }
+body:has(.play-lobby:not([style*="display: none"])) [data-site-chrome="nav"] { position: relative; z-index: 20; }
 /* The lobby owns the primary action; the shared deposit link remains available. */
-body:has(.play-lobby) [data-site-chrome="nav"] a[href="/deposit"] { background: var(--color-malam); color: var(--color-gading); box-shadow: 0 5px 0 var(--color-garis); }
+body:has(.play-lobby:not([style*="display: none"])) [data-site-chrome="nav"] a[href="/deposit"] { background: var(--color-malam); color: var(--color-gading); box-shadow: 0 5px 0 var(--color-garis); }
 .play-lobby { flex: 1; min-height: 0; position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: center; padding: clamp(12px, 3dvh, 28px) 20px max(18px, env(safe-area-inset-bottom)); color: var(--color-gading); }
 .play-lobby .jitu-game-playArena { position: absolute; inset: 0; height: auto; margin: 0; z-index: -1; }
 .play-lobby .jitu-game-arenaCanvas { position: absolute; inset: 0; }
@@ -63,9 +63,9 @@ body:has(.play-lobby) [data-site-chrome="nav"] a[href="/deposit"] { background: 
   .lobby-action { gap: 9px; }
 }
 @media (max-height: 500px) and (orientation: landscape) {
-  body:has(.play-lobby) [data-site-chrome="banner"] { padding-block: 2px; font-size: 11px; }
-  body:has(.play-lobby) [data-site-chrome="nav"] { margin-top: 5px; padding-block: 3px; }
-  body:has(.play-lobby) [data-site-chrome="nav"] img { max-height: 30px; object-fit: contain; }
+  body:has(.play-lobby:not([style*="display: none"])) [data-site-chrome="banner"] { padding-block: 2px; font-size: 11px; }
+  body:has(.play-lobby:not([style*="display: none"])) [data-site-chrome="nav"] { margin-top: 5px; padding-block: 3px; }
+  body:has(.play-lobby:not([style*="display: none"])) [data-site-chrome="nav"] img { max-height: 30px; object-fit: contain; }
   .play-lobby { padding: 7px 20px 10px; }
   .lobby-title h1 { font-size: 24px; }
   .lobby-title p { margin-top: 2px; font-size: 11px; }

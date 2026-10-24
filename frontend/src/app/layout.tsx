@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Bree_Serif, Nunito } from "next/font/google";
+import { ViewTransition } from "react";
 import { DummyWalletProvider } from "@/components/shell/DummyWallet";
 import { Footer } from "@/components/shell/Footer";
 import { SiteNav } from "@/components/shell/SiteNav";
@@ -32,7 +33,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <DummyWalletProvider>
           <TestnetBanner />
           <SiteNav />
-          <div className="flex flex-1 flex-col">{children}</div>
+          {/* Update the existing content host without remounting cached pages or canvases. */}
+          <ViewTransition default="none" update="page-content">
+            <div className="page-content flex flex-1 flex-col">{children}</div>
+          </ViewTransition>
           <Footer />
           <WrongNetworkGate />
         </DummyWalletProvider>

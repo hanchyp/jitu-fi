@@ -79,3 +79,60 @@ body {
     display: none;
   }
 }
+
+/* React snapshots only the changing content. Chrome stays live; no transforms or
+   retained exit trees that could disturb the table's fixed viewport/WebGL canvas. */
+:root {
+  view-transition-name: none;
+}
+
+::view-transition {
+  pointer-events: none;
+}
+
+/* Also extract the landing's floating nav from its content snapshot. */
+.page-content [data-site-chrome="nav"] {
+  view-transition-name: site-nav;
+}
+
+::view-transition-group(site-nav) {
+  animation: none;
+  z-index: 100;
+}
+
+::view-transition-old(site-nav) {
+  display: none;
+}
+
+::view-transition-new(site-nav) {
+  animation: none;
+}
+
+::view-transition-group(.page-content) {
+  animation-duration: 240ms;
+}
+
+::view-transition-old(.page-content) {
+  animation: page-out 240ms ease-out both;
+}
+
+::view-transition-new(.page-content) {
+  animation: page-in 240ms ease-out both;
+}
+
+@keyframes page-out {
+  to { opacity: 0; }
+}
+
+@keyframes page-in {
+  from { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}
