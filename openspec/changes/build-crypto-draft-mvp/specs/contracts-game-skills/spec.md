@@ -2,7 +2,9 @@
 
 ## Purpose
 
-Defines the skill cards players hold at a table and how they change a pick's scoring. Six skills each test a different decision: how sure you are (BOOST, INSURANCE), when to get out (LOCK), whether the trend turned (FLIP, SWAP), and how to slow down an opponent (FREEZE). Skills never touch principal.
+> **Scope change (2026-10-24):** skills are enforced by the backend game engine, not by a contract. Live skills use the backend's Pyth Hermes price at the moment of use; the "carries a price update" wording no longer applies.
+
+Defines the skill cards players hold at a table and how they change a pick's scoring. Six skills each test a different decision. Three help yourself: how sure you are (BOOST, INSURANCE) and when to get out (LOCK). Three attack an opponent's pick: stop it (FREEZE), reverse it (FLIP) or move it onto another coin (SWAP). Skills never touch principal.
 
 ## ADDED Requirements
 
@@ -57,7 +59,19 @@ An insured pick's return SHALL be floored at 0. The floor applies last, after an
 - **THEN** the round score is 2 × (40 + 0) / 2 = 40
 
 ### Requirement: Live skills
-LOCK, FLIP, SWAP and FREEZE SHALL be usable only in Live, before the Live deadline. Each call carries a price update. The contract applies it and reads the current price, which MUST be no older than 5 seconds and no earlier than the round's Live start. A pick can carry at most one live effect, and a call on a pick that already has one reverts.
+LOCK, FLIP, SWAP and FREEZE SHALL be usable only in Live, before the Live deadline. Each call carries a price update. The contract applies it and reads the current price, which MUST be no older than 5 seconds and no earlier than the round's Live start. A pick can carry at most one live effect, and a call on a pick that already has one reverts. LOCK targets the caller's own pick. FREEZE, FLIP and SWAP are attacks: they target an opponent's pick, never the caller's own, and each player can be hit by at most one attack per round.
+
+#### Scenario: Lock blocks attacks
+- **WHEN** a player has locked their BTC pick and an opponent tries to FLIP it
+- **THEN** the call reverts
+
+#### Scenario: Second attack on a player
+- **WHEN** a player was frozen this round and another opponent tries to SWAP one of their picks
+- **THEN** the call reverts
+
+#### Scenario: Attack own pick
+- **WHEN** a player tries to FLIP their own pick
+- **THEN** the call reverts
 
 #### Scenario: After the deadline
 - **WHEN** a player uses LOCK after the Live deadline but before settlement
@@ -83,33 +97,40 @@ LOCK SHALL fix one of the caller's own picks at the current price, so settlement
 - **THEN** the call reverts
 
 ### Requirement: FLIP
-FLIP SHALL reverse the direction of one of the caller's own picks from now on. The pick's return is the return from start to the flip price in the old direction, plus the return from the flip price to end in the new direction. Each segment is computed in bps and truncated separately. PickFlipped is emitted.
+FLIP SHALL reverse the direction of one opponent's pick from now on: Buy becomes Sell and Sell becomes Buy. The pick's return is the return from start to the flip price in the old direction, plus the return from the flip price to end in the new direction. Each segment is computed in bps and truncated separately. PickFlipped is emitted with the attacker and the target.
 
-#### Scenario: Trend reversal
-- **WHEN** BTC Buy is +30 bps at the flip and BTC then falls a further 20 bps
-- **THEN** the pick returns +30 + 20 = +50 bps
+#### Scenario: Flip a rising pick
+- **WHEN** a player flips an opponent's BTC Buy at +30 bps and BTC then rises a further 20 bps
+- **THEN** the opponent's pick returns +30 − 20 = +10 bps
+
+#### Scenario: Flip backfires
+- **WHEN** a player flips an opponent's BTC Buy at +30 bps and BTC then falls 20 bps
+- **THEN** the opponent's pick returns +30 + 20 = +50 bps
 
 ### Requirement: SWAP
-SWAP SHALL replace one of the caller's own picks with another table coin that the caller did not pick this round, with a direction the caller chooses. The return is the old pick's return from start to now, plus the new coin's return from now to end in the new direction. PickSwapped is emitted.
+SWAP SHALL move one opponent's pick onto another table coin that the opponent did not pick this round. The attacker chooses the coin; the pick keeps the opponent's direction. The return is the old coin's return from start to now, plus the new coin's return from now to end in that direction. PickSwapped is emitted with the attacker, the target and the new coin.
 
-#### Scenario: Swap to a mover
-- **WHEN** a player swaps ETH Buy (−10 bps so far) to SOL Buy and SOL then rises 40 bps
-- **THEN** the pick returns −10 + 40 = +30 bps
+#### Scenario: Swap onto a falling coin
+- **WHEN** a player swaps an opponent's ETH Buy (+25 bps so far) onto DOGE and DOGE then falls 40 bps
+- **THEN** the opponent's pick returns +25 − 40 = −15 bps
 
-#### Scenario: Swap to an owned coin
-- **WHEN** a player swaps to a coin they already picked this round
+#### Scenario: Swap onto a coin the target holds
+- **WHEN** a player swaps an opponent's pick onto a coin that opponent already picked this round
 - **THEN** the call reverts
 
 ### Requirement: FREEZE
-FREEZE SHALL fix one opponent's pick at the current price, like a LOCK applied by the attacker. Each player can be frozen at most once per round. PickFrozen is emitted.
+FREEZE SHALL fix one opponent's pick at the current price, like a LOCK applied by the attacker. PickFrozen is emitted.
 
 #### Scenario: Freeze a winner
 - **WHEN** a player freezes an opponent's SOL Buy at +20 bps and SOL ends at +90 bps
 - **THEN** that opponent's pick returns +20 bps
 
-#### Scenario: Second freeze on a player
-- **WHEN** a second player freezes the same opponent in the same round
-- **THEN** the call reverts
+### Requirement: Insurance softens attacks
+The INSURANCE floor SHALL apply after any attack, so an insured pick never scores below 0 because of a FLIP or SWAP.
+
+#### Scenario: Insured pick flipped
+- **WHEN** an opponent flips an insured BTC Buy at +10 bps and BTC then rises 50 bps
+- **THEN** the raw return is +10 − 50 = −40 bps and the pick scores 0
 
 ### Requirement: Demo randomness disclosure
 With the PseudoRandomness source, skill deals, coin draws and live durations SHALL be treated as predictable. This MUST be recorded as a known limitation in DECISIONS.md until a VRF source replaces it.
