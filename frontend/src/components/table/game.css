@@ -408,6 +408,54 @@ body:has(.jitu-game-shell[data-game="true"]) [data-site-chrome] { display: none;
   .jitu-seat-cardBack .jitu-coin3d { width: 23px; height: 23px; }
   .jitu-coin3dBack img { padding: 2px; }
 }
+.jitu-coin-modelLayer { position: fixed; inset: 0; z-index: 14; pointer-events: none; }
+.jitu-coin-modelLayer canvas { pointer-events: none; }
+[data-coin-renderer="webgl"] .jitu-coin3dRotor { opacity: 0; }
+.jitu-live-focus { position: absolute; left: 50%; top: 48%; transform: translate(-50%, -50%); z-index: 7; width: min(520px, 64%); padding: 14px 18px; border: 2px solid #040b10; border-radius: 16px; background: #113048f5; box-shadow: 0 5px #263349; }
+.jitu-live-focus > header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.jitu-live-focus h2 { font-family: var(--font-bree), Georgia, serif; font-size: 20px; color: #f2ede1; }
+.jitu-live-focus > header > span { color: #bdcdd8; font-size: 10px; font-weight: 700; }
+.jitu-live-tabs { display: flex; gap: 5px; margin: 10px 0 8px; }
+.jitu-live-tabs button { display: flex; align-items: center; justify-content: center; flex: 1; min-width: 0; gap: 4px; border: 1px solid #53728a; border-radius: 7px; padding: 5px; font-size: 10px; background: #0a2235; cursor: pointer; }
+.jitu-live-tabs button[aria-pressed="true"] { border-color: #daae4b; }
+.jitu-live-tabs img { border-radius: 50%; }
+.jitu-live-tabs [data-direction], .jitu-live-token [data-direction] { color: #7be35a; font-weight: 900; }
+.jitu-live-tabs [data-direction="Sell"], .jitu-live-token [data-direction="Sell"] { color: #ff6b5e; }
+.jitu-live-detail { display: grid; grid-template-columns: 115px minmax(0, 1fr); align-items: center; gap: 18px; }
+.jitu-live-token { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; }
+.jitu-live-token .jitu-coin3d { width: 90px; height: 90px; }
+.jitu-live-token .jitu-coin3dRotor { transform: rotateX(10deg) rotateY(-18deg); }
+.jitu-live-token:hover .jitu-coin3dRotor { transform: rotateX(-5deg) rotateY(18deg); }
+.jitu-live-token > strong { font-family: var(--font-bree), Georgia, serif; color: #f2ede1; font-size: 16px; font-weight: 400; }
+.jitu-live-token > span[data-direction] { font-size: 12px; }
+.jitu-live-quote > div { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 2px 8px; }
+.jitu-live-quote > div > span { grid-column: 1 / -1; color: #bdcdd8; font-size: 10px; font-weight: 700; }
+.jitu-live-quote strong { font-size: 23px; font-family: var(--font-bree), Georgia, serif; color: #f2ede1; font-weight: 400; }
+.jitu-live-quote b { font-size: 11px; color: #ff6b5e; }
+.jitu-live-quote b[data-positive="true"] { color: #7be35a; }
+.jitu-live-quote svg { display: block; width: 100%; height: 70px; margin-top: 5px; }
+.jitu-live-quote p { font-size: 10px; font-weight: 700; color: #bdcdd8; }
+.jitu-live-empty { text-align: center; }
+.jitu-live-empty p { color: #bdcdd8; font-size: 12px; margin-top: 7px; }
+@media (max-width: 540px) {
+  .jitu-live-focus { top: 60%; width: calc(100% - 24px); padding: 7px 10px; border-radius: 12px; }
+  .jitu-live-focus h2 { font-size: 15px; }
+  .jitu-live-focus > header > span { font-size: 8px; }
+  .jitu-live-tabs { margin: 5px 0; gap: 4px; }
+  .jitu-live-tabs button { font-size: 9px; padding: 3px; }
+  .jitu-live-tabs img { width: 14px; height: 14px; }
+  .jitu-live-tabs [data-direction] { display: none; }
+  .jitu-live-detail { grid-template-columns: 78px minmax(0, 1fr); gap: 10px; }
+  .jitu-live-token { gap: 2px; }
+  .jitu-live-token .jitu-coin3d { width: 58px; height: 58px; }
+  .jitu-live-token > strong { font-size: 12px; }
+  .jitu-live-token > span[data-direction] { font-size: 10px; }
+  .jitu-live-quote strong { font-size: 19px; }
+  .jitu-live-quote b { font-size: 9px; }
+  .jitu-live-quote > div > span { font-size: 8px; }
+  .jitu-live-quote svg { height: 38px; margin-top: 2px; }
+  .jitu-live-quote p { font-size: 8px; }
+}
 .jitu-coin-dialog { position: fixed; inset: 0; margin: auto; width: min(580px, calc(100vw - 24px)); max-width: none; max-height: calc(100dvh - 24px); padding: 0; color: #f2ede1; background: #113048; border: 3px solid #040b10; border-top: 6px solid #7c86a8; border-radius: 16px; box-shadow: 0 8px #040b10, inset 0 2px #4a5373; overflow: hidden; }
 .jitu-coin-dialog::backdrop { background: #040b10bd; backdrop-filter: blur(5px); }
 .jitu-coin-dialogBody { padding: 20px 24px 14px; }

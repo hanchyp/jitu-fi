@@ -4,6 +4,7 @@ Ambiguous design calls and known limitations, newest first. Each entry picks the
 
 ## 2026-10-24 — Arena is the game table; fixed viewport
 
+- Per Jeki's follow-up, animated coins now reuse the actual three.js `world/Coin` model from the landing. A single transparent WebGL layer follows the table, hand, flip and travel anchors; CSS faces are a capability fallback only. The stone table remains 2D. Live centers the player's sealed picks with a focused 3D coin, Buy/Sell, matching simulated quote/return and a price path; tabs expose every selected pick.
 - After pulling the shared shell from main, `/play` uses its banner/nav/footer. The fixed in-game view keeps its compact HUD and hides the shared chrome through explicit DOM markers, preventing duplicate navigation and background page scrolling. The shared wallet and wrong-network gate remain available.
 - Coin motion now uses CSS 3D front/reverse faces and a layered rim on the 2D table. Reveal flips from the crest to the asset, with per-seat staggering and a glint. Deal/return travel uses sampled curves with eased endpoints and 3D tilt. Concealed hands omit front assets entirely; reduced motion skips flips and travel.
 - Hand visuals are frameless per design feedback: concealed picks show only the Jitu crest, without a question mark; revealed picks show the coin icon, symbol and colored Buy/Sell text. The travelling duplicate uses the same frameless treatment.

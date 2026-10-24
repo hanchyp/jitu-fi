@@ -1,6 +1,8 @@
 "use client";
 
-import { useRef, useState, type Dispatch } from "react";
+import { useCallback, useRef, useState, useSyncExternalStore, type Dispatch } from "react";
+import dynamic from "next/dynamic";
+import { useReducedMotion } from "motion/react";
 import Image from "next/image";
 import { COINS, PLAYERS, type Player } from "@/mocks/table";
 import { gameScores, liveProgress, roundResult, type DemoAction, type DemoState } from "./demo-engine";
@@ -11,13 +13,27 @@ import { StoneTableArt } from "./StoneTableArt";
 import { SeatHand } from "./SeatHand";
 import { seatHandView } from "./seat-hand";
 import { useHandMotion } from "./useHandMotion";
+import { LivePicks } from "./LivePicks";
+
+const CoinModels = dynamic(() => import("./CoinModelLayer"), { ssr: false });
+const subscribe = () => () => {};
+let modelSupported: boolean | undefined;
+function canRenderCoins() {
+  if (modelSupported !== undefined) return modelSupported;
+  try {
+    const context = document.createElement("canvas").getContext("webgl2");
+    modelSupported = Boolean(context);
+    context?.getExtension("WEBGL_lose_context")?.loseContext();
+  } catch { modelSupported = false; }
+  return modelSupported;
+}
 
 export type ArenaTableProps = { state: DemoState; dispatch: Dispatch<DemoAction>; winners: string[] };
 export type ArenaTableViewProps = ArenaTableProps & { onInspect: (symbol: string) => void };
 function StaticTable({ state, onInspect }: ArenaTableViewProps) {
   return <div className="jitu-table-static" data-testid="static-game-table">
     <div className="jitu-table-stone"><StoneTableArt /><div className="jitu-table-crystal" aria-hidden="true" />
-      <div className="jitu-table-market" role="group" aria-label="Eight coins on the arena table">{COINS.map((coin) => <TableCoin key={coin.symbol} symbol={coin.symbol} state={state} onInspect={onInspect} />)}</div>
+      {state.phase === "live" ? <LivePicks state={state} onInspect={onInspect} /> : <div className="jitu-table-market" role="group" aria-label="Eight coins on the arena table">{COINS.map((coin) => <TableCoin key={coin.symbol} symbol={coin.symbol} state={state} onInspect={onInspect} />)}</div>}
     </div>
     {PLAYERS.map((player) => <CompactSeat key={player.id} player={player} state={state} onInspect={onInspect} />)}
   </div>;
@@ -47,11 +63,16 @@ function CompactSeat({ state, player, onInspect }: { state: DemoState; player: P
 export function ArenaTable(props: ArenaTableProps) {
   const [inspected, setInspected] = useState<string | null>(null);
   const stage = useRef<HTMLElement>(null);
+  const [modelHost, setModelHost] = useState<HTMLElement | null>(null);
+  const bindStage = useCallback((node: HTMLElement | null) => { stage.current = node; setModelHost(node); }, []);
+  const webgl = useSyncExternalStore(subscribe, canRenderCoins, () => false);
+  const reduced = useReducedMotion();
   useHandMotion(stage, props.state);
-  return <section ref={stage} className="jitu-table-stage" aria-label="Arena game table" data-renderer="2d" data-phase={props.state.phase}>
+  return <section ref={bindStage} className="jitu-table-stage" aria-label="Arena game table" data-renderer="2d" data-phase={props.state.phase}>
     <p className="jitu-table-instruction">{props.state.phase === "commit" ? props.state.locked ? "Picks sealed on your podium. Waiting for reveal." : `Tap a coin, read the chart, then choose Buy or Sell. Pick up to ${props.state.preset.caps[props.state.round]}.` : props.state.phase === "reveal" ? "The four seats reveal their calls." : props.state.phase === "live" ? "Your calls are live. Tap a coin to follow its chart." : props.state.phase === "results" ? "The winning seats take the light." : "Final scores at every seat."}</p>
     <StaticTable {...props} onInspect={setInspected} />
     <p className="jitu-table-crystalLabel">Principal Crystal · Always protected</p>
+    {modelHost && webgl && <CoinModels host={modelHost} still={Boolean(reduced)} />}
     {inspected && <CoinDialog key={inspected} symbol={inspected} state={props.state} dispatch={props.dispatch} onClose={() => setInspected(null)} />}
   </section>;
 }

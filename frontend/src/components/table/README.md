@@ -9,8 +9,10 @@ The game uses a fixed viewport and a 2D illustrated stone arena, with eight
 selectable coins on its surface and four seats around the rim. The challenger
 sits at the near edge. Revealed picks appear at their owners' seats, and winning
 seats light up, including ties. A compact control dock stays at the lower rim
-through every phase. No game phase adds page scrolling. In-game does not load
-the 3D scene or require WebGL.
+through every phase. No game phase adds page scrolling. The table stays 2D;
+one shared WebGL canvas renders the landing's actual `world/Coin` geometry over
+coin anchors, including animated copies. The reverse uses the Jitu crest.
+Unsupported WebGL falls back to the existing CSS coin faces.
 
 Click a table coin to open its chart dialog, then confirm Buy or Sell. Confirmation
 adds or updates the pick and returns to the table; closing the dialog makes no
@@ -25,11 +27,16 @@ open at Reveal. Confirming a new pick pulses the central coin, creates a copy,
 and deals the copy into your hand. Removing a pick or starting the next round
 returns the copies to the central market. Reduced motion skips travel effects.
 
-Coin visuals use two CSS 3D faces and rim slices over the 2D table. Reveal flips
+Fallback coin visuals use two CSS 3D faces and rim slices over the 2D table. Reveal flips
 from the Jitu reverse to the asset face, with a staggered lift, glint and soft
 settle; hidden hands never receive a front-face asset. Dealt copies follow a
 smooth curved path with eased lift/landing and a slight 3D tilt. No continuous
 spin is applied, and reduced motion shows the final face without the flip.
+
+During Live, the center shows the player's sealed picks rather than the full
+draft board. Tabs switch the focused pick; its 3D coin, direction, current quote,
+return and price path remain visible. Quotes and returns use the same simulation
+as scoring. Unsealed picks show a forfeit state instead of an active position.
 
 Every screen size uses the interactive 2D table. Tap a seat for the full
 pick/return breakdown. The lobby
@@ -53,7 +60,7 @@ reset the game and pause the timer; Resume timer runs from that preview.
 Run the state-machine tests from the repo root using the existing backend TS runner:
 
 ```sh
-pnpm --filter backend exec tsx --tsconfig ../frontend/tsconfig.json --test ../frontend/src/components/table/demo-engine.test.ts ../frontend/src/components/table/seat-hand.test.ts
+pnpm --filter frontend exec tsx --test src/components/table/demo-engine.test.ts src/components/table/seat-hand.test.ts src/components/table/live-picks.test.ts
 pnpm --filter frontend lint
 pnpm --filter frontend build
 ```

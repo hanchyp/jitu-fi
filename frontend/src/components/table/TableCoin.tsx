@@ -12,7 +12,7 @@ export function TableCoin({ state, onInspect, symbol }: { state: DemoState; onIn
   const move = marketMove(state, symbol);
   return <div className="jitu-table-coin" data-selected={Boolean(pick)} data-direction={pick?.direction}>
     <button type="button" className="jitu-table-token" data-market-coin={symbol} aria-label={`View ${symbol} chart${pick ? `, picked ${pick.direction}` : ""}`} aria-haspopup="dialog" onClick={() => onInspect(symbol)}>
-      <CoinToken3D frontSrc={coinDataUrl(coin)} />
+      <CoinToken3D symbol={symbol} frontSrc={coinDataUrl(coin)} />
       <strong>{symbol}{pick && <span aria-hidden="true"> ✓</span>}</strong>
       <span>{price(Math.round(coin.priceMicros * (10_000 + move) / 10_000))}</span>
       {pick && <span className="jitu-table-call" data-direction={pick.direction}>{pick.direction}</span>}
