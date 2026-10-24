@@ -2,6 +2,15 @@
 
 Ambiguous design calls and known limitations, newest first. Each entry picks the simplest safe option. The full design rationale lives in `openspec/changes/build-crypto-draft-mvp/design.md`.
 
+## 2026-10-23 — Logo and palette from the crest
+
+Agreed with the project owner. The official logo is the "adventure crest": a navy shield with a gold bevel, an ivory "J", emerald gems, and the "Jitu.fi" wordmark.
+- **The palette follows the logo:** ink `#040B10`, navy `#113048`, ivory `#F2EDE1` for wordmark and headings, gold `#DAAE4B` with bevel `#A17728`, and emerald `#40D0A3` as the brand accent.
+- **Monad purple `#836EF9` is kept only for the Monad crystal**, since that is the chain's identity.
+- **Buy green moves away from emerald**, so a brand accent never reads as a Buy signal.
+- **Landing layout stays as it is.** The logo replaces the text logo in the nav and the hero wordmark, and the shield "J" becomes the favicon and app icon.
+- **A 3D version of the crest plays in the loading/intro moment** (the fly-in); after that the hero uses the 2D logo.
+
 ## 2026-10-23 — Landing hero 3D details
 
 - **Toon outline** is a custom screen-space depth-Laplacian post effect, not drei `Outlines`. It roughly halves draw calls and keeps a constant line width. Glow meshes write no depth, so they get no outline.
