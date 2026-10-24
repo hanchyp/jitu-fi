@@ -1,0 +1,84 @@
+﻿/* Only /play owns this viewport; the table and other shared-shell pages keep their layouts. */
+html:has(.play-lobby) { height: 100dvh; }
+body:has(.play-lobby) { height: 100dvh; min-height: 0; background: var(--color-dasar); }
+body:has(.play-lobby) > div:has(.play-lobby) { flex: 1; min-height: 0; }
+body:has(.play-lobby) [data-site-chrome="footer"] { display: none; }
+body:has(.play-lobby) [data-site-chrome="banner"],
+body:has(.play-lobby) [data-site-chrome="nav"] { flex-shrink: 0; }
+body:has(.play-lobby) [data-site-chrome="nav"] { position: relative; z-index: 20; }
+/* The lobby owns the primary action; the shared deposit link remains available. */
+body:has(.play-lobby) [data-site-chrome="nav"] a[href="/deposit"] { background: var(--color-malam); color: var(--color-gading); box-shadow: 0 5px 0 var(--color-garis); }
+.play-lobby { flex: 1; min-height: 0; position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: center; padding: clamp(12px, 3dvh, 28px) 20px max(18px, env(safe-area-inset-bottom)); color: var(--color-gading); }
+.play-lobby .jitu-game-playArena { position: absolute; inset: 0; height: auto; margin: 0; z-index: -1; }
+.play-lobby .jitu-game-arenaCanvas { position: absolute; inset: 0; }
+.play-lobby .jitu-game-arenaCanvas::after { background: linear-gradient(180deg, var(--color-dasar), transparent 25%, transparent 45%, var(--color-dasar) 95%); }
+.play-lobby .jitu-game-arenaCaption { bottom: auto; top: 48%; color: var(--color-gading); font-size: 11px; }
+.lobby-title { text-align: center; flex-shrink: 0; }
+.lobby-title h1 { font-size: clamp(26px, 3.5vw, 44px); line-height: 1.1; }
+.lobby-title p { margin-top: 6px; color: rgb(255 255 255 / .75); font-size: 14px; font-weight: 700; }
+.lobby-crystal-space { flex: 1; min-height: 90px; }
+.lobby-controls { width: min(100%, 860px); text-align: center; flex-shrink: 0; }
+.lobby-modes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.lobby-mode { text-align: left; min-width: 0; border: 3px solid var(--color-garis); border-radius: 14px; padding: 11px 14px; background: var(--color-malam); box-shadow: 0 5px 0 var(--color-garis); cursor: pointer; font-size: 13px; font-weight: 800; }
+.lobby-mode:hover { background: var(--color-papan); }
+.lobby-mode[aria-pressed="true"] { border-color: var(--color-emas); background: var(--color-papan-terang); }
+.lobby-mode-heading { display: flex; justify-content: space-between; align-items: center; gap: 4px; font-size: 23px; line-height: 1.2; margin-bottom: 4px; }
+.lobby-check { color: var(--color-emas); width: 20px; font-family: var(--font-nunito), sans-serif; }
+.lobby-mode > span:last-child { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 8px; color: rgb(255 255 255 / .75); }
+.lobby-recommended { font-size: 11px; }
+.lobby-mode:first-child .lobby-recommended { color: var(--color-emas); }
+.lobby-detail { font-size: 13px; font-weight: 800; margin: 14px 0 12px; color: rgb(255 255 255 / .85); }
+.lobby-notice { max-width: 620px; margin: 0 auto 10px; border: 2px solid var(--color-emas); border-radius: 14px; background: var(--color-malam); padding: 7px 12px; font-size: 13px; line-height: 1.35; font-weight: 800; }
+.lobby-action { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.lobby-action button { min-width: 230px; }
+.lobby-action p { font-size: 12px; font-weight: 700; color: rgb(255 255 255 / .75); }
+.lobby-action strong { color: var(--color-emas); }
+.lobby-demo { position: absolute; bottom: 8px; right: 12px; z-index: 25; padding: 4px 8px; font-size: 11px; font-weight: 800; background: var(--color-dasar); border-radius: 7px; }
+.lobby-demo summary { cursor: pointer; }
+.lobby-demo[open] { border: 2px solid var(--color-emas); }
+.lobby-demo label { display: flex; flex-direction: column; gap: 8px; padding: 8px 0; }
+.lobby-demo select { background: var(--color-malam); padding: 8px; border: 2px solid var(--color-garis); border-radius: 7px; }
+@media (max-width: 600px) {
+  .play-lobby { padding: 16px 16px max(18px, env(safe-area-inset-bottom)); }
+  .lobby-title p { max-width: 280px; margin: 6px auto 0; font-size: 12px; }
+  .lobby-modes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .lobby-mode { padding: 8px 10px; }
+  .lobby-mode-heading { font-size: 21px; }
+  .lobby-mode > span:last-child { font-size: 12px; }
+  .lobby-detail { font-size: 11px; margin: 11px 0; }
+  .lobby-notice { font-size: 12px; padding: 6px 8px; }
+  .lobby-recommended { font-size: 10px; }
+  .lobby-mode:first-child .lobby-recommended { font-size: 9px; }
+  .play-lobby .jitu-game-arenaCaption { top: 48%; }
+}
+@media (max-height: 700px) and (orientation: portrait) {
+  .play-lobby { padding-top: 12px; padding-bottom: 14px; }
+  .lobby-crystal-space { min-height: 75px; }
+  .lobby-title h1 { font-size: 26px; }
+  .play-lobby .jitu-game-arenaCanvas { bottom: auto; height: 58%; }
+  .play-lobby .jitu-game-arenaCaption { display: none; }
+  .lobby-action { gap: 9px; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  body:has(.play-lobby) [data-site-chrome="banner"] { padding-block: 2px; font-size: 11px; }
+  body:has(.play-lobby) [data-site-chrome="nav"] { margin-top: 5px; padding-block: 3px; }
+  body:has(.play-lobby) [data-site-chrome="nav"] img { max-height: 30px; object-fit: contain; }
+  .play-lobby { padding: 7px 20px 10px; }
+  .lobby-title h1 { font-size: 24px; }
+  .lobby-title p { margin-top: 2px; font-size: 11px; }
+  .lobby-crystal-space { min-height: 44px; }
+  .lobby-modes { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .lobby-mode { padding: 4px 10px; }
+  .lobby-mode-heading { font-size: 19px; margin: 0; }
+  .lobby-mode > span:last-child { font-size: 11px; }
+  .lobby-detail { margin: 6px 0; font-size: 11px; }
+  .lobby-notice { padding: 3px 10px; margin-bottom: 5px; font-size: 11px; }
+  .lobby-action { gap: 7px; }
+  .lobby-action button { padding: 5px 24px; font-size: 18px; }
+  .lobby-action p { font-size: 10px; }
+  .play-lobby .jitu-game-arenaCanvas { bottom: auto; height: 80%; }
+  .play-lobby .jitu-game-arenaCaption { display: none; }
+}
+/* Reserve a separate bottom line for the development trigger. */
+.play-lobby:has(.lobby-demo) .lobby-controls { margin-bottom: 24px; }
+
